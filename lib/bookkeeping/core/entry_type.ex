@@ -6,5 +6,5 @@ defmodule Bookkeeping.Core.EntryType do
   def credit(), do: __MODULE__.new(:credit)
 
   def new(type) when type in @types, do: {:ok, %__MODULE__{type: type}}
-  def new(_type), do: {:error, %__MODULE__{type: :invalid_type}}
+  def new(_type), do: {:error, :invalid_entry_type}
 end
