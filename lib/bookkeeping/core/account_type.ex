@@ -19,7 +19,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Asset",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: false
   }}`.
@@ -29,7 +29,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.asset()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Asset",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: false
       }}
@@ -47,7 +47,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Liability",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: false
   }}`.
@@ -57,7 +57,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.liability()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Liability",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: false
       }}
@@ -75,7 +75,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Equity",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: false
   }}`.
@@ -85,7 +85,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.equity()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Equity",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: false
       }}
@@ -103,7 +103,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Expense",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: false
   }}`.
@@ -113,7 +113,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.expense()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Expense",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: false
       }}
@@ -131,7 +131,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Revenue",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: false
   }}`.
@@ -141,7 +141,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.revenue()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Revenue",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: false
       }}
@@ -159,7 +159,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Loss",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: false
   }}`.
@@ -169,7 +169,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.loss()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Loss",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: false
       }}
@@ -187,7 +187,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Gain",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: false
   }}`.
@@ -197,7 +197,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.gain()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Gain",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: false
       }}
@@ -215,7 +215,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Asset",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: true
   }}`.
@@ -225,7 +225,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.contra_asset()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Asset",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: true
       }}
@@ -243,7 +243,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Liability",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: true
   }}`.
@@ -253,7 +253,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.contra_liability()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Liability",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: true
       }}
@@ -271,7 +271,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Equity",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: true
   }}`.
@@ -281,7 +281,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.contra_equity()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Equity",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: true
       }}
@@ -299,7 +299,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Expense",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: true
   }}`.
@@ -309,7 +309,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.contra_expense()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Expense",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: true
       }}
@@ -327,7 +327,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Revenue",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: true
   }}`.
@@ -337,7 +337,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.contra_revenue()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Revenue",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: true
       }}
@@ -355,7 +355,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Loss",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: true
   }}`.
@@ -365,7 +365,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.contra_loss()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Loss",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Crebit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: true
       }}
@@ -383,7 +383,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Gain",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
     primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: true
   }}`.
@@ -393,7 +393,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> Bookkeeping.Core.AccountType.contra_gain()
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Gain",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
         primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: true
       }}
