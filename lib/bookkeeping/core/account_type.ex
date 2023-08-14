@@ -5,10 +5,11 @@ defmodule Bookkeeping.Core.AccountType do
   Account types help to organize the information in a systematic and logical way, and to show the relationship between the assets, liabilities, equity, revenue, expenses, and other elements of the accounting equation.
   Account types also help to prepare the financial statements, such as the balance sheet, income statement, and cash flow statement.
   """
-  alias Bookkeeping.Core.EntryType
+  alias Bookkeeping.Core.{EntryType, ReportingCategory}
 
   defstruct name: :binary,
             normal_balance: %EntryType{},
+            primary_reporting_category: %ReportingCategory{},
             contra: false
 
   @doc """
@@ -19,6 +20,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Asset",
     normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: false
   }}`.
 
@@ -28,12 +30,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Asset",
         normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: false
       }}
   """
   def asset() do
     {:ok, debit} = EntryType.debit()
-    __MODULE__.new("Asset", debit)
+    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
+    __MODULE__.new("Asset", debit, balance_sheet)
   end
 
   @doc """
@@ -44,6 +48,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Liability",
     normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: false
   }}`.
 
@@ -53,12 +58,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Liability",
         normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: false
       }}
   """
   def liability() do
     {:ok, credit} = EntryType.credit()
-    __MODULE__.new("Liability", credit)
+    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
+    __MODULE__.new("Liability", credit, balance_sheet)
   end
 
   @doc """
@@ -69,6 +76,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Equity",
     normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: false
   }}`.
 
@@ -78,12 +86,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Equity",
         normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: false
       }}
   """
   def equity() do
     {:ok, credit} = EntryType.credit()
-    __MODULE__.new("Equity", credit)
+    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
+    __MODULE__.new("Equity", credit, balance_sheet)
   end
 
   @doc """
@@ -94,6 +104,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Expense",
     normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: false
   }}`.
 
@@ -103,12 +114,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Expense",
         normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: false
       }}
   """
   def expense() do
     {:ok, debit} = EntryType.debit()
-    __MODULE__.new("Expense", debit)
+    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
+    __MODULE__.new("Expense", debit, profit_and_loss)
   end
 
   @doc """
@@ -119,6 +132,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Revenue",
     normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: false
   }}`.
 
@@ -128,12 +142,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Revenue",
         normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: false
       }}
   """
   def revenue() do
     {:ok, credit} = EntryType.credit()
-    __MODULE__.new("Revenue", credit)
+    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
+    __MODULE__.new("Revenue", credit, profit_and_loss)
   end
 
   @doc """
@@ -144,6 +160,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Loss",
     normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: false
   }}`.
 
@@ -153,12 +170,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Loss",
         normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: false
       }}
   """
   def loss() do
     {:ok, debit} = EntryType.debit()
-    __MODULE__.new("Loss", debit)
+    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
+    __MODULE__.new("Loss", debit, profit_and_loss)
   end
 
   @doc """
@@ -169,6 +188,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Gain",
     normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: false
   }}`.
 
@@ -178,12 +198,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Gain",
         normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: false
       }}
   """
   def gain() do
     {:ok, credit} = EntryType.credit()
-    __MODULE__.new("Gain", credit)
+    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
+    __MODULE__.new("Gain", credit, profit_and_loss)
   end
 
   @doc """
@@ -194,6 +216,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Asset",
     normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: true
   }}`.
 
@@ -203,12 +226,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Asset",
         normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: true
       }}
   """
   def contra_asset() do
     {:ok, credit} = EntryType.credit()
-    __MODULE__.new("Contra Asset", credit, true)
+    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
+    __MODULE__.new("Contra Asset", credit, balance_sheet, true)
   end
 
   @doc """
@@ -219,6 +244,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Liability",
     normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: true
   }}`.
 
@@ -228,12 +254,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Liability",
         normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: true
       }}
   """
   def contra_liability() do
     {:ok, debit} = EntryType.debit()
-    __MODULE__.new("Contra Liability", debit, true)
+    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
+    __MODULE__.new("Contra Liability", debit, balance_sheet, true)
   end
 
   @doc """
@@ -244,6 +272,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Equity",
     normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
     contra: true
   }}`.
 
@@ -253,12 +282,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Equity",
         normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
         contra: true
       }}
   """
   def contra_equity() do
     {:ok, debit} = EntryType.debit()
-    __MODULE__.new("Contra Equity", debit, true)
+    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
+    __MODULE__.new("Contra Equity", debit, balance_sheet, true)
   end
 
   @doc """
@@ -269,6 +300,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Expense",
     normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: true
   }}`.
 
@@ -278,12 +310,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Expense",
         normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: true
       }}
   """
   def contra_expense() do
     {:ok, credit} = EntryType.credit()
-    __MODULE__.new("Contra Expense", credit, true)
+    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
+    __MODULE__.new("Contra Expense", credit, profit_and_loss, true)
   end
 
   @doc """
@@ -294,6 +328,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Revenue",
     normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: true
   }}`.
 
@@ -303,12 +338,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Revenue",
         normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: true
       }}
   """
   def contra_revenue() do
     {:ok, debit} = EntryType.debit()
-    __MODULE__.new("Contra Revenue", debit, true)
+    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
+    __MODULE__.new("Contra Revenue", debit, profit_and_loss, true)
   end
 
   @doc """
@@ -319,6 +356,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Loss",
     normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: true
   }}`.
 
@@ -328,12 +366,14 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Loss",
         normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: true
       }}
   """
   def contra_loss() do
     {:ok, credit} = EntryType.credit()
-    __MODULE__.new("Contra Loss", credit, true)
+    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
+    __MODULE__.new("Contra Loss", credit, profit_and_loss, true)
   end
 
   @doc """
@@ -344,6 +384,7 @@ defmodule Bookkeeping.Core.AccountType do
   Returns `{:ok, %Bookkeeping.Core.AccountType{
     name: "Contra Gain",
     normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
     contra: true
   }}`.
 
@@ -353,25 +394,34 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok, %Bookkeeping.Core.AccountType{
         name: "Contra Gain",
         normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
         contra: true
       }}
   """
   def contra_gain() do
     {:ok, debit} = EntryType.debit()
-    __MODULE__.new("Contra Gain", debit, true)
+    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
+    __MODULE__.new("Contra Gain", debit, profit_and_loss, true)
   end
 
-  def new(name, normal_balance, contra \\ false)
+  def new(name, normal_balance, primary_reporting_category, contra \\ false)
 
-  def new(name, %EntryType{type: entry_type} = normal_balance, contra)
+  def new(
+        name,
+        %EntryType{type: entry_type} = normal_balance,
+        %ReportingCategory{primary: true} = primary_reporting_category,
+        contra
+      )
       when is_binary(name) and entry_type in [:debit, :credit] do
     {:ok,
      %__MODULE__{
        name: name,
        normal_balance: normal_balance,
+       primary_reporting_category: primary_reporting_category,
        contra: contra
      }}
   end
 
-  def new(_name, _normal_balance, _contra), do: {:error, :invalid_account_type}
+  def new(_name, _normal_balance, _primary_reporting_category, _contra),
+    do: {:error, :invalid_account_type}
 end
