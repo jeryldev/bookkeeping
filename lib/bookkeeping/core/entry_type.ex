@@ -9,8 +9,8 @@ defmodule Bookkeeping.Core.EntryType do
   one account is debited and another account is credited.
   """
 
-  defstruct ~w[type]a
-  @types [:debit, :credit]
+  defstruct type: nil
+  @entry_types [:debit, :credit]
 
   @doc """
   Creates a new debit entry type.
@@ -42,6 +42,6 @@ defmodule Bookkeeping.Core.EntryType do
   """
   def credit(), do: __MODULE__.new(:credit)
 
-  def new(type) when type in @types, do: {:ok, %__MODULE__{type: type}}
+  def new(type) when type in @entry_types, do: {:ok, %__MODULE__{type: type}}
   def new(_type), do: {:error, :invalid_entry_type}
 end
