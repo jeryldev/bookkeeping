@@ -9,7 +9,7 @@ defmodule Bookkeeping.Core.EntryType do
   one account is debited and another account is credited.
   """
 
-  defstruct type: nil
+  defstruct ~w[type name]a
   @entry_types [:debit, :credit]
 
   @doc """
@@ -18,14 +18,14 @@ defmodule Bookkeeping.Core.EntryType do
   It increases assets, expenses, contra liability, contra equity, and contra revenue accounts..
   It decreases liabilities, equity, revenue, contra asset and contra expense accounts.
 
-  Returns `{:ok, %Bookkeeping.Core.EntryType{type: debit}}`.
+  Returns `{:ok, %Bookkeeping.Core.EntryType{type: debit, name: "Debit"}}`.
 
   ## Examples:
 
       iex> Bookkeeping.Core.EntryType.debit()
-      {:ok, %Bookkeeping.Core.EntryType{type: :debit}}
+      {:ok, %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"}}
   """
-  def debit(), do: __MODULE__.new(:debit)
+  def debit(), do: __MODULE__.new(:debit, "Debit")
 
   @doc """
   Creates a new credit entry type.
@@ -33,15 +33,17 @@ defmodule Bookkeeping.Core.EntryType do
   It increases liabilities, equity, revenue, contra asset and contra expense accounts.
   It decreases assets, expenses, contra liability, contra equity, and contra revenue accounts.
 
-  Returns `{:ok, %Bookkeeping.Core.EntryType{type: credit}}`.
+  Returns `{:ok, %Bookkeeping.Core.EntryType{type: credit, name: "Credit"}}`.
 
   ## Examples:
 
       iex> Bookkeeping.Core.EntryType.credit()
-      {:ok, %Bookkeeping.Core.EntryType{type: :credit}}
+      {:ok, %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"}}
   """
-  def credit(), do: __MODULE__.new(:credit)
+  def credit(), do: __MODULE__.new(:credit, "Credit")
 
-  def new(type) when type in @entry_types, do: {:ok, %__MODULE__{type: type}}
-  def new(_type), do: {:error, :invalid_entry_type}
+  def new(type, name) when type in @entry_types and is_binary(name),
+    do: {:ok, %__MODULE__{type: type, name: name}}
+
+  def new(_type, _name), do: {:error, :invalid_entry_type}
 end
