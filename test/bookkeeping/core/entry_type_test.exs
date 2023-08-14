@@ -18,4 +18,8 @@ defmodule Bookkeeping.Core.EntryTypeTest do
   test "disallow entry types other than :debit and :credit" do
     assert EntryType.new(:invalid) == {:error, :invalid_entry_type}
   end
+
+  test "only allow Atom type of entry type" do
+    assert EntryType.new("invalid") == {:error, :invalid_entry_type}
+  end
 end

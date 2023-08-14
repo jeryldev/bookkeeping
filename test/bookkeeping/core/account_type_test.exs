@@ -1,40 +1,96 @@
 defmodule Bookkeeping.Core.AccountTypeTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.{AccountType, EntryType}
+  alias Bookkeeping.Core.{AccountType, EntryType, ReportingCategory}
 
   test "create Asset account type" do
     assert AccountType.asset() ==
-             {:ok, %AccountType{name: "Asset", normal_balance: %EntryType{type: :debit}}}
+             {:ok,
+              %AccountType{
+                name: "Asset",
+                normal_balance: %EntryType{type: :debit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :balance_sheet,
+                  primary: true
+                }
+              }}
   end
 
   test "create Liability account type" do
     assert AccountType.liability() ==
-             {:ok, %AccountType{name: "Liability", normal_balance: %EntryType{type: :credit}}}
+             {:ok,
+              %AccountType{
+                name: "Liability",
+                normal_balance: %EntryType{type: :credit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :balance_sheet,
+                  primary: true
+                }
+              }}
   end
 
   test "create Equity account type" do
     assert AccountType.equity() ==
-             {:ok, %AccountType{name: "Equity", normal_balance: %EntryType{type: :credit}}}
+             {:ok,
+              %AccountType{
+                name: "Equity",
+                normal_balance: %EntryType{type: :credit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :balance_sheet,
+                  primary: true
+                }
+              }}
   end
 
   test "create Expense account type" do
     assert AccountType.expense() ==
-             {:ok, %AccountType{name: "Expense", normal_balance: %EntryType{type: :debit}}}
+             {:ok,
+              %AccountType{
+                name: "Expense",
+                normal_balance: %EntryType{type: :debit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :profit_and_loss,
+                  primary: true
+                }
+              }}
   end
 
   test "create Revenue account type" do
     assert AccountType.revenue() ==
-             {:ok, %AccountType{name: "Revenue", normal_balance: %EntryType{type: :credit}}}
+             {:ok,
+              %AccountType{
+                name: "Revenue",
+                normal_balance: %EntryType{type: :credit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :profit_and_loss,
+                  primary: true
+                }
+              }}
   end
 
   test "create Loss account type" do
     assert AccountType.loss() ==
-             {:ok, %AccountType{name: "Loss", normal_balance: %EntryType{type: :debit}}}
+             {:ok,
+              %AccountType{
+                name: "Loss",
+                normal_balance: %EntryType{type: :debit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :profit_and_loss,
+                  primary: true
+                }
+              }}
   end
 
   test "create Gain account type" do
     assert AccountType.gain() ==
-             {:ok, %AccountType{name: "Gain", normal_balance: %EntryType{type: :credit}}}
+             {:ok,
+              %AccountType{
+                name: "Gain",
+                normal_balance: %EntryType{type: :credit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :profit_and_loss,
+                  primary: true
+                }
+              }}
   end
 
   test "create Contra Asset account type" do
@@ -43,6 +99,10 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               %AccountType{
                 name: "Contra Asset",
                 normal_balance: %EntryType{type: :credit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :balance_sheet,
+                  primary: true
+                },
                 contra: true
               }}
   end
@@ -53,6 +113,10 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               %AccountType{
                 name: "Contra Liability",
                 normal_balance: %EntryType{type: :debit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :balance_sheet,
+                  primary: true
+                },
                 contra: true
               }}
   end
@@ -63,6 +127,10 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               %AccountType{
                 name: "Contra Equity",
                 normal_balance: %EntryType{type: :debit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :balance_sheet,
+                  primary: true
+                },
                 contra: true
               }}
   end
@@ -73,6 +141,10 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               %AccountType{
                 name: "Contra Expense",
                 normal_balance: %EntryType{type: :credit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :profit_and_loss,
+                  primary: true
+                },
                 contra: true
               }}
   end
@@ -83,6 +155,10 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               %AccountType{
                 name: "Contra Revenue",
                 normal_balance: %EntryType{type: :debit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :profit_and_loss,
+                  primary: true
+                },
                 contra: true
               }}
   end
@@ -93,6 +169,10 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               %AccountType{
                 name: "Contra Gain",
                 normal_balance: %EntryType{type: :debit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :profit_and_loss,
+                  primary: true
+                },
                 contra: true
               }}
   end
@@ -103,27 +183,64 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               %AccountType{
                 name: "Contra Loss",
                 normal_balance: %EntryType{type: :credit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :profit_and_loss,
+                  primary: true
+                },
                 contra: true
               }}
   end
 
   test "allow account types that has an entry type of debit" do
-    assert AccountType.new("Asset", %EntryType{type: :debit}) ==
-             {:ok, %AccountType{name: "Asset", normal_balance: %EntryType{type: :debit}}}
+    assert AccountType.new("Asset", %EntryType{type: :debit}, %ReportingCategory{
+             type: :balance_sheet,
+             primary: true
+           }) ==
+             {:ok,
+              %AccountType{
+                name: "Asset",
+                normal_balance: %EntryType{type: :debit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :balance_sheet,
+                  primary: true
+                }
+              }}
   end
 
   test "allow account types that has an entry type of credit" do
-    assert AccountType.new("Liability", %EntryType{type: :credit}) ==
-             {:ok, %AccountType{name: "Liability", normal_balance: %EntryType{type: :credit}}}
+    assert AccountType.new("Liability", %EntryType{type: :credit}, %ReportingCategory{
+             type: :balance_sheet,
+             primary: true
+           }) ==
+             {:ok,
+              %AccountType{
+                name: "Liability",
+                normal_balance: %EntryType{type: :credit},
+                primary_reporting_category: %ReportingCategory{
+                  type: :balance_sheet,
+                  primary: true
+                }
+              }}
   end
 
   test "disallow account types that has no name" do
-    assert AccountType.new(nil, %EntryType{type: :debit}) ==
+    assert AccountType.new(nil, %EntryType{type: :debit}, %ReportingCategory{
+             type: :balance_sheet,
+             primary: true
+           }) ==
              {:error, :invalid_account_type}
   end
 
   test "disallow account types that has an entry type other than debit or credit" do
-    assert AccountType.new("Invalid", %EntryType{type: :invalid_type}) ==
+    assert AccountType.new("Invalid", %EntryType{type: :invalid_type}, %ReportingCategory{
+             type: :balance_sheet,
+             primary: true
+           }) ==
+             {:error, :invalid_account_type}
+  end
+
+  test "disallow account types that has no reporting category" do
+    assert AccountType.new("Invalid", %EntryType{type: :debit}, nil) ==
              {:error, :invalid_account_type}
   end
 end
