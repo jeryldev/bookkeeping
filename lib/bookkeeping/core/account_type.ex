@@ -137,6 +137,56 @@ defmodule Bookkeeping.Core.AccountType do
   end
 
   @doc """
+  Creates a new Loss account type.
+  Loss is an account type that represents the amount of money that a business loses from selling goods or services to customers.
+  Examples: loss on sale of equipment, loss on sale of investments, loss on foreign exchange, etc.
+
+  Returns `{:ok, %Bookkeeping.Core.AccountType{
+    name: "Loss",
+    normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    contra: false
+  }}`.
+
+  ## Examples:
+
+      iex> Bookkeeping.Core.AccountType.loss()
+      {:ok, %Bookkeeping.Core.AccountType{
+        name: "Loss",
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        contra: false
+      }}
+  """
+  def loss() do
+    {:ok, debit} = EntryType.debit()
+    __MODULE__.new("Loss", debit)
+  end
+
+  @doc """
+  Creates a new Gain account type.
+  Gain is an account type that represents the amount of money that a business gains from selling goods or services to customers.
+  Examples: gain on sale of equipment, gain on sale of investments, gain on foreign exchange, etc.
+
+  Returns `{:ok, %Bookkeeping.Core.AccountType{
+    name: "Gain",
+    normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    contra: false
+  }}`.
+
+  ## Examples:
+
+      iex> Bookkeeping.Core.AccountType.gain()
+      {:ok, %Bookkeeping.Core.AccountType{
+        name: "Gain",
+        normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        contra: false
+      }}
+  """
+  def gain() do
+    {:ok, credit} = EntryType.credit()
+    __MODULE__.new("Gain", credit)
+  end
+
+  @doc """
   Creates a new Contra Asset account type.
   Contra Asset is an account type that reduces the value of an asset account, such as accumulated depreciation or allowance for doubtful accounts.
   Examples: accumulated depreciation - equipment, allowance for doubtful accounts - accounts receivable, etc.
@@ -259,6 +309,56 @@ defmodule Bookkeeping.Core.AccountType do
   def contra_revenue() do
     {:ok, debit} = EntryType.debit()
     __MODULE__.new("Contra Revenue", debit, true)
+  end
+
+  @doc """
+  Creates a new Contra Loss account type.
+  Contra Loss is an account type that reduces the amount of a loss account.
+  Examples: Gain on sale of assets, Gain on impairment reversal, Gain on debt settlement, etc.
+
+  Returns `{:ok, %Bookkeeping.Core.AccountType{
+    name: "Contra Loss",
+    normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+    contra: true
+  }}`.
+
+  ## Examples:
+
+      iex> Bookkeeping.Core.AccountType.contra_loss()
+      {:ok, %Bookkeeping.Core.AccountType{
+        name: "Contra Loss",
+        normal_balance: %Bookkeeping.Core.EntryType{type: :credit},
+        contra: true
+      }}
+  """
+  def contra_loss() do
+    {:ok, credit} = EntryType.credit()
+    __MODULE__.new("Contra Loss", credit, true)
+  end
+
+  @doc """
+  Creates a new Contra Gain account type.
+  Contra Gain is an account type that reduces the amount of a gain account.
+  Examples: Loss on sale of assets, Loss on impairment reversal, Loss on debt settlement, etc.
+
+  Returns `{:ok, %Bookkeeping.Core.AccountType{
+    name: "Contra Gain",
+    normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+    contra: true
+  }}`.
+
+  ## Examples:
+
+      iex> Bookkeeping.Core.AccountType.contra_gain()
+      {:ok, %Bookkeeping.Core.AccountType{
+        name: "Contra Gain",
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit},
+        contra: true
+      }}
+  """
+  def contra_gain() do
+    {:ok, debit} = EntryType.debit()
+    __MODULE__.new("Contra Gain", debit, true)
   end
 
   def new(name, normal_balance, contra \\ false)
