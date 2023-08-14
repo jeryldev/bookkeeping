@@ -27,6 +27,16 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok, %AccountType{name: "Revenue", normal_balance: %EntryType{type: :credit}}}
   end
 
+  test "create Loss account type" do
+    assert AccountType.loss() ==
+             {:ok, %AccountType{name: "Loss", normal_balance: %EntryType{type: :debit}}}
+  end
+
+  test "create Gain account type" do
+    assert AccountType.gain() ==
+             {:ok, %AccountType{name: "Gain", normal_balance: %EntryType{type: :credit}}}
+  end
+
   test "create Contra Asset account type" do
     assert AccountType.contra_asset() ==
              {:ok,
@@ -73,6 +83,26 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               %AccountType{
                 name: "Contra Revenue",
                 normal_balance: %EntryType{type: :debit},
+                contra: true
+              }}
+  end
+
+  test "create Contra Gain account type" do
+    assert AccountType.contra_gain() ==
+             {:ok,
+              %AccountType{
+                name: "Contra Gain",
+                normal_balance: %EntryType{type: :debit},
+                contra: true
+              }}
+  end
+
+  test "create Contra Loss account type" do
+    assert AccountType.contra_loss() ==
+             {:ok,
+              %AccountType{
+                name: "Contra Loss",
+                normal_balance: %EntryType{type: :credit},
                 contra: true
               }}
   end
