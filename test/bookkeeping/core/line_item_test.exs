@@ -1,6 +1,6 @@
 defmodule Bookkeeping.Core.LineItemTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.{Account, AccountType, EntryType, LineItem, ReportingCategory}
+  alias Bookkeeping.Core.{Account, AccountType, LineItem}
 
   test "create line item with valid account and amount" do
     {:ok, asset_type} = AccountType.asset()
