@@ -1,5 +1,5 @@
 defmodule Bookkeeping.Core.Account do
-  alias Bookkeeping.Core.{AccountType}
+  alias Bookkeeping.Core.AccountType
 
   defstruct code: nil,
             name: nil,
