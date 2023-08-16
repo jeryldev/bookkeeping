@@ -7,7 +7,7 @@ defmodule Bookkeeping.Core.AccountType do
   """
   alias Bookkeeping.Core.{EntryType, ReportingCategory}
 
-  defstruct name: :binary,
+  defstruct name: nil,
             normal_balance: %EntryType{},
             primary_reporting_category: %ReportingCategory{},
             contra: false
