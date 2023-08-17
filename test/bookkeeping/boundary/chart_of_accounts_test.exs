@@ -1,24 +1,20 @@
 defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
   use ExUnit.Case, async: true
   alias Bookkeeping.Boundary.ChartOfAccounts
-  alias Bookkeeping.Core.AccountType
 
   setup do
     {:ok, server} = ChartOfAccounts.start_link()
-    {:ok, asset_type} = AccountType.asset()
-    {:ok, account} = ChartOfAccounts.create_account(server, "10010", "Cash", asset_type)
+    {:ok, account} = ChartOfAccounts.create_account(server, "10010", "Cash", "asset")
 
-    {:ok, server: server, account: account, asset_type: asset_type}
+    {:ok, server: server, account: account, asset_type: "asset"}
   end
 
   test "create account with valid code, name and account type", %{server: server} do
-    {:ok, asset_type} = AccountType.asset()
+    assert {:ok, _account} =
+             ChartOfAccounts.create_account(server, "10020", "Accounts receivable", "asset")
 
     assert {:ok, _account} =
-             ChartOfAccounts.create_account(server, "10020", "Accounts receivable", asset_type)
-
-    assert {:ok, _account} =
-             ChartOfAccounts.create_account("10020", "Accounts receivable", asset_type)
+             ChartOfAccounts.create_account("10020", "Accounts receivable", "asset")
   end
 
   test "disallow account with invalid code", %{server: server, asset_type: asset_type} do
@@ -30,13 +26,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
   end
 
   test "disallow account with invalid name", %{server: server} do
-    {:ok, asset_type} = AccountType.asset()
+    assert {:error, :invalid_account} =
+             ChartOfAccounts.create_account(server, "10020", :accounts_receivables, "asset")
 
     assert {:error, :invalid_account} =
-             ChartOfAccounts.create_account(server, "10020", :accounts_receivables, asset_type)
-
-    assert {:error, :invalid_account} =
-             ChartOfAccounts.create_account(server, "", :accounts_receivables, asset_type)
+             ChartOfAccounts.create_account(server, "", :accounts_receivables, "asset")
   end
 
   test "disallow account with invalid account type", %{server: server} do
@@ -62,17 +56,16 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   test "remove account", %{server: server, account: account} do
     {:ok, other_server} = ChartOfAccounts.start_link()
-    {:ok, asset_type} = AccountType.asset()
 
     {:ok, other_account} =
-      ChartOfAccounts.create_account(other_server, "10020", "Accounts receivable", asset_type)
+      ChartOfAccounts.create_account(other_server, "10020", "Accounts receivable", "asset")
 
     assert :ok = ChartOfAccounts.remove_account(server, account)
     assert :ok = ChartOfAccounts.remove_account(server, other_account)
     assert {:ok, []} = ChartOfAccounts.all_accounts(server)
 
     assert {:ok, prepaid_expenses} =
-             ChartOfAccounts.create_account("10040", "Prepaid Expenses", asset_type)
+             ChartOfAccounts.create_account("10040", "Prepaid Expenses", "asset")
 
     assert {:ok, found_account} = ChartOfAccounts.search_account(prepaid_expenses.code)
     assert :ok = ChartOfAccounts.remove_account(found_account)

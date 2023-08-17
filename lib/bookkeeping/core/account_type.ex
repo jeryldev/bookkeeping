@@ -13,6 +13,37 @@ defmodule Bookkeeping.Core.AccountType do
             contra: false
 
   @doc """
+  Selects an account type.
+
+  Returns `{:ok, %Bookkeeping.Core.AccountType{}}`.
+
+  ## Examples:
+
+      iex> Bookkeeping.Core.AccountType.select_account_type("asset")
+      {:ok, %Bookkeeping.Core.AccountType{
+        name: "Asset",
+        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
+        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
+        contra: false
+      }}
+  """
+  def select_account_type("asset"), do: asset()
+  def select_account_type("liability"), do: liability()
+  def select_account_type("equity"), do: equity()
+  def select_account_type("expense"), do: expense()
+  def select_account_type("revenue"), do: revenue()
+  def select_account_type("loss"), do: loss()
+  def select_account_type("gain"), do: gain()
+  def select_account_type("contra_asset"), do: contra_asset()
+  def select_account_type("contra_liability"), do: contra_liability()
+  def select_account_type("contra_equity"), do: contra_equity()
+  def select_account_type("contra_expense"), do: contra_expense()
+  def select_account_type("contra_revenue"), do: contra_revenue()
+  def select_account_type("contra_loss"), do: contra_loss()
+  def select_account_type("contra_gain"), do: contra_gain()
+  def select_account_type(_), do: {:error, :invalid_account_type}
+
+  @doc """
   Creates a new Asset account type.
   Asset is an account type that represents something that a business owns or controls that has future economic value.
   Examples: cash, accounts receivable, inventory, equipment, land, prepaid expense, prepaid asset, etc.
