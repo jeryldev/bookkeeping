@@ -6,24 +6,57 @@ defmodule Bookkeeping.Core.Account do
   """
   alias Bookkeeping.Core.AccountType
 
+  @account_types [
+    "asset",
+    "liability",
+    "equity",
+    "revenue",
+    "expense",
+    "gain",
+    "loss",
+    "contra_asset",
+    "contra_liability",
+    "contra_equity",
+    "contra_revenue",
+    "contra_expense",
+    "contra_gain",
+    "contra_loss"
+  ]
+
   defstruct code: nil,
             name: nil,
-            account_type: %AccountType{}
+            account_type: nil
 
   @doc """
-  Creates a new account.
+    Creates a new account struct.
 
-  Returns `{:ok, account}` if the account is valid, otherwise `{:error, :invalid_account}`.
+    Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`.
 
-  ## Examples
+    ## Examples
 
-      iex> Bookkeeping.Core.Account.create("1000", "Cash", %Bookkeeping.Core.AccountType{})
-      {:ok, %Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}}
+        iex> Account.create("10_000", "cash", "asset")
+        {:ok,
+         %Account{
+           code: "10_000",
+           name: "cash",
+           account_type: %AccountType{
+             name: "Asset",
+             normal_balance: %EntryType{type: :debit, name: "Debit"},
+             primary_reporting_category: %ReportingCategory{
+               type: :balance_sheet,
+               primary: true
+             },
+             contra: false
+           }
+         }}
   """
-  def create(code, name, account_type), do: new(code, name, account_type)
+  def create(code, name, binary_account_type), do: new(code, name, binary_account_type)
 
-  def new(code, name, %AccountType{} = account_type)
-      when is_binary(code) and is_binary(name) and code != "" and name != "" do
+  def new(code, name, binary_account_type)
+      when is_binary(code) and is_binary(name) and is_binary(binary_account_type) and
+             code != "" and name != "" and binary_account_type in @account_types do
+    {:ok, account_type} = AccountType.select_account_type(binary_account_type)
+
     {:ok,
      %__MODULE__{
        code: code,
