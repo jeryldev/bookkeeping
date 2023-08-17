@@ -4,8 +4,7 @@ defmodule Bookkeeping.Core.LineItemTest do
 
   test "create line item with valid account and amount" do
     {:ok, asset_account} = Account.create("10000", "cash", "asset")
-    {:ok, entry_type} = EntryType.debit()
-    line_item = LineItem.create(asset_account, Decimal.new(100), entry_type)
+    line_item = LineItem.create(asset_account, Decimal.new(100), "debit")
 
     assert line_item ==
              {:ok,

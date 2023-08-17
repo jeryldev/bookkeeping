@@ -2,6 +2,19 @@ defmodule Bookkeeping.Core.EntryTypeTest do
   use ExUnit.Case, async: true
   alias Bookkeeping.Core.EntryType
 
+  test "select debit entry type" do
+    assert EntryType.select_entry_type("debit") == {:ok, %EntryType{type: :debit, name: "Debit"}}
+  end
+
+  test "select credit entry type" do
+    assert EntryType.select_entry_type("credit") ==
+             {:ok, %EntryType{type: :credit, name: "Credit"}}
+  end
+
+  test "disallow invalid entry type" do
+    assert EntryType.select_entry_type("invalid") == {:error, :invalid_entry_type}
+  end
+
   test "create debit entry type" do
     assert EntryType.debit() == {:ok, %EntryType{type: :debit, name: "Debit"}}
   end
