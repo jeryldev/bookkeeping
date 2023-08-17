@@ -23,7 +23,7 @@ defmodule Bookkeeping.Core.LineItemTest do
                     contra: false
                   }
                 },
-                amount: Decimal.create("100")
+                amount: Decimal.new("100")
               }}
   end
 
