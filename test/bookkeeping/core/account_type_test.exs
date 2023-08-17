@@ -247,4 +247,12 @@ defmodule Bookkeeping.Core.AccountTypeTest do
     assert AccountType.new("Invalid", %EntryType{type: :debit}, nil) ==
              {:error, :invalid_account_type}
   end
+
+  test "disallow account types that has empty name" do
+    assert AccountType.new("", %EntryType{type: :credit, name: ""}, %ReportingCategory{
+             type: :balance_sheet,
+             primary: true
+           }) ==
+             {:error, :invalid_account_type}
+  end
 end

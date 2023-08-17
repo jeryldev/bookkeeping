@@ -17,13 +17,13 @@ defmodule Bookkeeping.Core.Account do
 
   ## Examples
 
-      iex> Bookkeeping.Core.Account.create(1000, "Cash", %Bookkeeping.Core.AccountType{})
-      {:ok, %Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: 1000, name: "Cash"}}
+      iex> Bookkeeping.Core.Account.create("1000", "Cash", %Bookkeeping.Core.AccountType{})
+      {:ok, %Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}}
   """
   def create(code, name, account_type), do: new(code, name, account_type)
 
   def new(code, name, %AccountType{} = account_type)
-      when is_binary(code) and is_binary(name) do
+      when is_binary(code) and is_binary(name) and code != "" and name != "" do
     {:ok,
      %__MODULE__{
        code: code,

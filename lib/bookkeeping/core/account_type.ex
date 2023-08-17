@@ -412,7 +412,7 @@ defmodule Bookkeeping.Core.AccountType do
         %ReportingCategory{primary: true} = primary_reporting_category,
         contra
       )
-      when is_binary(name) and entry_type in [:debit, :credit] do
+      when is_binary(name) and name != "" and entry_type in [:debit, :credit] do
     {:ok,
      %__MODULE__{
        name: name,
