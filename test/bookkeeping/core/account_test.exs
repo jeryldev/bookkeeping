@@ -4,12 +4,12 @@ defmodule Bookkeeping.Core.AccountTest do
 
   test "allow integer code, binary name and account type account field" do
     {:ok, account_type} = AccountType.asset()
-    new_account = Account.create(10_000, "cash", account_type)
+    new_account = Account.create("10_000", "cash", account_type)
 
     assert ^new_account =
              {:ok,
               %Account{
-                code: 10_000,
+                code: "10_000",
                 name: "cash",
                 account_type: %AccountType{
                   name: "Asset",
@@ -23,9 +23,9 @@ defmodule Bookkeeping.Core.AccountTest do
               }}
   end
 
-  test "disallow non-integer code field" do
+  test "disallow non-binary code field" do
     {:ok, account_type} = AccountType.asset()
-    new_account = Account.create("10_000", "cash", account_type)
+    new_account = Account.create(10_000, "cash", account_type)
 
     assert ^new_account = {:error, :invalid_account}
   end

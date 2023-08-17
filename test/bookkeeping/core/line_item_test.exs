@@ -4,7 +4,7 @@ defmodule Bookkeeping.Core.LineItemTest do
 
   test "create line item with valid account and amount" do
     {:ok, asset_type} = AccountType.asset()
-    {:ok, asset_account} = Account.create(10_000, "cash", asset_type)
+    {:ok, asset_account} = Account.create("10000", "cash", asset_type)
     {:ok, entry_type} = EntryType.debit()
     line_item = LineItem.create(asset_account, Decimal.new(100), entry_type)
 
@@ -12,7 +12,7 @@ defmodule Bookkeeping.Core.LineItemTest do
              {:ok,
               %Bookkeeping.Core.LineItem{
                 account: %Bookkeeping.Core.Account{
-                  code: 10_000,
+                  code: "10000",
                   name: "cash",
                   account_type: %Bookkeeping.Core.AccountType{
                     name: "Asset",
@@ -36,7 +36,7 @@ defmodule Bookkeeping.Core.LineItemTest do
 
   test "disallow line item with invalid amount" do
     {:ok, asset_type} = AccountType.asset()
-    {:ok, asset_account} = Account.create(10_000, "cash", asset_type)
+    {:ok, asset_account} = Account.create("10000", "cash", asset_type)
     {:ok, entry_type} = EntryType.debit()
     line_item = LineItem.create(asset_account, 100, entry_type)
 
