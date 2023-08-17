@@ -13,6 +13,20 @@ defmodule Bookkeeping.Core.EntryType do
   @entry_types [:debit, :credit]
 
   @doc """
+  Selects an entry type.
+
+  Returns `{:ok, %Bookkeeping.Core.EntryType{type: type, name: name}}` if the entry type is valid. Otherwise, returns `{:error, :invalid_entry_type}`.
+
+  ## Examples:
+
+      iex> Bookkeeping.Core.EntryType.select_entry_type("debit")
+      {:ok, %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"}}
+  """
+  def select_entry_type("debit"), do: debit()
+  def select_entry_type("credit"), do: credit()
+  def select_entry_type(_), do: {:error, :invalid_entry_type}
+
+  @doc """
   Creates a new debit entry type.
   A debit is an entry made on the left side of an account.
   It increases assets, expenses, contra liability, contra equity, and contra revenue accounts..
