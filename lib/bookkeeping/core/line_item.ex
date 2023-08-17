@@ -5,23 +5,42 @@ defmodule Bookkeeping.Core.LineItem do
   """
   alias Bookkeeping.Core.{Account, EntryType}
 
-  defstruct account: %Account{}, amount: 0, entry_type: %EntryType{}
+  @entry_types ["debit", "credit"]
+
+  defstruct account: %Account{}, amount: 0, entry_type: nil
 
   @doc """
-  Creates a new line item.
+    Creates a new line item struct.
 
-  Returns `{:ok, %Bookkeeping.Core.LineItem{account: account, amount: amount, entry_type: entry_type}}`.
+    Returns `{:ok, %LineItem{}}` if the line item is valid. Otherwise, returns `{:error, :invalid_line_item}`.
 
-  ## Examples:
+    ## Examples
 
-      iex> Bookkeeping.Core.LineItem.create(%Bookkeeping.Core.Account{name: "Cash"}, Decimal.new(100), Bookkeeping.Core.EntryType.debit())
-      {:ok, %Bookkeeping.Core.LineItem{account: %Bookkeeping.Core.Account{name: "Cash"}, amount: #Decimal<100>, entry_type: %Bookkeeping.Core.EntryType{name: "Debit", type: :debit}}}
+        iex> LineItem.create(%Account{}, Decimal.new(100), "debit")
+        {:ok,
+         %LineItem{
+           account: %Account{
+             code: nil,
+             name: nil,
+             account_type: %AccountType{
+               name: nil,
+               normal_balance: %EntryType{type: :debit, name: "Debit"},
+               primary_reporting_category: %ReportingCategory{type: nil, primary: nil},
+               contra: nil
+             }
+           },
+           amount: Decimal.new(100),
+           entry_type: %EntryType{type: :debit, name: "Debit"}
+         }}
   """
-  def create(account, amount, entry_type), do: new(account, amount, entry_type)
+  def create(account, amount, binary_entry_type), do: new(account, amount, binary_entry_type)
 
-  def new(%Account{} = account, %Decimal{} = amount, %EntryType{type: type} = entry_type)
-      when type in [:debit, :credit],
-      do: {:ok, %__MODULE__{account: account, amount: amount, entry_type: entry_type}}
+  def new(%Account{} = account, %Decimal{} = amount, binary_entry_type)
+      when binary_entry_type in @entry_types do
+    {:ok, entry_type} = EntryType.select_entry_type(binary_entry_type)
+
+    {:ok, %__MODULE__{account: account, amount: amount, entry_type: entry_type}}
+  end
 
   def new(_account, _amount, _entry_type), do: {:error, :invalid_line_item}
 end
