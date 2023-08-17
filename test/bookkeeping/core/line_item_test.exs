@@ -4,8 +4,8 @@ defmodule Bookkeeping.Core.LineItemTest do
 
   test "create line item with valid account and amount" do
     {:ok, asset_type} = AccountType.asset()
-    {:ok, asset_account} = Account.new(10_000, "cash", asset_type)
-    line_item = LineItem.new(asset_account, Decimal.new(100))
+    {:ok, asset_account} = Account.create(10_000, "cash", asset_type)
+    line_item = LineItem.create(asset_account, Decimal.new(100))
 
     assert line_item ==
              {:ok,
@@ -23,18 +23,18 @@ defmodule Bookkeeping.Core.LineItemTest do
                     contra: false
                   }
                 },
-                amount: Decimal.new("100")
+                amount: Decimal.create("100")
               }}
   end
 
   test "disallow line item with invalid account" do
-    assert LineItem.new("asset", Decimal.new(100)) == {:error, :invalid_line_item}
+    assert LineItem.create("asset", Decimal.new(100)) == {:error, :invalid_line_item}
   end
 
   test "disallow line item with invalid amount" do
     {:ok, asset_type} = AccountType.asset()
-    {:ok, asset_account} = Account.new(10_000, "cash", asset_type)
-    line_item = LineItem.new(asset_account, 100)
+    {:ok, asset_account} = Account.create(10_000, "cash", asset_type)
+    line_item = LineItem.create(asset_account, 100)
 
     assert line_item == {:error, :invalid_line_item}
   end
