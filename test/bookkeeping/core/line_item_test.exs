@@ -1,10 +1,9 @@
 defmodule Bookkeeping.Core.LineItemTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.{Account, AccountType, EntryType, LineItem}
+  alias Bookkeeping.Core.{Account, EntryType, LineItem}
 
   test "create line item with valid account and amount" do
-    {:ok, asset_type} = AccountType.asset()
-    {:ok, asset_account} = Account.create("10000", "cash", asset_type)
+    {:ok, asset_account} = Account.create("10000", "cash", "asset")
     {:ok, entry_type} = EntryType.debit()
     line_item = LineItem.create(asset_account, Decimal.new(100), entry_type)
 
@@ -35,8 +34,7 @@ defmodule Bookkeeping.Core.LineItemTest do
   end
 
   test "disallow line item with invalid amount" do
-    {:ok, asset_type} = AccountType.asset()
-    {:ok, asset_account} = Account.create("10000", "cash", asset_type)
+    {:ok, asset_account} = Account.create("10000", "cash", "asset")
     {:ok, entry_type} = EntryType.debit()
     line_item = LineItem.create(asset_account, 100, entry_type)
 
