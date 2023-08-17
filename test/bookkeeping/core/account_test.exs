@@ -42,4 +42,11 @@ defmodule Bookkeeping.Core.AccountTest do
 
     assert ^new_account = {:error, :invalid_account}
   end
+
+  test "disallow empty name" do
+    {:ok, account_type} = AccountType.asset()
+    new_account = Account.create(10_000, "", account_type)
+
+    assert ^new_account = {:error, :invalid_account}
+  end
 end

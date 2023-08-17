@@ -26,4 +26,8 @@ defmodule Bookkeeping.Core.EntryTypeTest do
   test "only allow String type of entry type name" do
     assert EntryType.new(:debit, :invalid) == {:error, :invalid_entry_type}
   end
+
+  test "disallow entry types that has empty name" do
+    assert EntryType.new(:debit, "") == {:error, :invalid_entry_type}
+  end
 end

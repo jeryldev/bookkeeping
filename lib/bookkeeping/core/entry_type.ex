@@ -42,7 +42,7 @@ defmodule Bookkeeping.Core.EntryType do
   """
   def credit, do: new(:credit, "Credit")
 
-  def new(type, name) when type in @entry_types and is_binary(name),
+  def new(type, name) when type in @entry_types and is_binary(name) and name != "",
     do: {:ok, %__MODULE__{type: type, name: name}}
 
   def new(_type, _name), do: {:error, :invalid_entry_type}
