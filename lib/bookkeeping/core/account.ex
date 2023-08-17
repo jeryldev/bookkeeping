@@ -23,7 +23,7 @@ defmodule Bookkeeping.Core.Account do
   def create(code, name, account_type), do: new(code, name, account_type)
 
   def new(code, name, %AccountType{} = account_type)
-      when is_integer(code) and is_binary(name) do
+      when is_binary(code) and is_binary(name) do
     {:ok,
      %__MODULE__{
        code: code,
