@@ -19,7 +19,7 @@ defmodule Bookkeeping.Core.ReportingCategory do
       iex> Bookkeeping.Core.ReportingCategory.balance_sheet()
       {:ok, %Bookkeeping.Core.ReportingCategory{type: :balance_sheet, primary: true}}
   """
-  def balance_sheet, do: __MODULE__.new(:balance_sheet)
+  def balance_sheet, do: new(:balance_sheet)
 
   @doc """
   Creates a new primary reporting category of type :profit_and_loss.
@@ -31,7 +31,7 @@ defmodule Bookkeeping.Core.ReportingCategory do
       iex> Bookkeeping.Core.ReportingCategory.profit_and_loss()
       {:ok, %Bookkeeping.Core.ReportingCategory{type: :profit_and_loss, primary: true}}
   """
-  def profit_and_loss, do: __MODULE__.new(:profit_and_loss)
+  def profit_and_loss, do: new(:profit_and_loss)
 
   def new(type) when is_atom(type) and type in @primary_reporting_categories,
     do: {:ok, %__MODULE__{type: type, primary: true}}

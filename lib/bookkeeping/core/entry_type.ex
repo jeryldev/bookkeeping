@@ -25,7 +25,7 @@ defmodule Bookkeeping.Core.EntryType do
       iex> Bookkeeping.Core.EntryType.debit()
       {:ok, %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"}}
   """
-  def debit, do: __MODULE__.new(:debit, "Debit")
+  def debit, do: new(:debit, "Debit")
 
   @doc """
   Creates a new credit entry type.
@@ -40,7 +40,7 @@ defmodule Bookkeeping.Core.EntryType do
       iex> Bookkeeping.Core.EntryType.credit()
       {:ok, %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"}}
   """
-  def credit, do: __MODULE__.new(:credit, "Credit")
+  def credit, do: new(:credit, "Credit")
 
   def new(type, name) when type in @entry_types and is_binary(name),
     do: {:ok, %__MODULE__{type: type, name: name}}

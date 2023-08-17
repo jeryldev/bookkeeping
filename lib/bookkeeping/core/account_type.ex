@@ -37,7 +37,7 @@ defmodule Bookkeeping.Core.AccountType do
   def asset do
     {:ok, debit} = EntryType.debit()
     {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    __MODULE__.new("Asset", debit, balance_sheet)
+    new("Asset", debit, balance_sheet)
   end
 
   @doc """
@@ -65,7 +65,7 @@ defmodule Bookkeeping.Core.AccountType do
   def liability do
     {:ok, credit} = EntryType.credit()
     {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    __MODULE__.new("Liability", credit, balance_sheet)
+    new("Liability", credit, balance_sheet)
   end
 
   @doc """
@@ -93,7 +93,7 @@ defmodule Bookkeeping.Core.AccountType do
   def equity do
     {:ok, credit} = EntryType.credit()
     {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    __MODULE__.new("Equity", credit, balance_sheet)
+    new("Equity", credit, balance_sheet)
   end
 
   @doc """
@@ -121,7 +121,7 @@ defmodule Bookkeeping.Core.AccountType do
   def expense do
     {:ok, debit} = EntryType.debit()
     {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    __MODULE__.new("Expense", debit, profit_and_loss)
+    new("Expense", debit, profit_and_loss)
   end
 
   @doc """
@@ -149,7 +149,7 @@ defmodule Bookkeeping.Core.AccountType do
   def revenue do
     {:ok, credit} = EntryType.credit()
     {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    __MODULE__.new("Revenue", credit, profit_and_loss)
+    new("Revenue", credit, profit_and_loss)
   end
 
   @doc """
@@ -177,7 +177,7 @@ defmodule Bookkeeping.Core.AccountType do
   def loss do
     {:ok, debit} = EntryType.debit()
     {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    __MODULE__.new("Loss", debit, profit_and_loss)
+    new("Loss", debit, profit_and_loss)
   end
 
   @doc """
@@ -205,7 +205,7 @@ defmodule Bookkeeping.Core.AccountType do
   def gain do
     {:ok, credit} = EntryType.credit()
     {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    __MODULE__.new("Gain", credit, profit_and_loss)
+    new("Gain", credit, profit_and_loss)
   end
 
   @doc """
@@ -233,7 +233,7 @@ defmodule Bookkeeping.Core.AccountType do
   def contra_asset do
     {:ok, credit} = EntryType.credit()
     {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    __MODULE__.new("Contra Asset", credit, balance_sheet, true)
+    new("Contra Asset", credit, balance_sheet, true)
   end
 
   @doc """
@@ -261,7 +261,7 @@ defmodule Bookkeeping.Core.AccountType do
   def contra_liability do
     {:ok, debit} = EntryType.debit()
     {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    __MODULE__.new("Contra Liability", debit, balance_sheet, true)
+    new("Contra Liability", debit, balance_sheet, true)
   end
 
   @doc """
@@ -289,7 +289,7 @@ defmodule Bookkeeping.Core.AccountType do
   def contra_equity do
     {:ok, debit} = EntryType.debit()
     {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    __MODULE__.new("Contra Equity", debit, balance_sheet, true)
+    new("Contra Equity", debit, balance_sheet, true)
   end
 
   @doc """
@@ -317,7 +317,7 @@ defmodule Bookkeeping.Core.AccountType do
   def contra_expense do
     {:ok, credit} = EntryType.credit()
     {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    __MODULE__.new("Contra Expense", credit, profit_and_loss, true)
+    new("Contra Expense", credit, profit_and_loss, true)
   end
 
   @doc """
@@ -345,7 +345,7 @@ defmodule Bookkeeping.Core.AccountType do
   def contra_revenue do
     {:ok, debit} = EntryType.debit()
     {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    __MODULE__.new("Contra Revenue", debit, profit_and_loss, true)
+    new("Contra Revenue", debit, profit_and_loss, true)
   end
 
   @doc """
@@ -373,7 +373,7 @@ defmodule Bookkeeping.Core.AccountType do
   def contra_loss do
     {:ok, credit} = EntryType.credit()
     {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    __MODULE__.new("Contra Loss", credit, profit_and_loss, true)
+    new("Contra Loss", credit, profit_and_loss, true)
   end
 
   @doc """
@@ -401,7 +401,7 @@ defmodule Bookkeeping.Core.AccountType do
   def contra_gain do
     {:ok, debit} = EntryType.debit()
     {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    __MODULE__.new("Contra Gain", debit, profit_and_loss, true)
+    new("Contra Gain", debit, profit_and_loss, true)
   end
 
   def new(name, normal_balance, primary_reporting_category, contra \\ false)
