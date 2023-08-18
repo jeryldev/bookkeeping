@@ -242,13 +242,10 @@ defmodule Bookkeeping.Core.AccountType do
 
   defp new(
          name,
-         %EntryType{type: entry_type} = normal_balance,
+         %EntryType{} = normal_balance,
          %PrimaryAccountCategory{} = primary_account_category,
          contra
-       )
-       when is_binary(name) and name != "" and
-              entry_type in [:debit, :credit] and
-              is_boolean(contra) do
+       ) do
     {:ok,
      %__MODULE__{
        name: name,
