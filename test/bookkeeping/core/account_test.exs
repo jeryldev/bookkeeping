@@ -1,6 +1,6 @@
 defmodule Bookkeeping.Core.AccountTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.{Account, AccountType, EntryType, ReportingCategory}
+  alias Bookkeeping.Core.{Account, AccountType, EntryType, PrimaryAccountCategory}
 
   test "allow integer code, binary name and account type account field" do
     new_account = Account.create("10_000", "cash", "asset")
@@ -13,9 +13,8 @@ defmodule Bookkeeping.Core.AccountTest do
                 account_type: %AccountType{
                   name: "Asset",
                   normal_balance: %EntryType{type: :debit, name: "Debit"},
-                  primary_reporting_category: %ReportingCategory{
-                    type: :balance_sheet,
-                    primary: true
+                  primary_account_category: %PrimaryAccountCategory{
+                    type: :balance_sheet
                   },
                   contra: false
                 }

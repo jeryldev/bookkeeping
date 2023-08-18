@@ -6,6 +6,10 @@ defmodule Bookkeeping.Core.Account do
   """
   alias Bookkeeping.Core.AccountType
 
+  defstruct code: nil,
+            name: nil,
+            account_type: nil
+
   @account_types [
     "asset",
     "liability",
@@ -23,10 +27,6 @@ defmodule Bookkeeping.Core.Account do
     "contra_loss"
   ]
 
-  defstruct code: nil,
-            name: nil,
-            account_type: nil
-
   @doc """
     Creates a new account struct.
 
@@ -42,20 +42,23 @@ defmodule Bookkeeping.Core.Account do
            account_type: %AccountType{
              name: "Asset",
              normal_balance: %EntryType{type: :debit, name: "Debit"},
-             primary_reporting_category: %ReportingCategory{
-               type: :balance_sheet,
-               primary: true
+             primary_account_category: %PrimaryAccountCategory{
+               type: :balance_sheet
+
              },
              contra: false
            }
          }}
   """
-  def create(code, name, binary_account_type), do: new(code, name, binary_account_type)
-
-  def new(code, name, binary_account_type)
+  def create(code, name, binary_account_type)
       when is_binary(code) and is_binary(name) and is_binary(binary_account_type) and
-             code != "" and name != "" and binary_account_type in @account_types do
-    {:ok, account_type} = AccountType.select_account_type(binary_account_type)
+             code != "" and name != "" and binary_account_type in @account_types,
+      do: new(code, name, binary_account_type)
+
+  def create(_, _, _), do: {:error, :invalid_account}
+
+  defp new(code, name, binary_account_type) do
+    {:ok, account_type} = AccountType.create(binary_account_type)
 
     {:ok,
      %__MODULE__{
@@ -64,6 +67,4 @@ defmodule Bookkeeping.Core.Account do
        account_type: account_type
      }}
   end
-
-  def new(_code, _name, _account_type), do: {:error, :invalid_account}
 end

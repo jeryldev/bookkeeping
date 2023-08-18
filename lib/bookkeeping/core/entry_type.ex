@@ -9,55 +9,29 @@ defmodule Bookkeeping.Core.EntryType do
   one account is debited and another account is credited.
   """
 
-  defstruct ~w[type name]a
+  defstruct type: nil,
+            name: nil
+
   @entry_types [:debit, :credit]
 
   @doc """
-  Selects an entry type.
+  Creates a new entry type struct.
 
-  Returns `{:ok, %Bookkeeping.Core.EntryType{type: type, name: name}}` if the entry type is valid. Otherwise, returns `{:error, :invalid_entry_type}`.
+  Returns `{:ok, %EntryType{}}` if the entry type is valid. Otherwise, returns `{:error, :invalid_entry_type}`.
 
-  ## Examples:
+  ## Examples
 
-      iex> Bookkeeping.Core.EntryType.select_entry_type("debit")
-      {:ok, %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"}}
+      iex> EntryType.create("debit")
+      {:ok, %EntryType{type: :debit, name: "Debit"}}
+      iex> EntryType.create("credit")
+      {:ok, %EntryType{type: :credit, name: "Credit"}}
+      iex> EntryType.create("invalid")
+      {:error, :invalid_entry_type}
   """
-  def select_entry_type("debit"), do: debit()
-  def select_entry_type("credit"), do: credit()
-  def select_entry_type(_), do: {:error, :invalid_entry_type}
+  def create("debit"), do: new(:debit, "Debit")
+  def create("credit"), do: new(:credit, "Credit")
+  def create(_), do: {:error, :invalid_entry_type}
 
-  @doc """
-  Creates a new debit entry type.
-  A debit is an entry made on the left side of an account.
-  It increases assets, expenses, contra liability, contra equity, and contra revenue accounts..
-  It decreases liabilities, equity, revenue, contra asset and contra expense accounts.
-
-  Returns `{:ok, %Bookkeeping.Core.EntryType{type: debit, name: "Debit"}}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.EntryType.debit()
-      {:ok, %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"}}
-  """
-  def debit, do: new(:debit, "Debit")
-
-  @doc """
-  Creates a new credit entry type.
-  A credit is an entry made on the right side of an account.
-  It increases liabilities, equity, revenue, contra asset and contra expense accounts.
-  It decreases assets, expenses, contra liability, contra equity, and contra revenue accounts.
-
-  Returns `{:ok, %Bookkeeping.Core.EntryType{type: credit, name: "Credit"}}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.EntryType.credit()
-      {:ok, %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"}}
-  """
-  def credit, do: new(:credit, "Credit")
-
-  def new(type, name) when type in @entry_types and is_binary(name) and name != "",
+  defp new(type, name) when type in @entry_types and is_binary(name) and name != "",
     do: {:ok, %__MODULE__{type: type, name: name}}
-
-  def new(_type, _name), do: {:error, :invalid_entry_type}
 end
