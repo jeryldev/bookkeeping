@@ -5,454 +5,256 @@ defmodule Bookkeeping.Core.AccountType do
   Account types help to organize the information in a systematic and logical way, and to show the relationship between the assets, liabilities, equity, revenue, expenses, and other elements of the accounting equation.
   Account types also help to prepare the financial statements, such as the balance sheet, income statement, and cash flow statement.
   """
-  alias Bookkeeping.Core.{EntryType, ReportingCategory}
+  alias Bookkeeping.Core.{EntryType, PrimaryAccountCategory}
 
   defstruct name: nil,
             normal_balance: %EntryType{},
-            primary_reporting_category: %ReportingCategory{},
+            primary_account_category: %PrimaryAccountCategory{},
             contra: false
 
+  @debit_accounts [
+    "asset",
+    "expense",
+    "loss",
+    "contra_liability",
+    "contra_equity",
+    "contra_revenue",
+    "contra_gain"
+  ]
+
+  @credit_accounts [
+    "liability",
+    "equity",
+    "revenue",
+    "gain",
+    "contra_asset",
+    "contra_expense",
+    "contra_loss"
+  ]
+
+  @balance_sheet_accounts [
+    "asset",
+    "liability",
+    "equity",
+    "contra_asset",
+    "contra_liability",
+    "contra_equity"
+  ]
+
+  @profit_and_loss_accounts [
+    "expense",
+    "revenue",
+    "loss",
+    "gain",
+    "contra_expense",
+    "contra_revenue",
+    "contra_loss",
+    "contra_gain"
+  ]
+
+  @contra_accounts [
+    "contra_asset",
+    "contra_liability",
+    "contra_equity",
+    "contra_expense",
+    "contra_revenue",
+    "contra_loss",
+    "contra_gain"
+  ]
+
+  @account_types [
+    "asset",
+    "liability",
+    "equity",
+    "expense",
+    "revenue",
+    "loss",
+    "gain",
+    "contra_asset",
+    "contra_liability",
+    "contra_equity",
+    "contra_expense",
+    "contra_revenue",
+    "contra_loss",
+    "contra_gain"
+  ]
+
+  @account_type_names %{
+    "asset" => "Asset",
+    "liability" => "Liability",
+    "equity" => "Equity",
+    "expense" => "Expense",
+    "revenue" => "Revenue",
+    "loss" => "Loss",
+    "gain" => "Gain",
+    "contra_asset" => "Contra Asset",
+    "contra_liability" => "Contra Liability",
+    "contra_equity" => "Contra Equity",
+    "contra_expense" => "Contra Expense",
+    "contra_revenue" => "Contra Revenue",
+    "contra_loss" => "Contra Loss",
+    "contra_gain" => "Contra Gain"
+  }
+
   @doc """
-  Selects an account type.
+  Creates a new account type struct.
 
-  Returns `{:ok, %Bookkeeping.Core.AccountType{}}`.
+  Returns `{:ok, %AccountType{}}` if the account type is valid. Otherwise, returns `{:error, :invalid_account_type}`.
 
-  ## Examples:
+  ## Examples
 
-      iex> Bookkeeping.Core.AccountType.select_account_type("asset")
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Asset",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-        contra: false
-      }}
+      iex> AccountType.create("asset")
+      {:ok,
+        %AccountType{
+          name: "Asset",
+          normal_balance: %EntryType{type: :debit, name: "Debit"},
+          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          contra: false
+        }}
+      iex> AccountType.create("liability")
+      {:ok,
+        %AccountType{
+          name: "Liability",
+          normal_balance: %EntryType{type: :credit, name: "Credit"},
+          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          contra: false
+        }}
+      iex> AccountType.create("equity")
+      {:ok,
+        %AccountType{
+          name: "Equity",
+          normal_balance: %EntryType{type: :credit, name: "Credit"},
+          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          contra: false
+        }}
+      iex> AccountType.create("expense")
+      {:ok,
+        %AccountType{
+          name: "Expense",
+          normal_balance: %EntryType{type: :debit, name: "Debit"},
+          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          contra: false
+        }}
+      iex> AccountType.create("revenue")
+      {:ok,
+        %AccountType{
+          name: "Revenue",
+          normal_balance: %EntryType{type: :credit, name: "Credit"},
+          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          contra: false
+        }}
+      iex> AccountType.create("loss")
+      {:ok,
+        %AccountType{
+          name: "Loss",
+          normal_balance: %EntryType{type: :debit, name: "Debit"},
+          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          contra: false
+        }}
+      iex> AccountType.create("gain")
+      {:ok,
+        %AccountType{
+          name: "Gain",
+          normal_balance: %EntryType{type: :credit, name: "Credit"},
+          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          contra: false
+        }}
+      iex> AccountType.create("contra_asset")
+      {:ok,
+        %AccountType{
+          name: "Contra Asset",
+          normal_balance: %EntryType{type: :credit, name: "Credit"},
+          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          contra: true
+        }}
+      iex> AccountType.create("contra_liability")
+      {:ok,
+        %AccountType{
+          name: "Contra Liability",
+          normal_balance: %EntryType{type: :debit, name: "Debit"},
+          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          contra: true
+        }}
+      iex> AccountType.create("contra_equity")
+      {:ok,
+        %AccountType{
+          name: "Contra Equity",
+          normal_balance: %EntryType{type: :debit, name: "Debit"},
+          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          contra: true
+        }}
+      iex> AccountType.create("contra_expense")
+      {:ok,
+        %AccountType{
+          name: "Contra Expense",
+          normal_balance: %EntryType{type: :credit, name: "Credit"},
+          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          contra: true
+        }}
+      iex> AccountType.create("contra_revenue")
+      {:ok,
+        %AccountType{
+          name: "Contra Revenue",
+          normal_balance: %EntryType{type: :debit, name: "Debit"},
+          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          contra: true
+        }}
+      iex> AccountType.create("contra_loss")
+      {:ok,
+        %AccountType{
+          name: "Contra Loss",
+          normal_balance: %EntryType{type: :credit, name: "Credit"},
+          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          contra: true
+        }}
+      iex> AccountType.create("contra_gain")
+      {:ok,
+        %AccountType{
+          name: "Contra Gain",
+          normal_balance: %EntryType{type: :debit, name: "Debit"},
+          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          contra: true
+        }}
+      iex> AccountType.create("invalid")
+      {:error, :invalid_account_type}
   """
-  def select_account_type("asset"), do: asset()
-  def select_account_type("liability"), do: liability()
-  def select_account_type("equity"), do: equity()
-  def select_account_type("expense"), do: expense()
-  def select_account_type("revenue"), do: revenue()
-  def select_account_type("loss"), do: loss()
-  def select_account_type("gain"), do: gain()
-  def select_account_type("contra_asset"), do: contra_asset()
-  def select_account_type("contra_liability"), do: contra_liability()
-  def select_account_type("contra_equity"), do: contra_equity()
-  def select_account_type("contra_expense"), do: contra_expense()
-  def select_account_type("contra_revenue"), do: contra_revenue()
-  def select_account_type("contra_loss"), do: contra_loss()
-  def select_account_type("contra_gain"), do: contra_gain()
-  def select_account_type(_), do: {:error, :invalid_account_type}
-
-  @doc """
-  Creates a new Asset account type.
-  Asset is an account type that represents something that a business owns or controls that has future economic value.
-  Examples: cash, accounts receivable, inventory, equipment, land, prepaid expense, prepaid asset, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Asset",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-    contra: false
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.asset()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Asset",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-        contra: false
-      }}
-  """
-  def asset do
-    {:ok, debit} = EntryType.debit()
-    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    new("Asset", debit, balance_sheet)
+  def create(binary_account_type) when binary_account_type in @account_types do
+    {:ok, entry_type} = set_entry_type(binary_account_type)
+    {:ok, primary_account_category} = set_primary_account_category(binary_account_type)
+    account_type_name = @account_type_names[binary_account_type]
+    contra_account? = binary_account_type in @contra_accounts
+    new(account_type_name, entry_type, primary_account_category, contra_account?)
   end
 
-  @doc """
-  Creates a new Liability account type.
-  Liability is an account type that represents something that a business owes or is obligated to pay in the future.
-  Examples: accounts payable, wages payable, taxes payable, loans payable, deferred revenue, annual subscription payments received, etc.
+  def create(_), do: {:error, :invalid_account_type}
 
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Liability",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-    contra: false
-  }}`.
+  defp set_entry_type(binary_account_type)
+       when binary_account_type in @credit_accounts,
+       do: EntryType.create("credit")
 
-  ## Examples:
+  defp set_primary_account_category(binary_account_type)
+       when binary_account_type in @balance_sheet_accounts,
+       do: PrimaryAccountCategory.create("balance_sheet")
 
-      iex> Bookkeeping.Core.AccountType.liability()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Liability",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-        contra: false
-      }}
-  """
-  def liability do
-    {:ok, credit} = EntryType.credit()
-    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    new("Liability", credit, balance_sheet)
-  end
+  defp set_primary_account_category(binary_account_type)
+       when binary_account_type in @profit_and_loss_accounts,
+       do: PrimaryAccountCategory.create("profit_and_loss")
 
-  @doc """
-  Creates a new Equity account type.
-  Equity is an account type that represents the difference between the assets and liabilities of a business; also known as owner’s or shareholder’s equity.
-  Examples: owner's equity, common stock, retained earnings, dividends, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Equity",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-    contra: false
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.equity()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Equity",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-        contra: false
-      }}
-  """
-  def equity do
-    {:ok, credit} = EntryType.credit()
-    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    new("Equity", credit, balance_sheet)
-  end
-
-  @doc """
-  Creates a new Expense account type.
-  Expense is an account type that represents the cost of using or consuming resources to generate revenue for a business.
-  Examples: rent expense, salary expense, interest expense, depreciation expense, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Expense",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-    contra: false
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.expense()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Expense",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-        contra: false
-      }}
-  """
-  def expense do
-    {:ok, debit} = EntryType.debit()
-    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    new("Expense", debit, profit_and_loss)
-  end
-
-  @doc """
-  Creates a new Revenue account type.
-  Revenue is an account type that represents the amount of money that a business earns from selling goods or services to customers.
-  Examples: sales revenue, service revenue, interest revenue, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Revenue",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-    contra: false
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.revenue()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Revenue",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-        contra: false
-      }}
-  """
-  def revenue do
-    {:ok, credit} = EntryType.credit()
-    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    new("Revenue", credit, profit_and_loss)
-  end
-
-  @doc """
-  Creates a new Loss account type.
-  Loss is an account type that represents the amount of money that a business loses from selling goods or services to customers.
-  Examples: loss on sale of equipment, loss on sale of investments, loss on foreign exchange, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Loss",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-    contra: false
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.loss()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Loss",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-        contra: false
-      }}
-  """
-  def loss do
-    {:ok, debit} = EntryType.debit()
-    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    new("Loss", debit, profit_and_loss)
-  end
-
-  @doc """
-  Creates a new Gain account type.
-  Gain is an account type that represents the amount of money that a business gains from selling goods or services to customers.
-  Examples: gain on sale of equipment, gain on sale of investments, gain on foreign exchange, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Gain",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-    contra: false
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.gain()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Gain",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-        contra: false
-      }}
-  """
-  def gain do
-    {:ok, credit} = EntryType.credit()
-    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    new("Gain", credit, profit_and_loss)
-  end
-
-  @doc """
-  Creates a new Contra Asset account type.
-  Contra Asset is an account type that reduces the value of an asset account, such as accumulated depreciation or allowance for doubtful accounts.
-  Examples: accumulated depreciation - equipment, allowance for doubtful accounts - accounts receivable, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Contra Asset",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-    contra: true
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.contra_asset()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Contra Asset",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-        contra: true
-      }}
-  """
-  def contra_asset do
-    {:ok, credit} = EntryType.credit()
-    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    new("Contra Asset", credit, balance_sheet, true)
-  end
-
-  @doc """
-  Creates a new Contra Liability account type.
-  Contra Liability is an account type that reduces the value of a liability account, such as discount on bonds payable or premium on bonds payable.
-  Examples: discount on bonds payable - bonds payable, premium on bonds payable - bonds payable, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Contra Liability",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-    contra: true
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.contra_liability()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Contra Liability",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-        contra: true
-      }}
-  """
-  def contra_liability do
-    {:ok, debit} = EntryType.debit()
-    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    new("Contra Liability", debit, balance_sheet, true)
-  end
-
-  @doc """
-  Creates a new Contra Equity account type.
-  Contra Equity is an account type that reduces the value of an equity account, such as treasury stock or dividends.
-  Examples: treasury stock - common stock, dividends - retained earnings, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Contra Equity",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-    contra: true
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.contra_equity()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Contra Equity",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :balance_sheet, primary: true},
-        contra: true
-      }}
-  """
-  def contra_equity do
-    {:ok, debit} = EntryType.debit()
-    {:ok, balance_sheet} = ReportingCategory.balance_sheet()
-    new("Contra Equity", debit, balance_sheet, true)
-  end
-
-  @doc """
-  Creates a new Contra Expense account type.
-  Contra Expense is an account type that reduces the amount of an expense account, such as purchase returns or sales discounts.
-  Examples: purchase returns - purchases expense, sales discounts - sales revenue, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Contra Expense",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-    contra: true
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.contra_expense()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Contra Expense",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-        contra: true
-      }}
-  """
-  def contra_expense do
-    {:ok, credit} = EntryType.credit()
-    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    new("Contra Expense", credit, profit_and_loss, true)
-  end
-
-  @doc """
-  Creates a new Contra Revenue account type.
-  Contra Revenue is an account type that reduces the amount of a revenue account, such as sales returns or sales allowances.
-  Examples: sales returns - sales revenue, sales allowances - sales revenue, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Contra Revenue",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-    contra: true
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.contra_revenue()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Contra Revenue",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-        contra: true
-      }}
-  """
-  def contra_revenue do
-    {:ok, debit} = EntryType.debit()
-    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    new("Contra Revenue", debit, profit_and_loss, true)
-  end
-
-  @doc """
-  Creates a new Contra Loss account type.
-  Contra Loss is an account type that reduces the amount of a loss account.
-  Examples: Gain on sale of assets, Gain on impairment reversal, Gain on debt settlement, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Contra Loss",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-    contra: true
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.contra_loss()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Contra Loss",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-        contra: true
-      }}
-  """
-  def contra_loss do
-    {:ok, credit} = EntryType.credit()
-    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    new("Contra Loss", credit, profit_and_loss, true)
-  end
-
-  @doc """
-  Creates a new Contra Gain account type.
-  Contra Gain is an account type that reduces the amount of a gain account.
-  Examples: Loss on sale of assets, Loss on impairment reversal, Loss on debt settlement, etc.
-
-  Returns `{:ok, %Bookkeeping.Core.AccountType{
-    name: "Contra Gain",
-    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-    primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-    contra: true
-  }}`.
-
-  ## Examples:
-
-      iex> Bookkeeping.Core.AccountType.contra_gain()
-      {:ok, %Bookkeeping.Core.AccountType{
-        name: "Contra Gain",
-        normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-        primary_reporting_category: %Bookkeeping.Core.ReportingCategory{category: :profit_and_loss, primary: true},
-        contra: true
-      }}
-  """
-  def contra_gain do
-    {:ok, debit} = EntryType.debit()
-    {:ok, profit_and_loss} = ReportingCategory.profit_and_loss()
-    new("Contra Gain", debit, profit_and_loss, true)
-  end
-
-  def new(name, normal_balance, primary_reporting_category, contra \\ false)
-
-  def new(
-        name,
-        %EntryType{type: entry_type} = normal_balance,
-        %ReportingCategory{primary: true} = primary_reporting_category,
-        contra
-      )
-      when is_binary(name) and name != "" and entry_type in [:debit, :credit] do
+  defp new(
+         name,
+         %EntryType{type: entry_type} = normal_balance,
+         %PrimaryAccountCategory{} = primary_account_category,
+         contra
+       )
+       when is_binary(name) and name != "" and
+              entry_type in [:debit, :credit] and
+              is_boolean(contra) do
     {:ok,
      %__MODULE__{
        name: name,
        normal_balance: normal_balance,
-       primary_reporting_category: primary_reporting_category,
+       primary_account_category: primary_account_category,
        contra: contra
      }}
   end
-
-  def new(_name, _normal_balance, _primary_reporting_category, _contra),
-    do: {:error, :invalid_account_type}
 end

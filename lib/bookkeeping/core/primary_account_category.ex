@@ -24,8 +24,7 @@ defmodule Bookkeeping.Core.PrimaryAccountCategory do
   """
   def create("balance_sheet"), do: new(:balance_sheet)
   def create("profit_and_loss"), do: new(:profit_and_loss)
-  def create(binary_type), do: new(binary_type)
+  def create(_), do: {:error, :invalid_primary_account_category}
 
   defp new(type) when type in @primary_reporting_categories, do: {:ok, %__MODULE__{type: type}}
-  defp new(_type), do: {:error, :invalid_primary_account_category}
 end

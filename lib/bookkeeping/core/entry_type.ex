@@ -30,10 +30,8 @@ defmodule Bookkeeping.Core.EntryType do
   """
   def create("debit"), do: new(:debit, "Debit")
   def create("credit"), do: new(:credit, "Credit")
-  def create(binary_entry_type), do: new(binary_entry_type, binary_entry_type)
+  def create(_), do: {:error, :invalid_entry_type}
 
   defp new(type, name) when type in @entry_types and is_binary(name) and name != "",
     do: {:ok, %__MODULE__{type: type, name: name}}
-
-  defp new(_type, _name), do: {:error, :invalid_entry_type}
 end
