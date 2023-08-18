@@ -229,6 +229,10 @@ defmodule Bookkeeping.Core.AccountType do
   def create(_), do: {:error, :invalid_account_type}
 
   defp set_entry_type(binary_account_type)
+       when binary_account_type in @debit_accounts,
+       do: EntryType.create("debit")
+
+  defp set_entry_type(binary_account_type)
        when binary_account_type in @credit_accounts,
        do: EntryType.create("credit")
 
