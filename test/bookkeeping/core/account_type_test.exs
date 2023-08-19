@@ -35,17 +35,6 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               }}
   end
 
-  test "create expense account type" do
-    assert AccountType.create("expense") ==
-             {:ok,
-              %AccountType{
-                name: "Expense",
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
-                contra: false
-              }}
-  end
-
   test "create revenue account type" do
     assert AccountType.create("revenue") ==
              {:ok,
@@ -57,11 +46,11 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               }}
   end
 
-  test "create loss account type" do
-    assert AccountType.create("loss") ==
+  test "create expense account type" do
+    assert AccountType.create("expense") ==
              {:ok,
               %AccountType{
-                name: "Loss",
+                name: "Expense",
                 normal_balance: %EntryType{type: :debit, name: "Debit"},
                 primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
                 contra: false
@@ -79,6 +68,17 @@ defmodule Bookkeeping.Core.AccountTypeTest do
               }}
   end
 
+  test "create loss account type" do
+    assert AccountType.create("loss") ==
+             {:ok,
+              %AccountType{
+                name: "Loss",
+                normal_balance: %EntryType{type: :debit, name: "Debit"},
+                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                contra: false
+              }}
+  end
+
   test "create contra asset account type" do
     assert AccountType.create("contra_asset") ==
              {:ok,
@@ -86,6 +86,72 @@ defmodule Bookkeeping.Core.AccountTypeTest do
                 name: "Contra Asset",
                 normal_balance: %EntryType{type: :credit, name: "Credit"},
                 primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+                contra: true
+              }}
+  end
+
+  test "create contra liability account type" do
+    assert AccountType.create("contra_liability") ==
+             {:ok,
+              %AccountType{
+                name: "Contra Liability",
+                normal_balance: %EntryType{type: :debit, name: "Debit"},
+                primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+                contra: true
+              }}
+  end
+
+  test "create contra equity account type" do
+    assert AccountType.create("contra_equity") ==
+             {:ok,
+              %AccountType{
+                name: "Contra Equity",
+                normal_balance: %EntryType{type: :debit, name: "Debit"},
+                primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+                contra: true
+              }}
+  end
+
+  test "create contra revenue account type" do
+    assert AccountType.create("contra_revenue") ==
+             {:ok,
+              %AccountType{
+                name: "Contra Revenue",
+                normal_balance: %EntryType{type: :debit, name: "Debit"},
+                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                contra: true
+              }}
+  end
+
+  test "create contra expense account type" do
+    assert AccountType.create("contra_expense") ==
+             {:ok,
+              %AccountType{
+                name: "Contra Expense",
+                normal_balance: %EntryType{type: :credit, name: "Credit"},
+                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                contra: true
+              }}
+  end
+
+  test "create contra gain account type" do
+    assert AccountType.create("contra_gain") ==
+             {:ok,
+              %AccountType{
+                name: "Contra Gain",
+                normal_balance: %EntryType{type: :debit, name: "Debit"},
+                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                contra: true
+              }}
+  end
+
+  test "create contra loss account type" do
+    assert AccountType.create("contra_loss") ==
+             {:ok,
+              %AccountType{
+                name: "Contra Loss",
+                normal_balance: %EntryType{type: :credit, name: "Credit"},
+                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
                 contra: true
               }}
   end

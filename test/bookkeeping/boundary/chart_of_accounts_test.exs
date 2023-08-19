@@ -2,139 +2,123 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
   use ExUnit.Case, async: true
   alias Bookkeeping.Boundary.ChartOfAccounts
 
-  setup do
-    {:ok, server} = ChartOfAccounts.start_link()
-    {:ok, account} = ChartOfAccounts.create_account(server, "10010", "Cash", "asset")
-
-    {:ok, server: server, account: account, asset_type: "asset"}
+  test "start link" do
+    {:error, {:already_started, server}} = ChartOfAccounts.start_link()
+    assert server in Process.list()
   end
 
-  test "create account with valid code, name and account type", %{server: server} do
-    assert {:ok, _account} =
-             ChartOfAccounts.create_account(server, "10020", "Accounts receivable", "asset")
-
-    assert {:ok, _account} =
-             ChartOfAccounts.create_account("10020", "Accounts receivable", "asset")
+  test "all accounts" do
+    assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+    assert is_list(accounts)
   end
 
-  test "disallow account with invalid code", %{server: server, asset_type: asset_type} do
-    assert {:error, :invalid_account} =
-             ChartOfAccounts.create_account(server, 10_020, "Accounts receivable", asset_type)
+  test "create account" do
+    assert {:ok, account} = ChartOfAccounts.create_account("1000", "Cash1", "asset")
+    assert account.code == "1000"
+    assert account.name == "Cash1"
 
-    assert {:error, :invalid_account} =
-             ChartOfAccounts.create_account(server, "", "Accounts receivable", asset_type)
-  end
+    assert {:ok, %{message: "Account already exists", account: existing_account}} =
+             ChartOfAccounts.create_account("1000", "Cash1", "asset")
 
-  test "disallow account with invalid name", %{server: server} do
-    assert {:error, :invalid_account} =
-             ChartOfAccounts.create_account(server, "10020", :accounts_receivables, "asset")
+    assert existing_account.code == "1000"
+    assert existing_account.name == "Cash1"
 
     assert {:error, :invalid_account} =
-             ChartOfAccounts.create_account(server, "", :accounts_receivables, "asset")
+             ChartOfAccounts.create_account("1002", "Inventory", "invalid")
+
+    assert {:error, :invalid_account} = ChartOfAccounts.create_account("1003", "", "asset")
   end
 
-  test "disallow account with invalid account type", %{server: server} do
-    assert {:error, :invalid_account} =
-             ChartOfAccounts.create_account(
-               server,
-               "10020",
-               "Accounts receivable",
-               "asset_type"
-             )
+  test "update account" do
+    assert {:ok, account} = ChartOfAccounts.create_account("1000update", "Cash original", "asset")
+
+    assert {:ok, updated_account} =
+             ChartOfAccounts.update_account(account, %{name: "Cash updated"})
+
+    assert updated_account.code == "1000update"
+    assert updated_account.name == "Cash updated"
+    assert updated_account.account_type.name == "Asset"
+    assert {:error, :invalid_account} = ChartOfAccounts.update_account(account, %{name: ""})
+    assert {:error, :invalid_account} = ChartOfAccounts.update_account(account, %{name: 1000})
+    assert {:ok, new_updated_account} = ChartOfAccounts.update_account(updated_account, %{})
+    assert updated_account == new_updated_account
   end
 
-  test "disallow account with duplicate code", %{server: server, asset_type: asset_type} do
-    assert {:error, :duplicate_account} =
-             ChartOfAccounts.create_account(server, "10010", "Cash", asset_type)
-
-    assert {:ok, _account} =
-             ChartOfAccounts.create_account("10030", "Inventory", asset_type)
-
-    assert {:error, :duplicate_account} =
-             ChartOfAccounts.create_account("10030", "Inventory", asset_type)
+  test "find account by code" do
+    assert {:ok, account} = ChartOfAccounts.create_account("1001", "Accounts receivable", "asset")
+    assert {:ok, account} = ChartOfAccounts.find_account_by_code(account.code)
+    assert account.code == "1001"
+    assert account.name == "Accounts receivable"
+    assert {:error, :not_found} = ChartOfAccounts.find_account_by_code("2001")
   end
 
-  test "remove account", %{server: server, account: account} do
-    {:ok, other_server} = ChartOfAccounts.start_link()
+  test "find account by name" do
+    assert {:ok, account} =
+             ChartOfAccounts.create_account("10010000", "Accounts receivable4", "asset")
 
-    {:ok, other_account} =
-      ChartOfAccounts.create_account(other_server, "10020", "Accounts receivable", "asset")
-
-    assert :ok = ChartOfAccounts.remove_account(server, account)
-    assert :ok = ChartOfAccounts.remove_account(server, other_account)
-    assert {:ok, []} = ChartOfAccounts.all_accounts(server)
-
-    assert {:ok, prepaid_expenses} =
-             ChartOfAccounts.create_account("10040", "Prepaid Expenses", "asset")
-
-    assert {:ok, found_account} = ChartOfAccounts.search_account(prepaid_expenses.code)
-    assert :ok = ChartOfAccounts.remove_account(found_account)
-    assert {:ok, refreshed_accounts} = ChartOfAccounts.all_accounts()
-    refute Enum.member?(refreshed_accounts, found_account)
+    assert {:ok, account} = ChartOfAccounts.find_account_by_name(account.name)
+    assert account.code == "10010000"
+    assert account.name == "Accounts receivable4"
+    assert {:error, :not_found} = ChartOfAccounts.find_account_by_name("Accounts payable4")
   end
 
-  test "search account by code", %{server: server, account: account} do
-    assert {:ok, [^account]} = ChartOfAccounts.search_account(server, "10010")
-    assert {:ok, []} = ChartOfAccounts.search_account(server, "10020 Accounts receivable")
+  test "search accounts by code or name" do
+    assert {:ok, account_1} = ChartOfAccounts.create_account("100100", "Cash2", "asset")
+    assert {:ok, account_2} = ChartOfAccounts.create_account("100200", "Receivable2", "asset")
+    assert {:ok, account_3} = ChartOfAccounts.create_account("100300", "Inventory2", "asset")
+    assert {:ok, accounts} = ChartOfAccounts.search_accounts("100")
+    assert Enum.member?(accounts, account_1)
+    assert Enum.member?(accounts, account_2)
+    assert Enum.member?(accounts, account_3)
+
+    assert {:ok, accounts} = ChartOfAccounts.search_accounts("receivable")
+    refute Enum.member?(accounts, account_1)
+    assert Enum.member?(accounts, account_2)
+    refute Enum.member?(accounts, account_3)
   end
 
-  test "search account by name", %{server: server, account: account} do
-    assert {:ok, [^account]} = ChartOfAccounts.search_account(server, "Cash")
-    assert {:ok, []} = ChartOfAccounts.search_account(server, "10020 Accounts receivable")
+  test "remove account" do
+    assert {:ok, account_1} = ChartOfAccounts.create_account("10010", "Cash3", "asset")
+    assert {:ok, account_2} = ChartOfAccounts.create_account("10020", "Receivable3", "asset")
+    assert {:ok, account_3} = ChartOfAccounts.create_account("10030", "Inventory3", "asset")
+    assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+    assert Enum.member?(accounts, account_1)
+    assert Enum.member?(accounts, account_2)
+    assert Enum.member?(accounts, account_3)
+
+    assert :ok = ChartOfAccounts.remove_account(account_1)
+    assert :ok = ChartOfAccounts.remove_account(account_2)
+    assert {:ok, updated_accounts} = ChartOfAccounts.all_accounts()
+    refute Enum.member?(updated_accounts, account_1)
+    refute Enum.member?(updated_accounts, account_2)
+    assert Enum.member?(updated_accounts, account_3)
   end
 
-  test "search account by code and name", %{server: server, account: account} do
-    assert {:ok, [^account]} = ChartOfAccounts.search_account(server, "10010 Cash")
-    assert {:ok, []} = ChartOfAccounts.search_account(server, "10020 Accounts receivable")
+  test "get all sorted accounts by code or name" do
+    assert {:ok, account_1} = ChartOfAccounts.create_account("1001000", "Cash4", "asset")
+    assert {:ok, account_2} = ChartOfAccounts.create_account("1002000", "Receivable4", "asset")
+    assert {:ok, account_3} = ChartOfAccounts.create_account("1003000", "Inventory4", "asset")
+    assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+    assert Enum.member?(accounts, account_1)
+    assert Enum.member?(accounts, account_2)
+    assert Enum.member?(accounts, account_3)
+
+    assert {:ok, accounts} = ChartOfAccounts.all_sorted_accounts("code")
+    account_1_index = find_account_index(accounts, "1001000")
+    account_2_index = find_account_index(accounts, "1002000")
+    account_3_index = find_account_index(accounts, "1003000")
+    assert account_2_index > account_1_index
+    assert account_3_index > account_2_index
+
+    assert {:ok, accounts} = ChartOfAccounts.all_sorted_accounts("name")
+    account_1_index = find_account_index(accounts, "1001000")
+    account_2_index = find_account_index(accounts, "1002000")
+    account_3_index = find_account_index(accounts, "1003000")
+    assert account_2_index > account_1_index
+    assert account_3_index < account_2_index
+
+    assert {:error, :invalid_field} = ChartOfAccounts.all_sorted_accounts("invalid")
   end
 
-  test "search all accounts", %{server: server, account: account} do
-    assert {:ok, [^account]} = ChartOfAccounts.all_accounts(server)
-  end
-
-  test "sort accounts by code", %{server: server, asset_type: asset_type} do
-    ChartOfAccounts.create_account(server, "10030", "Inventory", asset_type)
-    ChartOfAccounts.create_account(server, "10020", "Accounts receivable", asset_type)
-
-    {:ok, accounts} = ChartOfAccounts.all_accounts(server)
-    codes = Enum.map(accounts, & &1.code)
-    assert ["10010", "10030", "10020"] = codes
-    assert :ok = ChartOfAccounts.sort_accounts_by_code(server)
-
-    {:ok, sorted_accounts} = ChartOfAccounts.all_accounts(server)
-    sorted_codes = Enum.map(sorted_accounts, & &1.code)
-    assert ["10010", "10020", "10030"] = sorted_codes
-
-    ChartOfAccounts.create_account("10070", "Land", asset_type)
-    ChartOfAccounts.create_account("10010", "Cash and Cash Equivalents", asset_type)
-    {:ok, gen_server_accounts_before} = ChartOfAccounts.all_accounts()
-    gen_server_account_codes_before = Enum.map(gen_server_accounts_before, & &1.code)
-    assert :ok = ChartOfAccounts.sort_accounts_by_code()
-    {:ok, gen_server_accounts_after} = ChartOfAccounts.all_accounts()
-    gen_server_account_codes_after = Enum.map(gen_server_accounts_after, & &1.code)
-    refute gen_server_account_codes_before == gen_server_account_codes_after
-  end
-
-  test "sort accounts by name", %{server: server, asset_type: asset_type} do
-    ChartOfAccounts.create_account(server, "10030", "Inventory", asset_type)
-    ChartOfAccounts.create_account(server, "10020", "Accounts receivable", asset_type)
-
-    {:ok, accounts} = ChartOfAccounts.all_accounts(server)
-    names = Enum.map(accounts, & &1.name)
-    assert ["Cash", "Inventory", "Accounts receivable"] = names
-    assert :ok = ChartOfAccounts.sort_accounts_by_name(server)
-
-    {:ok, sorted_accounts} = ChartOfAccounts.all_accounts(server)
-    sorted_names = Enum.map(sorted_accounts, & &1.name)
-    assert ["Accounts receivable", "Cash", "Inventory"] = sorted_names
-
-    ChartOfAccounts.create_account("10060", "Trade Inventories", asset_type)
-    ChartOfAccounts.create_account("10050", "Accounts Receivables Test", asset_type)
-    {:ok, gen_server_accounts_before} = ChartOfAccounts.all_accounts()
-    gen_server_account_names_before = Enum.map(gen_server_accounts_before, & &1.name)
-    assert :ok = ChartOfAccounts.sort_accounts_by_name()
-    {:ok, gen_server_accounts_after} = ChartOfAccounts.all_accounts()
-    gen_server_account_names_after = Enum.map(gen_server_accounts_after, & &1.name)
-    refute gen_server_account_names_before == gen_server_account_names_after
-  end
+  defp find_account_index(accounts, code), do: Enum.find_index(accounts, &(&1.code == code))
 end
