@@ -5,7 +5,6 @@ defmodule Bookkeeping.Core.AccountType do
   Account types help to organize the information in a systematic and logical way, and to show the relationship between the assets, liabilities, equity, revenue, expenses, and other elements of the accounting equation.
   Account types also help to prepare the financial statements, such as the balance sheet, income statement, and cash flow statement.
   """
-  alias ElixirSense.Providers.Suggestion.Reducers.Struct
   alias Bookkeeping.Core.{EntryType, PrimaryAccountCategory}
 
   @type t :: %__MODULE__{
