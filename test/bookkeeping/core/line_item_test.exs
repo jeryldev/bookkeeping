@@ -9,7 +9,7 @@ defmodule Bookkeeping.Core.LineItemTest do
 
   test "create line item with valid account, amount, and binary_entry_type", %{details: details} do
     assert {:ok, asset_account} =
-             Account.create("10000", "cash", "asset", "description", true, details)
+             Account.create("10000", "cash", "asset", "description",  details)
 
     assert {:ok, line_item} = LineItem.create(asset_account, Decimal.new(100), "debit")
     assert line_item.account == asset_account
@@ -22,7 +22,7 @@ defmodule Bookkeeping.Core.LineItemTest do
   end
 
   test "disallow line item with invalid amount", %{details: details} do
-    {:ok, asset_account} = Account.create("10000", "cash", "asset", "description", true, details)
+    {:ok, asset_account} = Account.create("10000", "cash", "asset", "description",  details)
     line_item = LineItem.create(asset_account, 100, "debit")
 
     assert line_item == {:error, :invalid_line_item}

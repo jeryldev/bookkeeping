@@ -20,13 +20,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   test "create account", %{description: description, details: details} do
     assert {:ok, account} =
-             ChartOfAccounts.create_account("1000", "Cash1", "asset", description, true, details)
+             ChartOfAccounts.create_account("1000", "Cash1", "asset", description, details)
 
     assert account.code == "1000"
     assert account.name == "Cash1"
 
     assert {:ok, %{message: "Account already exists", account: existing_account}} =
-             ChartOfAccounts.create_account("1000", "Cash1", "asset", description, true, details)
+             ChartOfAccounts.create_account("1000", "Cash1", "asset", description, details)
 
     assert existing_account.code == "1000"
     assert existing_account.name == "Cash1"
@@ -42,12 +42,12 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
              )
 
     assert {:error, :invalid_account} =
-             ChartOfAccounts.create_account("1003", "", "asset", description, true, details)
+             ChartOfAccounts.create_account("1003", "", "asset", description, details)
   end
 
   test "update account" do
     assert {:ok, account} =
-             ChartOfAccounts.create_account("1000update", "Cash original", "asset", "", true, %{})
+             ChartOfAccounts.create_account("1000update", "Cash original", "asset", "", %{})
 
     assert {:ok, updated_account} =
              ChartOfAccounts.update_account(account, %{name: "Cash updated"})
@@ -65,7 +65,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   test "find account by code" do
     assert {:ok, account} =
-             ChartOfAccounts.create_account("1001", "Accounts receivable", "asset", "", true, %{})
+             ChartOfAccounts.create_account("1001", "Accounts receivable", "asset", "", %{})
 
     assert {:ok, account} = ChartOfAccounts.find_account_by_code(account.code)
     assert account.code == "1001"
@@ -80,7 +80,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
                "Accounts receivable4",
                "asset",
                "",
-               true,
                %{}
              )
 
@@ -92,13 +91,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   test "search accounts by code or name" do
     assert {:ok, account_1} =
-             ChartOfAccounts.create_account("100100", "Cash2", "asset", "", true, %{})
+             ChartOfAccounts.create_account("100100", "Cash2", "asset", "", %{})
 
     assert {:ok, account_2} =
-             ChartOfAccounts.create_account("100200", "Receivable2", "asset", "", true, %{})
+             ChartOfAccounts.create_account("100200", "Receivable2", "asset", "", %{})
 
     assert {:ok, account_3} =
-             ChartOfAccounts.create_account("100300", "Inventory2", "asset", "", true, %{})
+             ChartOfAccounts.create_account("100300", "Inventory2", "asset", "", %{})
 
     assert {:ok, accounts} = ChartOfAccounts.search_accounts("100")
     assert Enum.member?(accounts, account_1)
@@ -113,13 +112,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   test "get all sorted accounts by code or name" do
     assert {:ok, account_1} =
-             ChartOfAccounts.create_account("1001000", "Cash4", "asset", "", true, %{})
+             ChartOfAccounts.create_account("1001000", "Cash4", "asset", "", %{})
 
     assert {:ok, account_2} =
-             ChartOfAccounts.create_account("1002000", "Receivable4", "asset", "", true, %{})
+             ChartOfAccounts.create_account("1002000", "Receivable4", "asset", "", %{})
 
     assert {:ok, account_3} =
-             ChartOfAccounts.create_account("1003000", "Inventory4", "asset", "", true, %{})
+             ChartOfAccounts.create_account("1003000", "Inventory4", "asset", "", %{})
 
     assert {:ok, accounts} = ChartOfAccounts.all_accounts()
     assert Enum.member?(accounts, account_1)

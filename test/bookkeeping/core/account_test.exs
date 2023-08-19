@@ -9,7 +9,7 @@ defmodule Bookkeeping.Core.AccountTest do
 
   test "allow integer code, binary name and account type account field", %{details: details} do
     assert {:ok, new_account} =
-             Account.create("10_000", "cash", "asset", "description", true, details)
+             Account.create("10_000", "cash", "asset", "description", details)
 
     assert new_account.code == "10_000"
     assert new_account.name == "cash"
@@ -19,7 +19,7 @@ defmodule Bookkeeping.Core.AccountTest do
 
   test "create account with description and active fields", %{details: details} do
     assert {:ok, new_account} =
-             Account.create("10_010", "cash", "asset", "cash and cash equivalents", true, details)
+             Account.create("10_010", "cash", "asset", "cash and cash equivalents", details)
 
     assert new_account.code == "10_010"
     assert new_account.name == "cash"
@@ -30,32 +30,32 @@ defmodule Bookkeeping.Core.AccountTest do
   end
 
   test "disallow non-binary code field", %{details: details} do
-    new_account = Account.create(10_000, "cash", "asset", "description", true, details)
+    new_account = Account.create(10_000, "cash", "asset", "description", details)
 
     assert ^new_account = {:error, :invalid_account}
   end
 
   test "disallow non-binary name field", %{details: details} do
-    new_account = Account.create(10_000, 10_000, "asset", "description", true, details)
+    new_account = Account.create(10_000, 10_000, "asset", "description", details)
 
     assert ^new_account = {:error, :invalid_account}
   end
 
   test "disallow non-%AccountType{} account field", %{details: details} do
-    new_account = Account.create(10_000, "cash", "account_type", "description", true, details)
+    new_account = Account.create(10_000, "cash", "account_type", "description", details)
 
     assert ^new_account = {:error, :invalid_account}
   end
 
   test "disallow empty name", %{details: details} do
-    new_account = Account.create(10_000, "", "asset", "description", true, details)
+    new_account = Account.create(10_000, "", "asset", "description", details)
 
     assert ^new_account = {:error, :invalid_account}
   end
 
   test "update account", %{details: details} do
     assert {:ok, account} =
-             Account.create("10_000", "cash", "asset", "description", true, details)
+             Account.create("10_000", "cash", "asset", "description", details)
 
     assert {:ok, account_2} = Account.update(account, %{name: "cash and cash equivalents"})
     assert account.code == account_2.code

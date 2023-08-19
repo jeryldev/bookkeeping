@@ -62,14 +62,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
     - name: The name of the account.
     - account_type: The type of the account.
     - description: The description of the account.
-    - active: The status of the account.
     - audit_details: The details of the audit log.
 
   Returns `{:ok, account}` if the account is valid, otherwise `{:error, :invalid_account}`.
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.create_account(server, "1000", "Cash", "asset", "", true, %{})
+      iex> Bookkeeping.Boundary.ChartOfAccounts.create_account(server, "1000", "Cash", "asset", "", %{})
       {:ok,
       %Bookkeeping.Core.Account{
         code: "1000",
@@ -93,7 +92,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
         }
       }}
   """
-  @spec create_account(String.t(), String.t(), String.t(), String.t(), boolean(), map()) ::
+  @spec create_account(String.t(), String.t(), String.t(), String.t(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account}
   def create_account(
         server \\ __MODULE__,
@@ -101,7 +100,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
         name,
         account_type,
         description,
-        active,
         audit_details
       ) do
     with true <- is_binary(code) and is_binary(name) and account_type in @account_types,
@@ -109,7 +107,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
          {:error, :not_found} <- GenServer.call(server, {:find_account_by_name, name}) do
       GenServer.call(
         server,
-        {:create_account, code, name, account_type, description, active, audit_details}
+        {:create_account, code, name, account_type, description, audit_details}
       )
     else
       {:ok, account} -> {:ok, %{message: "Account already exists", account: account}}
@@ -242,11 +240,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @impl true
   def handle_call(
-        {:create_account, code, name, account_type, description, active, audit_details},
+        {:create_account, code, name, account_type, description, audit_details},
         _from,
         accounts
       ) do
-    case Account.create(code, name, account_type, description, active, audit_details) do
+    case Account.create(code, name, account_type, description, audit_details) do
       {:ok, account} ->
         updated_accounts = Map.put(accounts, code, account)
         {:reply, {:ok, account}, updated_accounts}

@@ -11,16 +11,16 @@ defmodule Bookkeeping.Core.Account do
           name: String.t(),
           description: String.t(),
           account_type: %AccountType{},
-          active: boolean(),
-          audit_log: AuditLog.t()
+          audit_log: AuditLog.t(),
+          active: boolean()
         }
 
   defstruct code: "",
             name: "",
             description: "",
             account_type: nil,
-            active: true,
-            audit_log: %{}
+            audit_log: %{},
+            active: true
 
   @account_types [
     "asset",
@@ -46,14 +46,13 @@ defmodule Bookkeeping.Core.Account do
     - name: The name of the account.
     - account_type: The type of the account.
     - description: The description of the account.
-    - active: The status of the account.
     - audit_details: The details of the audit log.
 
   Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`.
 
   ## Examples
 
-      iex> Account.create("10_000", "cash", "asset", "", true, %{})
+      iex> Account.create("10_000", "cash", "asset", "", %{})
       {:ok,
       %Account{
         code: "10_000",
@@ -80,17 +79,17 @@ defmodule Bookkeeping.Core.Account do
       iex> Account.create("invalid", "invalid", "invalid", nil, false, %{})
       {:error, :invalid_account}
   """
-  @spec create(String.t(), String.t(), String.t(), String.t(), boolean(), map()) ::
+  @spec create(String.t(), String.t(), String.t(), String.t(), map()) ::
           {:ok, %__MODULE__{}} | {:error, :invalid_account}
-  def create(code, name, binary_account_type, description, active, audit_details)
+  def create(code, name, binary_account_type, description, audit_details)
       when is_binary(code) and is_binary(name) and is_binary(binary_account_type) and
              is_binary(description) and code != "" and name != "" and
              binary_account_type in @account_types and
-             is_binary(description) and is_boolean(active) and is_map(audit_details) do
-    new(code, name, binary_account_type, description, active, audit_details)
+             is_binary(description) and is_map(audit_details) do
+    new(code, name, binary_account_type, description, audit_details)
   end
 
-  def create(_, _, _, _, _, _), do: {:error, :invalid_account}
+  def create(_, _, _, _, _), do: {:error, :invalid_account}
 
   @doc """
   Updates an account struct.
@@ -150,7 +149,7 @@ defmodule Bookkeeping.Core.Account do
     end
   end
 
-  defp new(code, name, binary_account_type, description, active, audit_details) do
+  defp new(code, name, binary_account_type, description, audit_details) do
     {:ok, account_type} = AccountType.create(binary_account_type)
     {:ok, audit_log} = AuditLog.create("account", "create", audit_details)
 
@@ -160,7 +159,6 @@ defmodule Bookkeeping.Core.Account do
        name: name,
        description: description,
        account_type: account_type,
-       active: active,
        audit_log: audit_log
      }}
   end
