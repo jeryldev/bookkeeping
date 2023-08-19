@@ -13,6 +13,10 @@ defmodule Bookkeeping.Core.LineItem do
 
   @doc """
     Creates a new line item struct.
+    Arguments:
+      - account: The account of the line item.
+      - amount: The amount of the line item.
+      - binary_entry_type: The entry type of the line item.
 
     Returns `{:ok, %LineItem{}}` if the line item is valid. Otherwise, returns `{:error, :invalid_line_item}`.
 

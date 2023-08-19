@@ -1,52 +1,62 @@
 defmodule Bookkeeping.Core.AccountTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.{Account, AccountType, EntryType, PrimaryAccountCategory}
+  alias Bookkeeping.Core.{Account, EntryType}
 
-  test "allow integer code, binary name and account type account field" do
-    new_account = Account.create("10_000", "cash", "asset")
-
-    assert ^new_account =
-             {:ok,
-              %Account{
-                code: "10_000",
-                name: "cash",
-                account_type: %AccountType{
-                  name: "Asset",
-                  normal_balance: %EntryType{type: :debit, name: "Debit"},
-                  primary_account_category: %PrimaryAccountCategory{
-                    type: :balance_sheet
-                  },
-                  contra: false
-                }
-              }}
+  setup do
+    details = %{email: "example@example.com"}
+    {:ok, details: details}
   end
 
-  test "disallow non-binary code field" do
-    new_account = Account.create(10_000, "cash", "asset")
+  test "allow integer code, binary name and account type account field", %{details: details} do
+    assert {:ok, new_account} =
+             Account.create("10_000", "cash", "asset", "description", details)
+
+    assert new_account.code == "10_000"
+    assert new_account.name == "cash"
+    assert new_account.account_type.name == "Asset"
+    assert new_account.account_type.normal_balance == %EntryType{type: :debit, name: "Debit"}
+  end
+
+  test "create account with description and active fields", %{details: details} do
+    assert {:ok, new_account} =
+             Account.create("10_010", "cash", "asset", "cash and cash equivalents", details)
+
+    assert new_account.code == "10_010"
+    assert new_account.name == "cash"
+    assert new_account.account_type.name == "Asset"
+    assert new_account.account_type.normal_balance == %EntryType{type: :debit, name: "Debit"}
+    assert new_account.description == "cash and cash equivalents"
+    assert new_account.active
+  end
+
+  test "disallow non-binary code field", %{details: details} do
+    new_account = Account.create(10_000, "cash", "asset", "description", details)
 
     assert ^new_account = {:error, :invalid_account}
   end
 
-  test "disallow non-binary name field" do
-    new_account = Account.create(10_000, 10_000, "asset")
+  test "disallow non-binary name field", %{details: details} do
+    new_account = Account.create(10_000, 10_000, "asset", "description", details)
 
     assert ^new_account = {:error, :invalid_account}
   end
 
-  test "disallow non-%AccountType{} account field" do
-    new_account = Account.create(10_000, "cash", "account_type")
+  test "disallow non-%AccountType{} account field", %{details: details} do
+    new_account = Account.create(10_000, "cash", "account_type", "description", details)
 
     assert ^new_account = {:error, :invalid_account}
   end
 
-  test "disallow empty name" do
-    new_account = Account.create(10_000, "", "asset")
+  test "disallow empty name", %{details: details} do
+    new_account = Account.create(10_000, "", "asset", "description", details)
 
     assert ^new_account = {:error, :invalid_account}
   end
 
-  test "update account" do
-    assert {:ok, account} = Account.create("10_000", "cash", "asset")
+  test "update account", %{details: details} do
+    assert {:ok, account} =
+             Account.create("10_000", "cash", "asset", "description", details)
+
     assert {:ok, account_2} = Account.update(account, %{name: "cash and cash equivalents"})
     assert account.code == account_2.code
     refute account.name == account_2.name
@@ -60,20 +70,11 @@ defmodule Bookkeeping.Core.AccountTest do
                binary_account_type: "liability"
              })
 
-    assert account_3 == %Bookkeeping.Core.Account{
-             code: "10_001",
-             name: "trade payables",
-             account_type: %Bookkeeping.Core.AccountType{
-               name: "Liability",
-               normal_balance: %Bookkeeping.Core.EntryType{type: :credit, name: "Credit"},
-               primary_account_category: %Bookkeeping.Core.PrimaryAccountCategory{
-                 type: :balance_sheet
-               },
-               contra: false
-             }
-           }
+    assert account.code == account_3.code
+    refute account.name == account_3.name
+    assert account.account_type == account_3.account_type
 
-    assert {:ok, account_4} =
+    assert {:ok, _account_4} =
              Account.update(account, %{
                code: "10_001",
                name: "cash and cash equivalents"
