@@ -57,21 +57,60 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Creates a new account.
+  Arguments:
+    - code: The code of the account.
+    - name: The name of the account.
+    - account_type: The type of the account.
+    - description: The description of the account.
+    - active: The status of the account.
+    - audit_details: The details of the audit log.
 
   Returns `{:ok, account}` if the account is valid, otherwise `{:error, :invalid_account}`.
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.create_account(server, "1000", "Cash", %Bookkeeping.Core.AccountType{})
-      {:ok, %Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}}
+      iex> Bookkeeping.Boundary.ChartOfAccounts.create_account(server, "1000", "Cash", "asset", "", true, %{})
+      {:ok,
+      %Bookkeeping.Core.Account{
+        code: "1000",
+        name: "Cash",
+        description: "",
+        account_type: %AccountType{
+          name: "Asset",
+          normal_balance: %EntryType{type: :debit, name: "Debit"},
+          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          contra: false
+        },
+        active: true,
+        audit_log: %AuditLog{
+          id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+          record_type: "account",
+          action_type: "create",
+          details: %{},
+          created_at: ~U[2021-10-10 10:10:10.000000Z],
+          updated_at: ~U[2021-10-10 10:10:10.000000Z],
+          deleted_at: nil
+        }
+      }}
   """
-  @spec create_account(String.t(), String.t(), String.t()) ::
+  @spec create_account(String.t(), String.t(), String.t(), String.t(), boolean(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account}
-  def create_account(server \\ __MODULE__, code, name, account_type) do
+  def create_account(
+        server \\ __MODULE__,
+        code,
+        name,
+        account_type,
+        description,
+        active,
+        audit_details
+      ) do
     with true <- is_binary(code) and is_binary(name) and account_type in @account_types,
          {:error, :not_found} <- GenServer.call(server, {:find_account_by_code, code}),
          {:error, :not_found} <- GenServer.call(server, {:find_account_by_name, name}) do
-      GenServer.call(server, {:create_account, code, name, account_type})
+      GenServer.call(
+        server,
+        {:create_account, code, name, account_type, description, active, audit_details}
+      )
     else
       {:ok, account} -> {:ok, %{message: "Account already exists", account: account}}
       _ -> {:error, :invalid_account}
@@ -80,6 +119,9 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Updates an account.
+  Arguments:
+    - account: The account to be updated.
+    - attrs: The attributes to be updated. The editable attributes are `name`, `description`, and `active`.
 
   Returns `{:ok, account}` if the account is valid, otherwise `{:error, :invalid_account}`.
 
@@ -87,11 +129,27 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
       iex> Bookkeeping.Boundary.ChartOfAccounts.update_account(server, account, %{name: "Cash and cash equivalents"})
       {:ok,
-       %Bookkeeping.Core.Account{
-         account_type: %Bookkeeping.Core.AccountType{},
-         code: "1000",
-         name: "Cash and cash equivalents"
-       }}
+      %Bookkeeping.Core.Account{
+        code: "1000",
+        name: "Cash and cash equivalents",
+        description: "",
+        account_type: %AccountType{
+          name: "Asset",
+          normal_balance: %EntryType{type: :debit, name: "Debit"},
+          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          contra: false
+        },
+        active: true,
+        audit_log: %AuditLog{
+          id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+          record_type: "account",
+          action_type: "create",
+          details: %{},
+          created_at: ~U[2021-10-10 10:10:10.000000Z],
+          updated_at: ~U[2021-10-10 10:10:10.000000Z],
+          deleted_at: nil
+        }
+      }}
   """
   @spec update_account(Account.t(), map()) :: {:ok, Account.t()} | {:error, :invalid_account}
   def update_account(server \\ __MODULE__, account, attrs) do
@@ -102,6 +160,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Finds an account by code.
+  Arguments:
+    - code: The code of the account.
 
   Returns `{:ok, account}` if the account was found, otherwise `{:error, :not_found}`.
 
@@ -119,6 +179,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Finds an account by name.
+  Arguments:
+    - name: The name of the account.
 
   Returns `{:ok, account}` if the account was found, otherwise `{:error, :not_found}`.
 
@@ -136,6 +198,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Search accounts by code or name.
+  Arguments:
+    - query: The query to search for code or name.
 
   Returns `{:ok, accounts}` if the account was found, otherwise `{:ok, []}`.
 
@@ -149,23 +213,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
     if is_binary(query),
       do: GenServer.call(server, {:search_accounts, query}),
       else: {:error, :invalid_query}
-  end
-
-  @doc """
-  Removes an account.
-
-  Returns `:ok` if the account was removed successfully.
-
-  ## Examples
-
-      iex> Bookkeeping.Boundary.ChartOfAccounts.remove_account(server, account)
-      :ok
-  """
-  @spec remove_account(Account.t()) :: :ok | {:error, :invalid_account}
-  def remove_account(server \\ __MODULE__, account) do
-    if is_struct(account, Account),
-      do: GenServer.call(server, {:remove_account, account}),
-      else: {:error, :invalid_account}
   end
 
   @doc """
@@ -194,8 +241,12 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   end
 
   @impl true
-  def handle_call({:create_account, code, name, account_type}, _from, accounts) do
-    case Account.create(code, name, account_type) do
+  def handle_call(
+        {:create_account, code, name, account_type, description, active, audit_details},
+        _from,
+        accounts
+      ) do
+    case Account.create(code, name, account_type, description, active, audit_details) do
       {:ok, account} ->
         updated_accounts = Map.put(accounts, code, account)
         {:reply, {:ok, account}, updated_accounts}
@@ -255,12 +306,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
       end)
 
     {:reply, {:ok, found_accounts}, accounts}
-  end
-
-  @impl true
-  def handle_call({:remove_account, account}, _from, accounts) do
-    updated_accounts = Map.delete(accounts, account.code)
-    {:reply, :ok, updated_accounts}
   end
 
   @impl true

@@ -1,37 +1,28 @@
 defmodule Bookkeeping.Core.LineItemTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.{Account, LineItem}
+  alias Bookkeeping.Core.{Account, EntryType, LineItem}
 
-  test "create line item with valid account, amount, and binary_entry_type" do
-    {:ok, asset_account} = Account.create("10000", "cash", "asset")
-    line_item = LineItem.create(asset_account, Decimal.new(100), "debit")
+  setup do
+    details = %{email: "example@example.com"}
+    {:ok, details: details}
+  end
 
-    assert line_item ==
-             {:ok,
-              %Bookkeeping.Core.LineItem{
-                account: %Bookkeeping.Core.Account{
-                  code: "10000",
-                  name: "cash",
-                  account_type: %Bookkeeping.Core.AccountType{
-                    name: "Asset",
-                    normal_balance: %Bookkeeping.Core.EntryType{type: :debit, name: "Debit"},
-                    primary_account_category: %Bookkeeping.Core.PrimaryAccountCategory{
-                      type: :balance_sheet
-                    },
-                    contra: false
-                  }
-                },
-                amount: Decimal.new("100"),
-                entry_type: %Bookkeeping.Core.EntryType{name: "Debit", type: :debit}
-              }}
+  test "create line item with valid account, amount, and binary_entry_type", %{details: details} do
+    assert {:ok, asset_account} =
+             Account.create("10000", "cash", "asset", "description", true, details)
+
+    assert {:ok, line_item} = LineItem.create(asset_account, Decimal.new(100), "debit")
+    assert line_item.account == asset_account
+    assert line_item.amount == Decimal.new(100)
+    assert line_item.entry_type == %EntryType{type: :debit, name: "Debit"}
   end
 
   test "disallow line item with invalid fields" do
-    assert LineItem.create("asset", Decimal.new(100), "invalid") == {:error, :invalid_line_item}
+    assert {:error, :invalid_line_item} = LineItem.create("asset", Decimal.new(100), "invalid")
   end
 
-  test "disallow line item with invalid amount" do
-    {:ok, asset_account} = Account.create("10000", "cash", "asset")
+  test "disallow line item with invalid amount", %{details: details} do
+    {:ok, asset_account} = Account.create("10000", "cash", "asset", "description", true, details)
     line_item = LineItem.create(asset_account, 100, "debit")
 
     assert line_item == {:error, :invalid_line_item}
