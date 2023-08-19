@@ -225,7 +225,7 @@ defmodule Bookkeeping.Core.AccountType do
       iex> AccountType.create("invalid")
       {:error, :invalid_account_type}
   """
-  @spec create(String.t()) :: {:ok, %__MODULE__{}} | {:error, :invalid_account_type}
+  @spec create(String.t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_account_type}
   def create(binary_account_type) when binary_account_type in @account_types do
     {:ok, entry_type} = set_entry_type(binary_account_type)
     {:ok, primary_account_category} = set_primary_account_category(binary_account_type)
@@ -255,7 +255,7 @@ defmodule Bookkeeping.Core.AccountType do
        do: PrimaryAccountCategory.create("profit_and_loss")
 
   @spec new(String.t(), EntryType.t(), PrimaryAccountCategory.t(), boolean()) ::
-          {:ok, %__MODULE__{}}
+          {:ok, __MODULE__.t()}
   defp new(
          name,
          %EntryType{} = normal_balance,

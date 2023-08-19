@@ -58,8 +58,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   @doc """
   Creates a new account.
   Arguments:
-    - code: The code of the account.
-    - name: The name of the account.
+    - code: The unique code of the account.
+    - name: The unique name of the account.
     - account_type: The type of the account.
     - description: The description of the account.
     - audit_details: The details of the audit log.
@@ -159,7 +159,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   @doc """
   Finds an account by code.
   Arguments:
-    - code: The code of the account.
+    - code: The unique code of the account.
 
   Returns `{:ok, account}` if the account was found, otherwise `{:error, :not_found}`.
 
@@ -178,7 +178,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   @doc """
   Finds an account by name.
   Arguments:
-    - name: The name of the account.
+    - name: The unique name of the account.
 
   Returns `{:ok, account}` if the account was found, otherwise `{:error, :not_found}`.
 

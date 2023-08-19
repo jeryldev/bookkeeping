@@ -8,7 +8,6 @@ defmodule Bookkeeping.Core.EntryType do
   In a double-entry system, every transaction is recorded in at least two accounts:
   one account is debited and another account is credited.
   """
-
   @type t :: %__MODULE__{
           type: :debit | :credit,
           name: String.t()
@@ -33,12 +32,12 @@ defmodule Bookkeeping.Core.EntryType do
       iex> EntryType.create("invalid")
       {:error, :invalid_entry_type}
   """
-  @spec create(String.t()) :: {:ok, %__MODULE__{}} | {:error, :invalid_entry_type}
+  @spec create(String.t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_entry_type}
   def create("debit"), do: new(:debit, "Debit")
   def create("credit"), do: new(:credit, "Credit")
   def create(_), do: {:error, :invalid_entry_type}
 
-  @spec new(type :: atom(), name :: String.t()) :: {:ok, %__MODULE__{}}
+  @spec new(type :: atom(), name :: String.t()) :: {:ok, __MODULE__.t()}
   defp new(type, name) when type in @entry_types and is_binary(name) and name != "",
     do: {:ok, %__MODULE__{type: type, name: name}}
 end

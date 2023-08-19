@@ -42,8 +42,8 @@ defmodule Bookkeeping.Core.Account do
   @doc """
   Creates a new account struct.
   Arguments:
-    - code: The code of the account.
-    - name: The name of the account.
+    - code: The unique code of the account.
+    - name: The unique name of the account.
     - account_type: The type of the account.
     - description: The description of the account.
     - audit_details: The details of the audit log.
@@ -80,7 +80,7 @@ defmodule Bookkeeping.Core.Account do
       {:error, :invalid_account}
   """
   @spec create(String.t(), String.t(), String.t(), String.t(), map()) ::
-          {:ok, %__MODULE__{}} | {:error, :invalid_account}
+          {:ok, Account.t()} | {:error, :invalid_account}
   def create(code, name, binary_account_type, description, audit_details)
       when is_binary(code) and is_binary(name) and is_binary(binary_account_type) and
              is_binary(description) and code != "" and name != "" and
@@ -126,7 +126,7 @@ defmodule Bookkeeping.Core.Account do
         }
       }}
   """
-  @spec update(%__MODULE__{}, map()) :: {:ok, %__MODULE__{}} | {:error, :invalid_account}
+  @spec update(%__MODULE__{}, map()) :: {:ok, Account.t()} | {:error, :invalid_account}
   def update(account, attrs) when is_map(attrs) do
     name = Map.get(attrs, :name, account.name)
     description = Map.get(attrs, :description, account.description)
