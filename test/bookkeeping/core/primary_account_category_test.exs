@@ -12,8 +12,8 @@ defmodule Bookkeeping.Core.PrimaryAccountCategoryTest do
              {:ok, %PrimaryAccountCategory{type: :profit_and_loss}}
   end
 
-  test "disallow invalid primary account category type" do
+  test "disallow invalid primary account category" do
     assert PrimaryAccountCategory.create("invalid") ==
-             {:error, :invalid_primary_account_category_type}
+             {:error, :invalid_primary_account_category}
   end
 end

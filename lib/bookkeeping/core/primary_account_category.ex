@@ -4,6 +4,8 @@ defmodule Bookkeeping.Core.PrimaryAccountCategory do
   Primary account category is a category that is used to group accounts based on the type of information they provide.
   There are two types of primary account categories: balance sheet and profit and loss.
   """
+  @type t :: %__MODULE__{type: :balance_sheet | :profit_and_loss}
+
   defstruct type: nil
 
   @primary_reporting_categories [:balance_sheet, :profit_and_loss]
@@ -22,9 +24,11 @@ defmodule Bookkeeping.Core.PrimaryAccountCategory do
       iex> PrimaryAccountCategory.create("invalid")
       {:error, :invalid_primary_account_category}
   """
+  @spec create(String.t()) :: {:ok, %__MODULE__{}} | {:error, :invalid_primary_account_category}
   def create("balance_sheet"), do: new(:balance_sheet)
   def create("profit_and_loss"), do: new(:profit_and_loss)
   def create(_), do: {:error, :invalid_primary_account_category}
 
+  @spec new(type :: atom()) :: {:ok, %__MODULE__{}}
   defp new(type) when type in @primary_reporting_categories, do: {:ok, %__MODULE__{type: type}}
 end
