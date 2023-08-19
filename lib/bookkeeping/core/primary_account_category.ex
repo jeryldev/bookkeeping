@@ -24,11 +24,12 @@ defmodule Bookkeeping.Core.PrimaryAccountCategory do
       iex> PrimaryAccountCategory.create("invalid")
       {:error, :invalid_primary_account_category}
   """
-  @spec create(String.t()) :: {:ok, %__MODULE__{}} | {:error, :invalid_primary_account_category}
+  @spec create(String.t()) ::
+          {:ok, __MODULE__.t()} | {:error, :invalid_primary_account_category}
   def create("balance_sheet"), do: new(:balance_sheet)
   def create("profit_and_loss"), do: new(:profit_and_loss)
   def create(_), do: {:error, :invalid_primary_account_category}
 
-  @spec new(type :: atom()) :: {:ok, %__MODULE__{}}
+  @spec new(type :: atom()) :: {:ok, __MODULE__.t()}
   defp new(type) when type in @primary_reporting_categories, do: {:ok, %__MODULE__{type: type}}
 end

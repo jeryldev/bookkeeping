@@ -77,7 +77,7 @@ defmodule Bookkeeping.Core.AuditLog do
       {:error, :invalid_audit_log}
   """
   @spec create(String.t(), String.t(), map()) ::
-          {:ok, %__MODULE__{}} | {:error, :invalid_audit_log}
+          {:ok, __MODULE__.t()} | {:error, :invalid_audit_log}
   def create(record_type, action_type, audit_details)
       when is_binary(record_type) and record_type != "" and is_binary(action_type) and
              action_type in @action_types and is_map(audit_details) do
