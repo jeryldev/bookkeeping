@@ -81,15 +81,17 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
           contra: false
         },
         active: true,
-        audit_log: %AuditLog{
-          id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-          record_type: "account",
-          action_type: "create",
-          details: %{},
-          created_at: ~U[2021-10-10 10:10:10.000000Z],
-          updated_at: ~U[2021-10-10 10:10:10.000000Z],
-          deleted_at: nil
-        }
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "account",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          }
+        ]
       }}
   """
   @spec create_account(String.t(), String.t(), String.t(), String.t(), map()) ::
@@ -119,7 +121,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   Updates an account.
   Arguments:
     - account: The account to be updated.
-    - attrs: The attributes to be updated. The editable attributes are `name`, `description`, and `active`.
+    - attrs: The attributes to be updated. The editable attributes are `name`, `description`, `active`, and `audit_details`.
 
   Returns `{:ok, account}` if the account is valid, otherwise `{:error, :invalid_account}`.
 
@@ -138,15 +140,17 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
           contra: false
         },
         active: true,
-        audit_log: %AuditLog{
-          id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-          record_type: "account",
-          action_type: "create",
-          details: %{},
-          created_at: ~U[2021-10-10 10:10:10.000000Z],
-          updated_at: ~U[2021-10-10 10:10:10.000000Z],
-          deleted_at: nil
-        }
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "account",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          }
+        ]
       }}
   """
   @spec update_account(Account.t(), map()) :: {:ok, Account.t()} | {:error, :invalid_account}

@@ -9,6 +9,17 @@ defmodule Bookkeeping.Core.LineItem do
           entry_type: EntryType.t()
         }
 
+  @type t_accounts_item :: %{
+          account: Bookkeeping.Core.Account.t(),
+          amount: Decimal.t(),
+          entry_type: String.t()
+        }
+
+  @type t_accounts :: %{
+          left: list(t_accounts_item),
+          right: list(t_accounts_item)
+        }
+
   alias Bookkeeping.Core.{Account, EntryType}
 
   defstruct account: %Account{},
@@ -20,7 +31,7 @@ defmodule Bookkeeping.Core.LineItem do
   @doc """
   Creates a list of line item structs.
   Arguments:
-    - line_items_map: The map of line items. The map must have the following keys:
+    - t_accounts: The map of line items. The map must have the following keys:
       - left: The list of maps with account and amount field and represents the entry type of debit.
       - right: The list of maps with account and amount field and represents the entry type of credit.
 
@@ -61,10 +72,11 @@ defmodule Bookkeeping.Core.LineItem do
          }
        ]}
   """
-  @spec bulk_create(map()) :: {:ok, map()} | {:error, :invalid_line_item}
-  def bulk_create(line_items_map) when is_map(line_items_map) and map_size(line_items_map) > 0 do
+  @spec bulk_create(t_accounts()) ::
+          {:ok, list(__MODULE__.t())} | {:error, :invalid_line_item}
+  def bulk_create(t_accounts) when is_map(t_accounts) and map_size(t_accounts) > 0 do
     bulk_create_result =
-      line_items_map
+      t_accounts
       |> Task.async_stream(fn
         {:left, debit_items} ->
           Task.async_stream(debit_items, fn item -> create(item.account, item.amount, "debit") end)
@@ -81,15 +93,7 @@ defmodule Bookkeeping.Core.LineItem do
           balanced: false,
           created_line_items: []
         },
-        fn {:ok, line_items}, acc ->
-          Enum.reduce(line_items, acc, fn
-            {:ok, {:ok, line_item}}, acc ->
-              process_line_item(acc, line_item)
-
-            {:ok, {:error, _line_item}}, acc ->
-              acc
-          end)
-        end
+        &validate_line_items/2
       )
 
     case bulk_create_result.created_line_items do
@@ -145,6 +149,16 @@ defmodule Bookkeeping.Core.LineItem do
     {:ok, entry_type} = EntryType.create(binary_entry_type)
 
     {:ok, %__MODULE__{account: account, amount: amount, entry_type: entry_type}}
+  end
+
+  defp validate_line_items({:ok, line_items}, acc) do
+    Enum.reduce(line_items, acc, fn
+      {:ok, {:ok, line_item}}, acc ->
+        process_line_item(acc, line_item)
+
+      {:ok, {:error, _line_item}}, acc ->
+        acc
+    end)
   end
 
   defp process_line_item(acc, line_item) do
