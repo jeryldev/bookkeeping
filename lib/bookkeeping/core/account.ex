@@ -11,7 +11,7 @@ defmodule Bookkeeping.Core.Account do
           name: String.t(),
           description: String.t(),
           account_type: %AccountType{},
-          audit_log: AuditLog.t(),
+          audit_logs: list(AuditLog.t()),
           active: boolean()
         }
 
@@ -19,7 +19,7 @@ defmodule Bookkeeping.Core.Account do
             name: "",
             description: "",
             account_type: nil,
-            audit_log: %{},
+            audit_logs: [],
             active: true
 
   @account_types [
@@ -65,15 +65,17 @@ defmodule Bookkeeping.Core.Account do
           contra: false
         },
         active: true,
-        audit_log: %AuditLog{
-          id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-          record_type: "account",
-          action_type: "create",
-          details: %{},
-          created_at: ~U[2021-10-10 10:10:10.000000Z],
-          updated_at: ~U[2021-10-10 10:10:10.000000Z],
-          deleted_at: nil
-        }
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "account",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          }
+        ]
       }}
 
       iex> Account.create("invalid", "invalid", "invalid", nil, false, %{})
@@ -95,7 +97,7 @@ defmodule Bookkeeping.Core.Account do
   Updates an account struct.
   Arguments:
     - account: The account to be updated.
-    - attrs: The attributes to be updated. The editable attributes are `name`, `description`, and `active`.
+    - attrs: The attributes to be updated. The editable attributes are `name`, `description`, `active`, and `audit_details`.
 
   Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`.
 
@@ -115,15 +117,26 @@ defmodule Bookkeeping.Core.Account do
           contra: false
         },
         active: true,
-        audit_log: %AuditLog{
-          id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-          record_type: "account",
-          action_type: "update",
-          details: %{},
-          created_at: nil,
-          updated_at: ~U[2021-10-10 10:10:10.000000Z],
-          deleted_at: nil
-        }
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "account",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          },
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "account",
+            action_type: "update",
+            details: %{},
+            created_at: nil,
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          }
+        ]
       }}
   """
   @spec update(%__MODULE__{}, map()) :: {:ok, Account.t()} | {:error, :invalid_account}
@@ -131,21 +144,26 @@ defmodule Bookkeeping.Core.Account do
     name = Map.get(attrs, :name, account.name)
     description = Map.get(attrs, :description, account.description)
     active = Map.get(attrs, :active, account.active)
-    audit_details = Map.get(account.audit_log, :audit_details, %{})
-    {:ok, audit_log} = AuditLog.create("account", "update", audit_details)
+    audit_details = Map.get(attrs, :audit_details, %{})
 
-    if is_binary(name) and name != "" and
-         is_binary(description) and is_boolean(active) do
+    valid_fields? =
+      is_binary(name) and name != "" and is_binary(description) and
+        is_boolean(active) and is_map(audit_details)
+
+    with true <- valid_fields?,
+         {:ok, audit_log} <- AuditLog.create("account", "update", audit_details) do
+      existing_audit_logs = Map.get(account, :audit_logs, [])
+
       update_params = %{
         name: name,
         description: description,
         active: active,
-        audit_log: audit_log
+        audit_logs: [audit_log | existing_audit_logs]
       }
 
       {:ok, Map.merge(account, update_params)}
     else
-      {:error, :invalid_account}
+      _ -> {:error, :invalid_account}
     end
   end
 
@@ -159,7 +177,7 @@ defmodule Bookkeeping.Core.Account do
        name: name,
        description: description,
        account_type: account_type,
-       audit_log: audit_log
+       audit_logs: [audit_log]
      }}
   end
 end
