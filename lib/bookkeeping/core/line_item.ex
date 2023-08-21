@@ -30,6 +30,7 @@ defmodule Bookkeeping.Core.LineItem do
 
   @doc """
   Creates a list of line item structs.
+
   Arguments:
     - t_accounts: The map of line items. The map must have the following keys:
       - left: The list of maps with account and amount field and represents the entry type of debit.
@@ -111,7 +112,8 @@ defmodule Bookkeeping.Core.LineItem do
 
   @doc """
     Creates a new line item struct.
-    Arguments:
+
+  Arguments:
       - account: The account of the line item.
       - amount: The amount of the line item.
       - binary_entry_type: The entry type of the line item.

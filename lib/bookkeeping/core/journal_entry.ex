@@ -37,6 +37,7 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   @doc """
   Creates a new journal entry struct.
+
   Arguments:
     - transaction_date: The date of the transaction.
     - reference_number: The unique reference number of the journal entry.
@@ -78,6 +79,7 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   @doc """
   Updates a journal entry struct. Update can only be done if the journal entry is not posted.
+
   Arguments:
     - journal_entry: The journal entry to be updated.
     - attrs: The attributes to be updated. The editable attributes are `transaction_date`, `reference_number`, `description`, `posted`, `t_accounts`, and `audit_details`.

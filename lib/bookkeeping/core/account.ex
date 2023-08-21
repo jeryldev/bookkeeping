@@ -41,6 +41,7 @@ defmodule Bookkeeping.Core.Account do
 
   @doc """
   Creates a new account struct.
+
   Arguments:
     - code: The unique code of the account.
     - name: The unique name of the account.
@@ -95,6 +96,7 @@ defmodule Bookkeeping.Core.Account do
 
   @doc """
   Updates an account struct.
+
   Arguments:
     - account: The account to be updated.
     - attrs: The attributes to be updated. The editable attributes are `name`, `description`, `active`, and `audit_details`.
