@@ -27,6 +27,7 @@ defmodule Bookkeeping.Core.AuditLog do
 
   @doc """
   Creates a new audit log struct.
+
   Arguments:
     - record_type: The type of the record.
     - action_type: The type of the action.

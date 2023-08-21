@@ -1,7 +1,9 @@
 defmodule Bookkeeping.Boundary.ChartOfAccounts do
   @moduledoc """
   Bookkeeping.Boundary.ChartOfAccounts is a GenServer that manages the chart of accounts.
-  The chart of accounts is a list of all accounts used by a business.
+  Chart of Accounts is a list of all accounts used by a business.
+  The Chart Of Accounts GenServer is responsible for creating, updating, and searching accounts.
+  The state of the Chart Of Accounts GenServer is a map in which the keys are the account codes and the values are the account structs.
   """
   use GenServer
 
@@ -57,12 +59,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Creates a new account.
+
   Arguments:
     - code: The unique code of the account.
     - name: The unique name of the account.
-    - account_type: The type of the account.
-    - description: The description of the account.
-    - audit_details: The details of the audit log.
+    - account_type: The type of the account. The account type must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
+    - description (optional): The description of the account.
+    - audit_details (optional): The audit details of the account.
 
   Returns `{:ok, account}` if the account is valid, otherwise `{:error, :invalid_account}`.
 
@@ -119,6 +122,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Updates an account.
+
   Arguments:
     - account: The account to be updated.
     - attrs: The attributes to be updated. The editable attributes are `name`, `description`, `active`, and `audit_details`.
@@ -162,6 +166,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Finds an account by code.
+
   Arguments:
     - code: The unique code of the account.
 
@@ -181,6 +186,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Finds an account by name.
+
   Arguments:
     - name: The unique name of the account.
 
@@ -200,6 +206,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @doc """
   Search accounts by code or name.
+
   Arguments:
     - query: The query to search for code or name.
 
@@ -235,7 +242,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   end
 
   @impl true
-  def init(accounts), do: {:ok, accounts}
+  def init(chart_of_account), do: {:ok, chart_of_account}
 
   @impl true
   def handle_call(:all_accounts, _from, accounts) do
