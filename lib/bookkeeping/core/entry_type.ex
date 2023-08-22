@@ -1,6 +1,6 @@
 defmodule Bookkeeping.Core.EntryType do
   @moduledoc """
-  Bookkeeping.Core.EntryType is a struct that represents the type of an entry of an account.
+  Bookkeeping.Core.EntryType is a module that represents the type of an entry of an account.
   Entry types are used to determine the normal balance of an account.
   There are two types of entries: debit and credit.
   In accounting, debit and credit are terms used to describe the recording of financial transactions.
@@ -8,36 +8,37 @@ defmodule Bookkeeping.Core.EntryType do
   In a double-entry system, every transaction is recorded in at least two accounts:
   one account is debited and another account is credited.
   """
-  @type t :: %__MODULE__{
-          type: :debit | :credit,
-          name: String.t()
-        }
-
-  defstruct type: nil,
-            name: nil
+  @type t :: :debit | :credit
 
   @entry_types [:debit, :credit]
 
   @doc """
-  Creates a new entry type struct.
+  Creates a new entry type atom.
 
-  Returns `{:ok, %EntryType{}}` if the entry type is valid. Otherwise, returns `{:error, :invalid_entry_type}`.
+  Returns `{:ok, :debit}` or `{:ok, :credit}` if the entry type is valid. Otherwise, returns `{:error, :invalid_entry_type}`.
 
   ## Examples
 
-      iex> EntryType.create("debit")
-      {:ok, %EntryType{type: :debit, name: "Debit"}}
-      iex> EntryType.create("credit")
-      {:ok, %EntryType{type: :credit, name: "Credit"}}
+      iex> EntryType.create(:debit)
+      {:ok, :debit}
+
+      iex> EntryType.create(:credit)
+      {:ok, :credit}
+
       iex> EntryType.create("invalid")
       {:error, :invalid_entry_type}
   """
-  @spec create(String.t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_entry_type}
-  def create("debit"), do: new(:debit, "Debit")
-  def create("credit"), do: new(:credit, "Credit")
+  @spec create(__MODULE__.t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_entry_type}
+  def create(atom_entry_type) when atom_entry_type in @entry_types, do: {:ok, atom_entry_type}
   def create(_), do: {:error, :invalid_entry_type}
 
-  @spec new(type :: atom(), name :: String.t()) :: {:ok, __MODULE__.t()}
-  defp new(type, name) when type in @entry_types and is_binary(name) and name != "",
-    do: {:ok, %__MODULE__{type: type, name: name}}
+  @doc """
+  Returns a list of all entry types.
+
+  ## Examples
+
+      iex> EntryType.all_entry_types()
+      [:debit, :credit]
+  """
+  def all_entry_types, do: @entry_types
 end
