@@ -9,8 +9,8 @@ defmodule Bookkeeping.Core.AccountType do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          normal_balance: %EntryType{},
-          primary_account_category: %PrimaryAccountCategory{},
+          normal_balance: EntryType.t(),
+          primary_account_category: PrimaryAccountCategory.t(),
           contra: boolean()
         }
 
@@ -114,114 +114,128 @@ defmodule Bookkeeping.Core.AccountType do
       {:ok,
         %AccountType{
           name: "Asset",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :debit,
+          primary_account_category: :balance_sheet,
           contra: false
         }}
+
       iex> AccountType.create("liability")
       {:ok,
         %AccountType{
           name: "Liability",
-          normal_balance: %EntryType{type: :credit, name: "Credit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :credit,
+          primary_account_category: :balance_sheet,
           contra: false
         }}
+
       iex> AccountType.create("equity")
       {:ok,
         %AccountType{
           name: "Equity",
-          normal_balance: %EntryType{type: :credit, name: "Credit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :credit,
+          primary_account_category: :balance_sheet,
           contra: false
         }}
+
       iex> AccountType.create("revenue")
       {:ok,
         %AccountType{
           name: "Revenue",
-          normal_balance: %EntryType{type: :credit, name: "Credit"},
-          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          normal_balance: :credit,
+          primary_account_category: :profit_and_loss,
           contra: false
         }}
+
       iex> AccountType.create("expense")
       {:ok,
         %AccountType{
           name: "Expense",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          normal_balance: :debit,
+          primary_account_category: :profit_and_loss,
           contra: false
         }}
+
       iex> AccountType.create("gain")
       {:ok,
         %AccountType{
           name: "Gain",
-          normal_balance: %EntryType{type: :credit, name: "Credit"},
-          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          normal_balance: :credit,
+          primary_account_category: :profit_and_loss,
           contra: false
         }}
+
       iex> AccountType.create("loss")
       {:ok,
         %AccountType{
           name: "Loss",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          normal_balance: :debit,
+          primary_account_category: :profit_and_loss,
           contra: false
         }}
+
       iex> AccountType.create("contra_asset")
       {:ok,
         %AccountType{
           name: "Contra Asset",
-          normal_balance: %EntryType{type: :credit, name: "Credit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :credit,
+          primary_account_category: :balance_sheet,
           contra: true
         }}
+
       iex> AccountType.create("contra_liability")
       {:ok,
         %AccountType{
           name: "Contra Liability",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :debit,
+          primary_account_category: :balance_sheet,
           contra: true
         }}
+
       iex> AccountType.create("contra_equity")
       {:ok,
         %AccountType{
           name: "Contra Equity",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :debit,
+          primary_account_category: :balance_sheet,
           contra: true
         }}
+
       iex> AccountType.create("contra_revenue")
       {:ok,
         %AccountType{
           name: "Contra Revenue",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          normal_balance: :debit,
+          primary_account_category: :profit_and_loss,
           contra: true
         }}
+
       iex> AccountType.create("contra_expense")
       {:ok,
         %AccountType{
           name: "Contra Expense",
-          normal_balance: %EntryType{type: :credit, name: "Credit"},
-          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          normal_balance: :credit,
+          primary_account_category: :profit_and_loss,
           contra: true
         }}
+
       iex> AccountType.create("contra_gain")
       {:ok,
         %AccountType{
           name: "Contra Gain",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          normal_balance: :debit,
+          primary_account_category: :profit_and_loss,
           contra: true
         }}
+
       iex> AccountType.create("contra_loss")
       {:ok,
         %AccountType{
           name: "Contra Loss",
-          normal_balance: %EntryType{type: :credit, name: "Credit"},
-          primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+          normal_balance: :credit,
+          primary_account_category: :profit_and_loss,
           contra: true
         }}
+
       iex> AccountType.create("invalid")
       {:error, :invalid_account_type}
   """
@@ -231,7 +245,14 @@ defmodule Bookkeeping.Core.AccountType do
     {:ok, primary_account_category} = set_primary_account_category(binary_account_type)
     account_type_name = @account_type_names[binary_account_type]
     contra_account? = binary_account_type in @contra_accounts
-    new(account_type_name, entry_type, primary_account_category, contra_account?)
+
+    {:ok,
+     %__MODULE__{
+       name: account_type_name,
+       normal_balance: entry_type,
+       primary_account_category: primary_account_category,
+       contra: contra_account?
+     }}
   end
 
   def create(_), do: {:error, :invalid_account_type}
@@ -239,35 +260,18 @@ defmodule Bookkeeping.Core.AccountType do
   @spec set_entry_type(String.t()) :: {:ok, EntryType.t()}
   defp set_entry_type(binary_account_type)
        when binary_account_type in @debit_accounts,
-       do: EntryType.create("debit")
+       do: EntryType.create(:debit)
 
   defp set_entry_type(binary_account_type)
        when binary_account_type in @credit_accounts,
-       do: EntryType.create("credit")
+       do: EntryType.create(:credit)
 
   @spec set_primary_account_category(String.t()) :: {:ok, PrimaryAccountCategory.t()}
   defp set_primary_account_category(binary_account_type)
        when binary_account_type in @balance_sheet_accounts,
-       do: PrimaryAccountCategory.create("balance_sheet")
+       do: PrimaryAccountCategory.create(:balance_sheet)
 
   defp set_primary_account_category(binary_account_type)
        when binary_account_type in @profit_and_loss_accounts,
-       do: PrimaryAccountCategory.create("profit_and_loss")
-
-  @spec new(String.t(), EntryType.t(), PrimaryAccountCategory.t(), boolean()) ::
-          {:ok, __MODULE__.t()}
-  defp new(
-         name,
-         %EntryType{} = normal_balance,
-         %PrimaryAccountCategory{} = primary_account_category,
-         contra
-       ) do
-    {:ok,
-     %__MODULE__{
-       name: name,
-       normal_balance: normal_balance,
-       primary_account_category: primary_account_category,
-       contra: contra
-     }}
-  end
+       do: PrimaryAccountCategory.create(:profit_and_loss)
 end

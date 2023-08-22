@@ -1,6 +1,6 @@
 defmodule Bookkeeping.Core.AccountTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.{Account, EntryType}
+  alias Bookkeeping.Core.Account
 
   setup do
     details = %{email: "example@example.com"}
@@ -14,7 +14,7 @@ defmodule Bookkeeping.Core.AccountTest do
     assert new_account.code == "10_000"
     assert new_account.name == "cash"
     assert new_account.account_type.name == "Asset"
-    assert new_account.account_type.normal_balance == %EntryType{type: :debit, name: "Debit"}
+    assert new_account.account_type.normal_balance == :debit
   end
 
   test "create account with description and active fields", %{details: details} do
@@ -24,7 +24,7 @@ defmodule Bookkeeping.Core.AccountTest do
     assert new_account.code == "10_010"
     assert new_account.name == "cash"
     assert new_account.account_type.name == "Asset"
-    assert new_account.account_type.normal_balance == %EntryType{type: :debit, name: "Debit"}
+    assert new_account.account_type.normal_balance == :debit
     assert new_account.description == "cash and cash equivalents"
     assert new_account.active
   end

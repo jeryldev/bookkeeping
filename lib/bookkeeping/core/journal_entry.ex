@@ -14,15 +14,15 @@ defmodule Bookkeeping.Core.JournalEntry do
           posted: boolean()
         }
 
+  @type t_accounts :: %{
+          left: list(t_accounts_item),
+          right: list(t_accounts_item)
+        }
+
   @type t_accounts_item :: %{
           account: Bookkeeping.Core.Account.t(),
           amount: Decimal.t(),
           entry_type: String.t()
-        }
-
-  @type t_accounts :: %{
-          left: list(t_accounts_item),
-          right: list(t_accounts_item)
         }
 
   alias Bookkeeping.Core.{AuditLog, LineItem}
@@ -51,15 +51,39 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   ## Examples
 
-      iex> JournalEntry.create(DateTime.utc_now(), "reference number", "description", %{}, %{})
+      iex> JournalEntry.create(DateTime.utc_now(), "reference number", "description", %{
+                 left: [%{account: expense_account, amount: Decimal.new(100)}],
+                 right: [%{account: asset_account, amount: Decimal.new(100)}]
+               }, %{})
       {:ok,
       %JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
         reference_number: "reference number",
         description: "description",
-        line_items: [],
-        audit_logs: [],
+        line_items: [
+          %LineItem{
+            account: expense_account,
+            amount: Decimal.new(100),
+            entry_type: :debit
+          },
+          %LineItem{
+            account: asset_account,
+            amount: Decimal.new(100),
+            entry_type: :credit
+          }
+        ],
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "journal_entry",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          }
+        ],
         posted: false
       }}
 
@@ -91,7 +115,10 @@ defmodule Bookkeeping.Core.JournalEntry do
       iex> JournalEntry.update(journal_entry, %{})
       {:error, :invalid_journal_entry}
 
-      iex> {:ok, journal_entry} = JournalEntry.create(DateTime.utc_now(), "reference number", "description", %{left: [left: [%{account: expense_account, amount: Decimal.new(100)}], right: [%{account: asset_account, amount: Decimal.new(100)}]}, %{})
+      iex> {:ok, journal_entry} = JournalEntry.create(DateTime.utc_now(), "reference number", "description", %{
+                 left: [%{account: expense_account, amount: Decimal.new(100)}],
+                 right: [%{account: asset_account, amount: Decimal.new(100)}]
+               }, %{})
       {:ok,
       %JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
@@ -100,32 +127,14 @@ defmodule Bookkeeping.Core.JournalEntry do
         description: "description",
         line_items: [
           %LineItem{
-            account: %Account{
-              code: nil,
-              name: nil,
-              account_type: %AccountType{
-                name: nil,
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: nil, primary: nil},
-                contra: nil
-              }
-            },
+            account: expense_account,
             amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
+            entry_type: :debit
           },
           %LineItem{
-            account: %Account{
-              code: nil,
-              name: nil,
-              account_type: %AccountType{
-                name: nil,
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: nil, primary: nil},
-                contra: nil
-              }
-            },
+            account: asset_account,
             amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
+            entry_type: :credit
           }
         ],
         audit_logs: [
@@ -151,32 +160,14 @@ defmodule Bookkeeping.Core.JournalEntry do
         description: "updated description",
         line_items: [
           %LineItem{
-            account: %Account{
-              code: nil,
-              name: nil,
-              account_type: %AccountType{
-                name: nil,
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: nil, primary: nil},
-                contra: nil
-              }
-            },
+            account: expense_account,
             amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
+            entry_type: :debit
           },
           %LineItem{
-            account: %Account{
-              code: nil,
-              name: nil,
-              account_type: %AccountType{
-                name: nil,
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: nil, primary: nil},
-                contra: nil
-              }
-            },
+            account: asset_account,
             amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
+            entry_type: :credit
           }
         ],
         audit_logs: [
