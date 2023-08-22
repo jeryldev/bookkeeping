@@ -1,14 +1,14 @@
 defmodule Bookkeeping.Core.AccountTypeTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.{AccountType, EntryType, PrimaryAccountCategory}
+  alias Bookkeeping.Core.AccountType
 
   test "create asset account type" do
     assert AccountType.create("asset") ==
              {:ok,
               %AccountType{
                 name: "Asset",
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+                normal_balance: :debit,
+                primary_account_category: :balance_sheet,
                 contra: false
               }}
   end
@@ -18,8 +18,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Liability",
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+                normal_balance: :credit,
+                primary_account_category: :balance_sheet,
                 contra: false
               }}
   end
@@ -29,8 +29,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Equity",
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+                normal_balance: :credit,
+                primary_account_category: :balance_sheet,
                 contra: false
               }}
   end
@@ -40,8 +40,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Revenue",
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                normal_balance: :credit,
+                primary_account_category: :profit_and_loss,
                 contra: false
               }}
   end
@@ -51,8 +51,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Expense",
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                normal_balance: :debit,
+                primary_account_category: :profit_and_loss,
                 contra: false
               }}
   end
@@ -62,8 +62,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Gain",
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                normal_balance: :credit,
+                primary_account_category: :profit_and_loss,
                 contra: false
               }}
   end
@@ -73,8 +73,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Loss",
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                normal_balance: :debit,
+                primary_account_category: :profit_and_loss,
                 contra: false
               }}
   end
@@ -84,8 +84,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Contra Asset",
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+                normal_balance: :credit,
+                primary_account_category: :balance_sheet,
                 contra: true
               }}
   end
@@ -95,8 +95,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Contra Liability",
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+                normal_balance: :debit,
+                primary_account_category: :balance_sheet,
                 contra: true
               }}
   end
@@ -106,8 +106,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Contra Equity",
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+                normal_balance: :debit,
+                primary_account_category: :balance_sheet,
                 contra: true
               }}
   end
@@ -117,8 +117,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Contra Revenue",
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                normal_balance: :debit,
+                primary_account_category: :profit_and_loss,
                 contra: true
               }}
   end
@@ -128,8 +128,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Contra Expense",
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                normal_balance: :credit,
+                primary_account_category: :profit_and_loss,
                 contra: true
               }}
   end
@@ -139,8 +139,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Contra Gain",
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                normal_balance: :debit,
+                primary_account_category: :profit_and_loss,
                 contra: true
               }}
   end
@@ -150,8 +150,8 @@ defmodule Bookkeeping.Core.AccountTypeTest do
              {:ok,
               %AccountType{
                 name: "Contra Loss",
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: :profit_and_loss},
+                normal_balance: :credit,
+                primary_account_category: :profit_and_loss,
                 contra: true
               }}
   end

@@ -27,9 +27,9 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   ]
 
   @doc """
-  Starts the chart of accounts GenServer.
+  Starts the Chart of Accounts GenServer.
 
-  Returns `{:ok, pid}` if the GenServer was started successfully.
+  Returns `{:ok, pid}` if the GenServer is started successfully.
 
   ## Examples
 
@@ -40,21 +40,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   def start_link(opts \\ []) do
     name = Keyword.get(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, %{}, name: name)
-  end
-
-  @doc """
-  Returns all accounts.
-
-  Returns `{:ok, accounts}`.
-
-  ## Examples
-
-      iex> Bookkeeping.Boundary.ChartOfAccounts.all_accounts(server)
-      {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
-  """
-  @spec all_accounts() :: {:ok, [Account.t()]}
-  def all_accounts(server \\ __MODULE__) do
-    GenServer.call(server, :all_accounts)
   end
 
   @doc """
@@ -79,8 +64,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
         description: "",
         account_type: %AccountType{
           name: "Asset",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :debit,
+          primary_account_category: :balance_sheet,
           contra: false
         },
         active: true,
@@ -139,8 +124,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
         description: "",
         account_type: %AccountType{
           name: "Asset",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :debit,
+          primary_account_category: :balance_sheet,
           contra: false
         },
         active: true,
@@ -162,6 +147,21 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
     if is_struct(account, Account),
       do: GenServer.call(server, {:update_account, account, attrs}),
       else: {:error, :invalid_account}
+  end
+
+  @doc """
+  Returns all accounts.
+
+  Returns `{:ok, accounts}`.
+
+  ## Examples
+
+      iex> Bookkeeping.Boundary.ChartOfAccounts.all_accounts(server)
+      {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
+  """
+  @spec all_accounts() :: {:ok, list(Account.t())}
+  def all_accounts(server \\ __MODULE__) do
+    GenServer.call(server, :all_accounts)
   end
 
   @doc """
@@ -217,7 +217,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
       iex> Bookkeeping.Boundary.ChartOfAccounts.search_accounts(server, "1000")
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec search_accounts(String.t()) :: {:ok, [Account.t()]} | {:error, :invalid_query}
+  @spec search_accounts(String.t()) :: {:ok, list(Account.t())} | {:error, :invalid_query}
   def search_accounts(server \\ __MODULE__, query) do
     if is_binary(query),
       do: GenServer.call(server, {:search_accounts, query}),
@@ -234,7 +234,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
       iex> Bookkeeping.Boundary.ChartOfAccounts.all_sorted_accounts(server, :code)
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec all_sorted_accounts(atom()) :: {:ok, [Account.t()]} | {:error, :invalid_field}
+  @spec all_sorted_accounts(atom()) :: {:ok, list(Account.t())} | {:error, :invalid_field}
   def all_sorted_accounts(server \\ __MODULE__, field) do
     if field in ["code", "name"],
       do: GenServer.call(server, {:sort_accounts, field}),
@@ -243,11 +243,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @impl true
   def init(chart_of_account), do: {:ok, chart_of_account}
-
-  @impl true
-  def handle_call(:all_accounts, _from, accounts) do
-    {:reply, {:ok, Map.values(accounts)}, accounts}
-  end
 
   @impl true
   def handle_call(
@@ -260,8 +255,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
         updated_accounts = Map.put(accounts, code, account)
         {:reply, {:ok, account}, updated_accounts}
 
-      {:error, :invalid_account} ->
-        {:reply, {:error, :invalid_account}, accounts}
+      {:error, message} ->
+        {:reply, {:error, message}, accounts}
     end
   end
 
@@ -279,6 +274,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
       {:error, :invalid_account} ->
         {:reply, {:error, :invalid_account}, accounts}
     end
+  end
+
+  @impl true
+  def handle_call(:all_accounts, _from, accounts) do
+    {:reply, {:ok, Map.values(accounts)}, accounts}
   end
 
   @impl true
