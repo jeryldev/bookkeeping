@@ -61,8 +61,8 @@ defmodule Bookkeeping.Core.Account do
         description: "",
         account_type: %AccountType{
           name: "Asset",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :debit,
+          primary_account_category: :balance_sheet,
           contra: false
         },
         active: true,
@@ -106,6 +106,7 @@ defmodule Bookkeeping.Core.Account do
   ## Examples
 
       iex> {:ok, account} = Account.create("10_000", "cash", "asset")
+
       iex> Account.update(account, %{name: "cash and cash equivalents"})
       {:ok,
       %Account{
@@ -114,8 +115,8 @@ defmodule Bookkeeping.Core.Account do
         description: "",
         account_type: %AccountType{
           name: "Asset",
-          normal_balance: %EntryType{type: :debit, name: "Debit"},
-          primary_account_category: %PrimaryAccountCategory{type: :balance_sheet},
+          normal_balance: :debit,
+          primary_account_category: :balance_sheet,
           contra: false
         },
         active: true,
@@ -170,16 +171,19 @@ defmodule Bookkeeping.Core.Account do
   end
 
   defp new(code, name, binary_account_type, description, audit_details) do
-    {:ok, account_type} = AccountType.create(binary_account_type)
-    {:ok, audit_log} = AuditLog.create("account", "create", audit_details)
-
-    {:ok,
-     %__MODULE__{
-       code: code,
-       name: name,
-       description: description,
-       account_type: account_type,
-       audit_logs: [audit_log]
-     }}
+    with {:ok, account_type} <- AccountType.create(binary_account_type),
+         {:ok, audit_log} <- AuditLog.create("account", "create", audit_details) do
+      {:ok,
+       %__MODULE__{
+         code: code,
+         name: name,
+         description: description,
+         account_type: account_type,
+         audit_logs: [audit_log]
+       }}
+    else
+      {:error, message} -> {:error, message}
+      _ -> {:error, :invalid_account}
+    end
   end
 end

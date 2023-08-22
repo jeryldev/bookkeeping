@@ -9,15 +9,15 @@ defmodule Bookkeeping.Core.LineItem do
           entry_type: EntryType.t()
         }
 
+  @type t_accounts :: %{
+          left: list(t_accounts_item),
+          right: list(t_accounts_item)
+        }
+
   @type t_accounts_item :: %{
           account: Bookkeeping.Core.Account.t(),
           amount: Decimal.t(),
           entry_type: String.t()
-        }
-
-  @type t_accounts :: %{
-          left: list(t_accounts_item),
-          right: list(t_accounts_item)
         }
 
   alias Bookkeeping.Core.{Account, EntryType}
@@ -25,8 +25,6 @@ defmodule Bookkeeping.Core.LineItem do
   defstruct account: %Account{},
             amount: 0,
             entry_type: nil
-
-  @entry_types ["debit", "credit"]
 
   @doc """
   Creates a list of line item structs.
@@ -40,36 +38,18 @@ defmodule Bookkeeping.Core.LineItem do
 
   ## Examples
 
-      iex> LineItem.bulk_create(%{left: [%{account: %Account{}, amount: Decimal.new(100)}], right: [%{account: %Account{}, amount: Decimal.new(100)}]})
+      iex> LineItem.bulk_create(%{left: [%{account: expense_account, amount: Decimal.new(100)}], right: [%{account: asset_account, amount: Decimal.new(100)}]})
       {:ok,
        [
          %LineItem{
-           account: %Account{
-             code: nil,
-             name: nil,
-             account_type: %AccountType{
-               name: nil,
-               normal_balance: %EntryType{type: :debit, name: "Debit"},
-               primary_account_category: %PrimaryAccountCategory{type: nil, primary: nil},
-               contra: nil
-             }
-           },
+           account: expense_account,
            amount: Decimal.new(100),
-           entry_type: %EntryType{type: :debit, name: "Debit"}
+           entry_type: :debit
          },
          %LineItem{
-           account: %Account{
-             code: nil,
-             name: nil,
-             account_type: %AccountType{
-               name: nil,
-               normal_balance: %EntryType{type: :credit, name: "Credit"},
-               primary_account_category: %PrimaryAccountCategory{type: nil, primary: nil},
-               contra: nil
-             }
-           },
+           account: asset_account,
            amount: Decimal.new(100),
-           entry_type: %EntryType{type: :credit, name: "Credit"}
+           entry_type: :credit
          }
        ]}
   """
@@ -80,11 +60,13 @@ defmodule Bookkeeping.Core.LineItem do
       t_accounts
       |> Task.async_stream(fn
         {:left, debit_items} ->
-          Task.async_stream(debit_items, fn item -> create(item.account, item.amount, "debit") end)
+          Task.async_stream(debit_items, fn item ->
+            create(item.account, item.amount, :debit)
+          end)
 
         {:right, credit_items} ->
           Task.async_stream(credit_items, fn item ->
-            create(item.account, item.amount, "credit")
+            create(item.account, item.amount, :credit)
           end)
       end)
       |> Enum.reduce(
@@ -122,49 +104,40 @@ defmodule Bookkeeping.Core.LineItem do
 
     ## Examples
 
-        iex> LineItem.create(%Account{}, Decimal.new(100), "debit")
+        iex> LineItem.create(asset_account, Decimal.new(100), "debit")
         {:ok,
          %LineItem{
            account: %Account{
              code: nil,
              name: nil,
-             account_type: %AccountType{
-               name: nil,
-               normal_balance: %EntryType{type: :debit, name: "Debit"},
-               primary_account_category: %PrimaryAccountCategory{type: nil, primary: nil},
-               contra: nil
-             }
-           },
+             account_type: asset_account,
            amount: Decimal.new(100),
-           entry_type: %EntryType{type: :debit, name: "Debit"}
+           entry_type: :debit
          }}
   """
-  @spec create(Account.t(), Decimal.t(), binary()) ::
+  @spec create(Account.t(), Decimal.t(), EntryType.t()) ::
           {:ok, __MODULE__.t()} | {:error, :invalid_line_item}
-  def create(%Account{} = account, %Decimal{} = amount, binary_entry_type)
-      when binary_entry_type in @entry_types,
-      do: new(account, amount, binary_entry_type)
-
-  def create(_, _, _), do: {:error, :invalid_line_item}
-
-  defp new(account, amount, binary_entry_type) do
-    {:ok, entry_type} = EntryType.create(binary_entry_type)
-
-    {:ok, %__MODULE__{account: account, amount: amount, entry_type: entry_type}}
+  def create(account, amount, atom_entry_type) do
+    with true <- is_struct(account, Account),
+         true <- is_struct(amount, Decimal),
+         true <- Decimal.gt?(amount, Decimal.new(0)),
+         true <- atom_entry_type in EntryType.all_entry_types(),
+         {:ok, entry_type} <- EntryType.create(atom_entry_type) do
+      {:ok, %__MODULE__{account: account, amount: amount, entry_type: entry_type}}
+    else
+      _ -> {:error, :invalid_line_item}
+    end
   end
 
   defp validate_line_items({:ok, line_items}, acc) do
     Enum.reduce(line_items, acc, fn
-      {:ok, {:ok, line_item}}, acc ->
-        process_line_item(acc, line_item)
-
-      {:ok, {:error, _line_item}}, acc ->
-        acc
+      {:ok, {:ok, line_item}}, acc -> process_line_item(acc, line_item)
+      {:ok, {:error, _line_item}}, acc -> acc
     end)
   end
 
   defp process_line_item(acc, line_item) do
-    entry_type = line_item.entry_type.type
+    entry_type = line_item.entry_type
 
     updated_debit_balance =
       if entry_type == :debit,

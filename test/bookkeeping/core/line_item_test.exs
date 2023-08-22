@@ -1,6 +1,6 @@
 defmodule Bookkeeping.Core.LineItemTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.{Account, EntryType, LineItem}
+  alias Bookkeeping.Core.{Account, LineItem}
 
   setup do
     details = %{email: "example@example.com"}
@@ -41,10 +41,10 @@ defmodule Bookkeeping.Core.LineItemTest do
     assert {:ok, asset_account} =
              Account.create("10000", "cash", "asset", "description", details)
 
-    assert {:ok, line_item} = LineItem.create(asset_account, Decimal.new(100), "debit")
+    assert {:ok, line_item} = LineItem.create(asset_account, Decimal.new(100), :debit)
     assert line_item.account == asset_account
     assert line_item.amount == Decimal.new(100)
-    assert line_item.entry_type == %EntryType{type: :debit, name: "Debit"}
+    assert line_item.entry_type == :debit
   end
 
   test "disallow line item with invalid fields" do
