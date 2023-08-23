@@ -240,6 +240,7 @@ defmodule Bookkeeping.Core.JournalEntry do
          {:ok, audit_log} <- AuditLog.create("journal_entry", "create", audit_details) do
       {:ok,
        %__MODULE__{
+         id: UUID.uuid4(),
          transaction_date: transaction_date,
          reference_number: reference_number,
          description: description,

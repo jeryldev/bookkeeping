@@ -227,10 +227,211 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     GenServer.call(server, {:find_journal_entry_by_reference_number, reference_number})
   end
 
+  @doc """
+  Returns a list of journal entries by transaction date.
+
+  Returns `{:ok, list(JournalEntry.t())}` if the journal entries are returned successfully. Otherwise, returns `{:error, :invalid_transaction_date}`.
+
+  ## Examples
+
+      iex> AccountingJournal.find_journal_entries_by_transaction_date(~U[2021-10-10 10:10:10.000000Z])
+      {:ok, [%JournalEntry{
+        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        reference_number: "ref_num_1",
+        description: "description",
+        line_items: [
+          %LineItem{
+            account: expense_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :debit, name: "Debit"}
+          },
+          %LineItem{
+            account: cash_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :credit, name: "Credit"}
+          }
+        ],
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "journal_entry",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          },
+          ...
+        ],
+        posted: false
+      }]}
+
+      iex> AccountingJournal.find_journal_entries_by_transaction_date(~U[2021-10-10 10:10:10.000000Z])
+      {:error, :invalid_transaction_date}
+  """
   @spec find_journal_entries_by_transaction_date(DateTime.t()) ::
           {:ok, list(JournalEntry.t())} | {:error, :invalid_transaction_date}
   def find_journal_entries_by_transaction_date(server \\ __MODULE__, datetime) do
     GenServer.call(server, {:find_journal_entries_by_transaction_date, datetime})
+  end
+
+  @doc """
+  Returns a journal entry by id.
+
+  Returns `{:ok, JournalEntry.t()}` if the journal entry is returned successfully. Otherwise, returns `{:error, :invalid_id}`.
+
+  ## Examples
+
+      iex> AccountingJournal.find_journal_entries_by_id("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+      {:ok, %JournalEntry{
+        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        reference_number: "ref_num_1",
+        description: "description",
+        line_items: [
+          %LineItem{
+            account: expense_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :debit, name: "Debit"}
+          },
+          %LineItem{
+            account: cash_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :credit, name: "Credit"}
+          }
+        ],
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "journal_entry",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          }
+        ],
+        posted: false
+      }}
+
+      iex> AccountingJournal.find_journal_entries_by_id("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+      {:error, :invalid_id}
+  """
+  @spec find_journal_entries_by_id(String.t()) ::
+          {:ok, JournalEntry.t()} | {:error, :invalid_id}
+  def find_journal_entries_by_id(server \\ __MODULE__, id) do
+    GenServer.call(server, {:find_journal_entries_by_id, id})
+  end
+
+  @doc """
+  Updates a journal entry.
+
+  Returns `{:ok, JournalEntry.t()}` if the journal entry is updated successfully. Otherwise, returns `{:error, :invalid_journal_entry}`.
+
+  ## Examples
+
+      iex> AccountingJournal.find_journal_entry_by_reference_number("ref_num_1")
+      {:ok, %JournalEntry{
+        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        reference_number: "ref_num_1",
+        description: "description",
+        line_items: [
+          %LineItem{
+            account: expense_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :debit, name: "Debit"}
+          },
+          %LineItem{
+            account: cash_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :credit, name: "Credit"}
+          }
+        ],
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "journal_entry",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          }
+        ],
+        posted: false
+      }}
+
+      iex> AccountingJournal.update_journal_entry(%JournalEntry{
+      ...>   id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      ...>   transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+      ...>   reference_number: "ref_num_1",
+      ...>   description: "description",
+      ...>   line_items: [
+      ...>     %LineItem{
+      ...>       account: expense_account,
+      ...>       amount: Decimal.new(100),
+      ...>       entry_type: %EntryType{type: :debit, name: "Debit"}
+      ...>     },
+      ...>     %LineItem{
+      ...>       account: cash_account,
+      ...>       amount: Decimal.new(100),
+      ...>       entry_type: %EntryType{type: :credit, name: "Credit"}
+      ...>     }
+      ...>   ],
+      ...>   audit_logs: [
+      ...>     %AuditLog{
+      ...>       id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      ...>       record_type: "journal_entry",
+      ...>       action_type: "create",
+      ...>       details: %{},
+      ...>       created_at: ~U[2021-10-10 10:10:10.000000Z],
+      ...>       updated_at: ~U[2021-10-10 10:10:10.000000Z],
+      ...>       deleted_at: nil
+      ...>     }
+      ...>   ],
+      ...>   posted: false
+      ...> }, %{description: "updated description",posted: true})
+      {:ok, %JournalEntry{
+        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        reference_number: "ref_num_1",
+        description: "updated description",
+        line_items: [
+          %LineItem{
+            account: expense_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :debit, name: "Debit"}
+          },
+          %LineItem{
+            account: cash_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :credit, name: "Credit"}
+          }
+        ],
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "journal_entry",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          },
+          ...
+        ],
+        posted: true
+      }}
+
+      iex> AccountingJournal.update_journal_entry(%JournalEntry{}, %{description: "updated description",posted: true})
+      {:error, :invalid_journal_entry}
+  """
+  @spec update_journal_entry(JournalEntry.t(), map()) ::
+          {:ok, JournalEntry.t()} | {:error, :invalid_journal_entry}
+  def update_journal_entry(server \\ __MODULE__, journal_entry, attrs) do
+    GenServer.call(server, {:update_journal_entry, journal_entry, attrs})
   end
 
   @impl true
@@ -308,6 +509,28 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     end
   end
 
+  @impl true
+  def handle_call({:find_journal_entries_by_id, id}, _from, journal_entries) do
+    case find_by_id(journal_entries, id) do
+      {:ok, journal_entry} -> {:reply, {:ok, journal_entry}, journal_entries}
+      {:error, message} -> {:reply, {:error, message}, journal_entries}
+    end
+  end
+
+  @impl true
+  def handle_call({:update_journal_entry, journal_entry, attrs}, _from, journal_entries) do
+    case JournalEntry.update(journal_entry, attrs) do
+      {:ok, updated_journal_entry} ->
+        updated_journal_entries =
+          process_journal_entry_update(journal_entries, updated_journal_entry)
+
+        {:reply, {:ok, updated_journal_entry}, updated_journal_entries}
+
+      {:error, message} ->
+        {:reply, {:error, message}, journal_entries}
+    end
+  end
+
   defp get_transaction_date_details(datetime) when is_struct(datetime, DateTime),
     do: {:ok, Map.take(datetime, [:year, :month, :day])}
 
@@ -341,4 +564,67 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
 
   defp find_by_reference_number(_journal_entries, _reference_number),
     do: {:error, :invalid_reference_number}
+
+  defp find_by_id(journal_entries, id) when is_binary(id) do
+    journal_entry =
+      Task.async_stream(journal_entries, fn {_k, je_list} ->
+        Enum.find(je_list, &(&1.id == id))
+      end)
+      |> Enum.reduce(nil, fn {:ok, search_result}, acc ->
+        if is_struct(search_result, JournalEntry),
+          do: search_result,
+          else: acc
+      end)
+
+    if is_map(journal_entry),
+      do: {:ok, journal_entry},
+      else: {:error, :not_found}
+  end
+
+  defp find_by_id(_journal_entries, _id), do: {:error, :invalid_id}
+
+  defp process_journal_entry_update(journal_entries, updated_journal_entry) do
+    transaction_date_details =
+      Map.take(updated_journal_entry.transaction_date, [:year, :month, :day])
+
+    if journal_entries[transaction_date_details] == nil do
+      with {:ok, old_journal_entry} <- find_by_id(journal_entries, updated_journal_entry.id),
+           {:ok, old_transaction_date_details} <-
+             get_transaction_date_details(old_journal_entry.transaction_date) do
+        updated_je_list =
+          remove_journal_entry_by_id(
+            journal_entries,
+            old_transaction_date_details,
+            old_journal_entry.id
+          )
+
+        journal_entries
+        |> Map.put(transaction_date_details, [updated_journal_entry])
+        |> Map.put(old_transaction_date_details, updated_je_list)
+      end
+    else
+      updated_je_list =
+        update_journal_entry_by_id(
+          journal_entries,
+          transaction_date_details,
+          updated_journal_entry
+        )
+
+      Map.put(journal_entries, transaction_date_details, updated_je_list)
+    end
+  end
+
+  defp remove_journal_entry_by_id(journal_entries, transaction_date_details, journal_entry_id) do
+    Enum.filter(journal_entries[transaction_date_details], fn je -> je.id != journal_entry_id end)
+  end
+
+  defp update_journal_entry_by_id(
+         journal_entries,
+         transaction_date_details,
+         updated_journal_entry
+       ) do
+    Enum.map(journal_entries[transaction_date_details], fn je ->
+      if je.id == updated_journal_entry.id, do: updated_journal_entry, else: je
+    end)
+  end
 end

@@ -229,4 +229,115 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:error, :invalid_reference_number} =
              AccountingJournal.find_journal_entry_by_reference_number(nil)
   end
+
+  test "find journal entries by id", %{details: details, t_accounts: t_accounts} do
+    assert {:ok, journal_entry_1} =
+             AccountingJournal.create_journal_entry(
+               DateTime.utc_now(),
+               "ref_num_12",
+               "journal entry description",
+               t_accounts,
+               details
+             )
+
+    assert {:ok, found_journal_entry} =
+             AccountingJournal.find_journal_entries_by_id(journal_entry_1.id)
+
+    assert found_journal_entry.id == journal_entry_1.id
+
+    assert {:error, :not_found} =
+             AccountingJournal.find_journal_entries_by_id("invalid_ref_num")
+
+    assert {:error, :invalid_id} =
+             AccountingJournal.find_journal_entries_by_id(nil)
+  end
+
+  test "update accounting journal entry", %{
+    details: details,
+    cash_account: cash_account,
+    expense_account: expense_account,
+    t_accounts: t_accounts
+  } do
+    assert {:ok, journal_entry} =
+             AccountingJournal.create_journal_entry(
+               DateTime.utc_now(),
+               "ref_num_13",
+               "journal entry description",
+               t_accounts,
+               details
+             )
+
+    assert {:error, :invalid_journal_entry} =
+             AccountingJournal.update_journal_entry(journal_entry, %{})
+
+    additional_random_days = Enum.random(10..100)
+
+    updated_transaction_date =
+      DateTime.add(journal_entry.transaction_date, additional_random_days, :day)
+
+    assert {:ok, updated_journal_entry} =
+             AccountingJournal.update_journal_entry(journal_entry, %{
+               transaction_date: updated_transaction_date,
+               description: "second updated description",
+               posted: false,
+               t_accounts: %{
+                 left: [%{account: expense_account, amount: Decimal.new(200)}],
+                 right: [%{account: cash_account, amount: Decimal.new(200)}]
+               }
+             })
+
+    assert updated_journal_entry.id == journal_entry.id
+    refute updated_journal_entry.transaction_date == journal_entry.transaction_date
+    assert updated_journal_entry.reference_number == journal_entry.reference_number
+    assert updated_journal_entry.description == "second updated description"
+    assert updated_journal_entry.posted == false
+    assert updated_journal_entry.line_items |> length() == 2
+    assert updated_journal_entry.audit_logs
+
+    assert {:ok, third_journal_entry_update} =
+             AccountingJournal.update_journal_entry(updated_journal_entry, %{
+               description: "third updated description",
+               posted: true,
+               t_accounts: %{
+                 left: [%{account: expense_account, amount: Decimal.new(300)}],
+                 right: [%{account: cash_account, amount: Decimal.new(300)}]
+               }
+             })
+
+    assert third_journal_entry_update.id == journal_entry.id
+    refute third_journal_entry_update.transaction_date == journal_entry.transaction_date
+    assert third_journal_entry_update.reference_number == journal_entry.reference_number
+    assert third_journal_entry_update.description == "third updated description"
+    assert third_journal_entry_update.posted == true
+    assert third_journal_entry_update.line_items |> length() == 2
+    assert third_journal_entry_update.audit_logs
+
+    assert {:error, :already_posted_journal_entry} =
+             AccountingJournal.update_journal_entry(third_journal_entry_update, %{
+               description: "fourth updated description",
+               posted: false,
+               t_accounts: %{
+                 left: [%{account: expense_account, amount: Decimal.new(400)}],
+                 right: [%{account: cash_account, amount: Decimal.new(400)}]
+               }
+             })
+
+    assert {:ok, journal_entries} =
+             AccountingJournal.find_journal_entries_by_transaction_date(
+               journal_entry.transaction_date
+             )
+
+    refute Enum.member?(journal_entries, journal_entry)
+    refute Enum.member?(journal_entries, updated_journal_entry)
+    refute Enum.member?(journal_entries, third_journal_entry_update)
+
+    assert {:ok, journal_entries} =
+             AccountingJournal.find_journal_entries_by_transaction_date(
+               updated_journal_entry.transaction_date
+             )
+
+    refute Enum.member?(journal_entries, journal_entry)
+    refute Enum.member?(journal_entries, updated_journal_entry)
+    assert Enum.member?(journal_entries, third_journal_entry_update)
+  end
 end
