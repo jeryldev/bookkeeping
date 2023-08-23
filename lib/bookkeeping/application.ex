@@ -10,7 +10,8 @@ defmodule Bookkeeping.Application do
     children = [
       # Starts a worker by calling: Bookkeeping.Worker.start_link(arg)
       # {Bookkeeping.Worker, arg}
-      {Bookkeeping.Boundary.ChartOfAccounts, []}
+      {Bookkeeping.Boundary.ChartOfAccounts, []},
+      {Bookkeeping.Boundary.AccountingJournal, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
