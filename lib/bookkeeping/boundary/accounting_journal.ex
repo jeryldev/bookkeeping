@@ -299,12 +299,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     case get_transaction_date_details(datetime) do
       {:ok, transaction_date_details} ->
         all_journal_entries =
-          Task.async_stream(journal_entries, fn {k, je} ->
-            if k == transaction_date_details, do: je, else: nil
-          end)
-          |> Enum.reduce([], fn {:ok, je_list}, acc ->
-            if is_list(je_list), do: je_list ++ acc, else: acc
-          end)
+          find_by_transaction_date_details(journal_entries, transaction_date_details)
 
         {:reply, {:ok, all_journal_entries}, journal_entries}
 
@@ -317,6 +312,15 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     do: {:ok, Map.take(datetime, [:year, :month, :day])}
 
   defp get_transaction_date_details(_), do: {:error, :invalid_transaction_date}
+
+  defp find_by_transaction_date_details(journal_entries, transaction_date_details) do
+    Task.async_stream(journal_entries, fn {k, je} ->
+      if k == transaction_date_details, do: je, else: nil
+    end)
+    |> Enum.reduce([], fn {:ok, je_list}, acc ->
+      if is_list(je_list), do: je_list ++ acc, else: acc
+    end)
+  end
 
   defp find_by_reference_number(journal_entries, reference_number)
        when is_binary(reference_number) do
