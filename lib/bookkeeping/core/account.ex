@@ -7,13 +7,15 @@ defmodule Bookkeeping.Core.Account do
   alias Bookkeeping.Core.{AccountType, AuditLog}
 
   @type t :: %__MODULE__{
-          code: String.t(),
+          code: account_code(),
           name: String.t(),
           description: String.t(),
           account_type: %AccountType{},
           audit_logs: list(AuditLog.t()),
           active: boolean()
         }
+
+  @type account_code :: String.t()
 
   defstruct code: "",
             name: "",
@@ -45,7 +47,7 @@ defmodule Bookkeeping.Core.Account do
   Arguments:
     - code: The unique code of the account.
     - name: The unique name of the account.
-    - account_type: The type of the account.
+    - binary_account_type: The type of the account. The account type must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
     - description: The description of the account.
     - audit_details: The details of the audit log.
 

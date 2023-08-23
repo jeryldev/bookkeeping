@@ -9,6 +9,41 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   alias Bookkeeping.Core.Account
 
+  @typedoc """
+  The state of the Chart Of Accounts GenServer.
+  The state is a map in which the keys are the account codes and the values are the account structs.
+
+  ## Examples
+
+      iex> %{
+      ...>   "1000" => %Account{
+      ...>     code: "1000",
+      ...>     name: "Cash",
+      ...>     description: "",
+      ...>     account_type: %AccountType{
+      ...>       name: "Asset",
+      ...>       normal_balance: :debit,
+      ...>       primary_account_category: :balance_sheet,
+      ...>       contra: false
+      ...>     },
+      ...>     active: true,
+      ...>     audit_logs: [
+      ...>       %AuditLog{
+      ...>         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      ...>         record_type: "account",
+      ...>         action_type: "create",
+      ...>         details: %{},
+      ...>         created_at: ~U[2021-10-10 10:10:10.000000Z],
+      ...>         updated_at: ~U[2021-10-10 10:10:10.000000Z],
+      ...>         deleted_at: nil
+      ...>       }
+      ...>     ]
+      ...>   },
+      ...>   ...
+      ...> }
+  """
+  @type chart_of_account_state :: %{Account.account_code() => Account.t()}
+
   @account_types [
     "asset",
     "liability",
@@ -242,6 +277,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   end
 
   @impl true
+  @spec init(chart_of_account_state()) :: {:ok, chart_of_account_state()}
   def init(chart_of_account), do: {:ok, chart_of_account}
 
   @impl true
