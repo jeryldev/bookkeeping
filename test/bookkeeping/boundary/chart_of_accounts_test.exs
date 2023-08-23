@@ -13,11 +13,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     assert server in Process.list()
   end
 
-  test "all accounts" do
-    assert {:ok, accounts} = ChartOfAccounts.all_accounts()
-    assert is_list(accounts)
-  end
-
   test "create account", %{description: description, details: details} do
     assert {:ok, account} =
              ChartOfAccounts.create_account("1000", "Cash1", "asset", description, details)
@@ -61,6 +56,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     assert updated_account.code == new_updated_account.code
     assert updated_account.name == new_updated_account.name
     assert updated_account.account_type == new_updated_account.account_type
+  end
+
+  test "all accounts" do
+    assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+    assert is_list(accounts)
   end
 
   test "find account by code" do
