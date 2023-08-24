@@ -3,7 +3,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
   Bookkeeping.Boundary.AccountingJournal is a GenServer that represents the accounting journal.
   Accounting Journal is a record of all relevant business transactions in terms of money or a record.
   The Accounting Journal GenServer is responsible for creating, updating, and searching journal entries.
-  The Accounting Journal GenServer is a map in which the keys are maps of transaction date details (year, month, day) and the values are lists of journal entries.
+  The state of Accounting Journal GenServer is a map in which the keys are maps of transaction date details (year, month, day) and the values are lists of journal entries.
   """
   use GenServer
 
@@ -267,10 +267,43 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
         posted: false
       }]}
 
+      iex> AccountingJournal.find_journal_entries_by_transaction_date(%{year: 2021, month: 10})
+      {:ok, [%JournalEntry{
+        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        reference_number: "ref_num_1",
+        description: "description",
+        line_items: [
+          %LineItem{
+            account: expense_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :debit, name: "Debit"}
+          },
+          %LineItem{
+            account: cash_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :credit, name: "Credit"}
+          }
+        ],
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "journal_entry",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          },
+          ...
+        ],
+        posted: false
+      }]}
+
       iex> AccountingJournal.find_journal_entries_by_transaction_date(~U[2021-10-10 10:10:10.000000Z])
       {:error, :invalid_transaction_date}
   """
-  @spec find_journal_entries_by_transaction_date(DateTime.t()) ::
+  @spec find_journal_entries_by_transaction_date(DateTime.t() | transaction_date_details()) ::
           {:ok, list(JournalEntry.t())} | {:error, :invalid_transaction_date}
   def find_journal_entries_by_transaction_date(server \\ __MODULE__, datetime) do
     GenServer.call(server, {:find_journal_entries_by_transaction_date, datetime})
@@ -509,6 +542,11 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     end
   end
 
+  # @impl true
+  # def handle_call({:find_journal_entries_by_transaction_date_range, from_datetime, to_datetine}, _from, journal_entries) do
+
+  # end
+
   @impl true
   def handle_call({:find_journal_entries_by_id, id}, _from, journal_entries) do
     case find_by_id(journal_entries, id) do
@@ -531,14 +569,18 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     end
   end
 
-  defp get_transaction_date_details(datetime) when is_struct(datetime, DateTime),
-    do: {:ok, Map.take(datetime, [:year, :month, :day])}
+  defp get_transaction_date_details(datetime)
+       when is_struct(datetime, DateTime) or is_map(datetime),
+       do: {:ok, Map.take(datetime, [:year, :month, :day])}
 
   defp get_transaction_date_details(_), do: {:error, :invalid_transaction_date}
 
   defp find_by_transaction_date_details(journal_entries, transaction_date_details) do
-    Task.async_stream(journal_entries, fn {k, je} ->
-      if k == transaction_date_details, do: je, else: nil
+    tdd_keys = Map.keys(transaction_date_details)
+
+    journal_entries
+    |> Task.async_stream(fn {k, je} ->
+      if Map.take(k, tdd_keys) == transaction_date_details, do: je, else: nil
     end)
     |> Enum.reduce([], fn {:ok, je_list}, acc ->
       if is_list(je_list), do: je_list ++ acc, else: acc
@@ -547,18 +589,17 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
 
   defp find_by_reference_number(journal_entries, reference_number)
        when is_binary(reference_number) do
-    journal_entry =
-      Task.async_stream(journal_entries, fn {_k, je_list} ->
+    journal_entry_found =
+      journal_entries
+      |> Task.async_stream(fn {_k, je_list} ->
         Enum.find(je_list, &(&1.reference_number == reference_number))
       end)
       |> Enum.reduce(nil, fn {:ok, search_result}, acc ->
-        if is_struct(search_result, JournalEntry),
-          do: search_result,
-          else: acc
+        if is_struct(search_result, JournalEntry), do: search_result, else: acc
       end)
 
-    if is_map(journal_entry),
-      do: {:ok, journal_entry},
+    if is_map(journal_entry_found),
+      do: {:ok, journal_entry_found},
       else: {:error, :not_found}
   end
 
@@ -566,18 +607,15 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     do: {:error, :invalid_reference_number}
 
   defp find_by_id(journal_entries, id) when is_binary(id) do
-    journal_entry =
-      Task.async_stream(journal_entries, fn {_k, je_list} ->
-        Enum.find(je_list, &(&1.id == id))
-      end)
+    journal_entry_found =
+      journal_entries
+      |> Task.async_stream(fn {_k, je_list} -> Enum.find(je_list, &(&1.id == id)) end)
       |> Enum.reduce(nil, fn {:ok, search_result}, acc ->
-        if is_struct(search_result, JournalEntry),
-          do: search_result,
-          else: acc
+        if is_struct(search_result, JournalEntry), do: search_result, else: acc
       end)
 
-    if is_map(journal_entry),
-      do: {:ok, journal_entry},
+    if is_map(journal_entry_found),
+      do: {:ok, journal_entry_found},
       else: {:error, :not_found}
   end
 
