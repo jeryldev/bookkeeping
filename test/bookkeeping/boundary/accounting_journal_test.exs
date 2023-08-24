@@ -83,9 +83,8 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
 
     assert {:ok, found_journal_entries} =
-             AccountingJournal.find_journal_entries_by_transaction_date(
-               journal_entry_2.transaction_date
-             )
+             journal_entry_2.transaction_date
+             |> AccountingJournal.find_journal_entries_by_transaction_date()
 
     assert Enum.member?(found_journal_entries, journal_entry_2)
     assert Enum.member?(found_journal_entries, journal_entry_3)
@@ -195,12 +194,18 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                details
              )
 
-    assert {:ok, filtered_journal_entries_1} =
-             AccountingJournal.find_journal_entries_by_transaction_date(
-               journal_entry_1.transaction_date
-             )
+    assert {:ok, je_result_1} =
+             journal_entry_1.transaction_date
+             |> AccountingJournal.find_journal_entries_by_transaction_date()
 
-    assert is_list(filtered_journal_entries_1)
+    assert is_list(je_result_1)
+
+    assert {:ok, je_result_2} =
+             journal_entry_1.transaction_date
+             |> Map.take([:year, :month])
+             |> AccountingJournal.find_journal_entries_by_transaction_date()
+
+    assert is_list(je_result_2)
 
     assert {:error, :invalid_transaction_date} =
              AccountingJournal.find_journal_entries_by_transaction_date(nil)
@@ -217,9 +222,8 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
 
     assert {:ok, found_journal_entry} =
-             AccountingJournal.find_journal_entry_by_reference_number(
-               journal_entry_1.reference_number
-             )
+             journal_entry_1.reference_number
+             |> AccountingJournal.find_journal_entry_by_reference_number()
 
     assert found_journal_entry.reference_number == journal_entry_1.reference_number
 
@@ -323,18 +327,16 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              })
 
     assert {:ok, journal_entries} =
-             AccountingJournal.find_journal_entries_by_transaction_date(
-               journal_entry.transaction_date
-             )
+             journal_entry.transaction_date
+             |> AccountingJournal.find_journal_entries_by_transaction_date()
 
     refute Enum.member?(journal_entries, journal_entry)
     refute Enum.member?(journal_entries, updated_journal_entry)
     refute Enum.member?(journal_entries, third_journal_entry_update)
 
     assert {:ok, journal_entries} =
-             AccountingJournal.find_journal_entries_by_transaction_date(
-               updated_journal_entry.transaction_date
-             )
+             updated_journal_entry.transaction_date
+             |> AccountingJournal.find_journal_entries_by_transaction_date()
 
     refute Enum.member?(journal_entries, journal_entry)
     refute Enum.member?(journal_entries, updated_journal_entry)
