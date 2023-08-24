@@ -12,14 +12,8 @@ defmodule Bookkeeping.Core.LineItem do
         }
 
   @type t_accounts :: %{
-          left: list(t_accounts_item),
-          right: list(t_accounts_item)
-        }
-
-  @type t_accounts_item :: %{
-          account: Account.t(),
-          amount: Decimal.t(),
-          entry_type: atom()
+          left: list(account_amount_pair()),
+          right: list(account_amount_pair())
         }
 
   @type account_amount_pair :: %{
@@ -58,8 +52,7 @@ defmodule Bookkeeping.Core.LineItem do
          }
        ]}
   """
-  @spec bulk_create(t_accounts()) ::
-          {:ok, list(__MODULE__.t())} | {:error, :invalid_line_item}
+  @spec bulk_create(t_accounts()) :: {:ok, list(__MODULE__.t())} | {:error, :invalid_line_item}
   def bulk_create(t_accounts) when is_map(t_accounts) and map_size(t_accounts) > 0 do
     bulk_create_result =
       t_accounts
