@@ -543,8 +543,9 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
   end
 
   # @impl true
-  # def handle_call({:find_journal_entries_by_transaction_date_range, from_datetime, to_datetine}, _from, journal_entries) do
-
+  # def handle_call({:find_journal_entries_by_transaction_date_range, from_datetime, to_datetine},
+  # _from,
+  # journal_entries) do
   # end
 
   @impl true
