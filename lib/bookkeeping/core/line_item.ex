@@ -3,6 +3,8 @@ defmodule Bookkeeping.Core.LineItem do
   Bookkeeping.Core.LineItem is a struct that represents a line item in a journal entry.
   A line item is a record of a single account and the amount of money that is either debited or credited.
   """
+  alias Bookkeeping.Core.{Account, EntryType}
+
   @type t :: %__MODULE__{
           account: Account.t(),
           amount: Decimal.t(),
@@ -10,17 +12,14 @@ defmodule Bookkeeping.Core.LineItem do
         }
 
   @type t_accounts :: %{
-          left: list(t_accounts_item),
-          right: list(t_accounts_item)
+          left: list(account_amount_pair()),
+          right: list(account_amount_pair())
         }
 
-  @type t_accounts_item :: %{
-          account: Bookkeeping.Core.Account.t(),
-          amount: Decimal.t(),
-          entry_type: String.t()
+  @type account_amount_pair :: %{
+          account: Account.t(),
+          amount: Decimal.t()
         }
-
-  alias Bookkeeping.Core.{Account, EntryType}
 
   defstruct account: %Account{},
             amount: 0,
@@ -53,28 +52,21 @@ defmodule Bookkeeping.Core.LineItem do
          }
        ]}
   """
-  @spec bulk_create(t_accounts()) ::
-          {:ok, list(__MODULE__.t())} | {:error, :invalid_line_item}
+  @spec bulk_create(t_accounts()) :: {:ok, list(__MODULE__.t())} | {:error, :invalid_line_item}
   def bulk_create(t_accounts) when is_map(t_accounts) and map_size(t_accounts) > 0 do
     bulk_create_result =
       t_accounts
       |> Task.async_stream(fn
-        {:left, debit_items} ->
-          Task.async_stream(debit_items, fn item ->
-            create(item.account, item.amount, :debit)
-          end)
-
-        {:right, credit_items} ->
-          Task.async_stream(credit_items, fn item ->
-            create(item.account, item.amount, :credit)
-          end)
+        {:left, debit_items} -> Task.async_stream(debit_items, &create(&1, :debit))
+        {:right, credit_items} -> Task.async_stream(credit_items, &create(&1, :credit))
       end)
       |> Enum.reduce(
         %{
           debit_balance: Decimal.new(0),
           credit_balance: Decimal.new(0),
           balanced: false,
-          created_line_items: []
+          created_line_items: [],
+          errors: []
         },
         &validate_line_items/2
       )
@@ -84,9 +76,11 @@ defmodule Bookkeeping.Core.LineItem do
         {:error, :invalid_line_items}
 
       created_line_items ->
-        if bulk_create_result.balanced,
-          do: {:ok, created_line_items},
-          else: {:error, :unbalanced_line_items}
+        cond do
+          bulk_create_result.errors != [] -> {:error, bulk_create_result.errors}
+          bulk_create_result.balanced == false -> {:error, :unbalanced_line_items}
+          true -> {:ok, created_line_items}
+        end
     end
   end
 
@@ -95,16 +89,15 @@ defmodule Bookkeeping.Core.LineItem do
   @doc """
     Creates a new line item struct.
 
-  Arguments:
-      - account: The account of the line item.
-      - amount: The amount of the line item.
-      - binary_entry_type: The entry type of the line item.
+    Arguments:
+      - account_amount_pair: The map with account and amount field.
+      - atom_entry_type: The atom that represents the entry type of the line item. The atom must be either `:debit` or `:credit`.
 
     Returns `{:ok, %LineItem{}}` if the line item is valid. Otherwise, returns `{:error, :invalid_line_item}`.
 
     ## Examples
 
-        iex> LineItem.create(asset_account, Decimal.new(100), "debit")
+        iex> LineItem.create(account_amount_pair(), :debit)
         {:ok,
          %LineItem{
            account: %Account{
@@ -115,16 +108,15 @@ defmodule Bookkeeping.Core.LineItem do
            entry_type: :debit
          }}
   """
-  @spec create(Account.t(), Decimal.t(), EntryType.t()) ::
+  @spec create(account_amount_pair(), EntryType.t()) ::
           {:ok, __MODULE__.t()} | {:error, :invalid_line_item}
-  def create(account, amount, atom_entry_type) do
-    with true <- is_struct(account, Account),
-         true <- is_struct(amount, Decimal),
-         true <- Decimal.gt?(amount, Decimal.new(0)),
-         true <- atom_entry_type in EntryType.all_entry_types(),
-         {:ok, entry_type} <- EntryType.create(atom_entry_type) do
+  def create(account_amount_pair, atom_entry_type) do
+    with {:ok, %{account: account, amount: amount}} <-
+           validate_account_and_amount(account_amount_pair),
+         {:ok, entry_type} <- validate_entry_type(atom_entry_type) do
       {:ok, %__MODULE__{account: account, amount: amount, entry_type: entry_type}}
     else
+      {:error, message} -> {:error, message}
       _ -> {:error, :invalid_line_item}
     end
   end
@@ -132,9 +124,44 @@ defmodule Bookkeeping.Core.LineItem do
   defp validate_line_items({:ok, line_items}, acc) do
     Enum.reduce(line_items, acc, fn
       {:ok, {:ok, line_item}}, acc -> process_line_item(acc, line_item)
-      {:ok, {:error, _line_item}}, acc -> acc
+      {:ok, {:error, message}}, acc -> Map.put(acc, :errors, [message | acc.errors])
     end)
   end
+
+  defp validate_account_and_amount(account_amount_pair) when is_map(account_amount_pair) do
+    account = Map.get(account_amount_pair, :account)
+    amount = Map.get(account_amount_pair, :amount)
+
+    with {:ok, account} <- validate_account(account),
+         {:ok, amount} <- validate_amount(amount) do
+      {:ok, %{account: account, amount: amount}}
+    else
+      {:error, message} -> {:error, message}
+      _ -> {:error, :invalid_line_item}
+    end
+  end
+
+  defp validate_account_and_amount(_), do: {:error, :invalid_account_and_amount_map}
+
+  defp validate_account(account)
+       when is_struct(account, Account) and not account.active,
+       do: {:error, :inactive_account}
+
+  defp validate_account(account)
+       when is_struct(account, Account) and account.active,
+       do: {:ok, account}
+
+  defp validate_account(_), do: {:error, :invalid_account}
+
+  defp validate_amount(amount) when is_struct(amount, Decimal) do
+    if Decimal.gt?(amount, Decimal.new(0)),
+      do: {:ok, amount},
+      else: {:error, :invalid_amount}
+  end
+
+  defp validate_amount(_), do: {:error, :invalid_amount}
+
+  defp validate_entry_type(atom_entry_type), do: EntryType.create(atom_entry_type)
 
   defp process_line_item(acc, line_item) do
     entry_type = line_item.entry_type
@@ -153,7 +180,8 @@ defmodule Bookkeeping.Core.LineItem do
       debit_balance: updated_debit_balance,
       credit_balance: updated_credit_balance,
       balanced: Decimal.equal?(updated_debit_balance, updated_credit_balance),
-      created_line_items: [line_item | acc.created_line_items]
+      created_line_items: [line_item | acc.created_line_items],
+      errors: acc.errors
     }
   end
 end
