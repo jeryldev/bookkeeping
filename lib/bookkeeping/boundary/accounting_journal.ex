@@ -22,6 +22,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
       ...>      transaction_date: ~U[2021-10-10 10:10:10.000000Z],
       ...>      reference_number: "reference number",
       ...>      description: "description",
+      ...>      journal_entry_details: %{},
       ...>      line_items: [
       ...>        %LineItem{
       ...>          account: %Account{
@@ -99,6 +100,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
           DateTime.t(),
           String.t(),
           String.t(),
+          map(),
           JournalEntry.t_accounts(),
           map()
         ) :: {:ok, JournalEntry.t()} | {:error, :invalid_journal_entry}
@@ -107,13 +109,14 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
         transaction_date,
         reference_number,
         description,
+        journal_entry_details,
         t_accounts,
         audit_details
       ) do
     GenServer.call(
       server,
-      {:create_journal_entry, transaction_date, reference_number, description, t_accounts,
-       audit_details}
+      {:create_journal_entry, transaction_date, reference_number, description,
+       journal_entry_details, t_accounts, audit_details}
     )
   end
 
@@ -564,8 +567,8 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
 
   @impl true
   def handle_call(
-        {:create_journal_entry, transaction_date, reference_number, description, t_accounts,
-         audit_details},
+        {:create_journal_entry, transaction_date, reference_number, description,
+         journal_entry_details, t_accounts, audit_details},
         _from,
         journal_entries
       ) do
@@ -575,6 +578,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
              transaction_date,
              reference_number,
              description,
+             journal_entry_details,
              t_accounts,
              audit_details
            ) do
