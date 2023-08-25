@@ -24,6 +24,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
                DateTime.utc_now(),
                "reference number",
                "description",
+               %{},
                %{
                  left: [%{account: expense_account, amount: Decimal.new(100)}],
                  right: [%{account: asset_account, amount: Decimal.new(100)}]
@@ -39,6 +40,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
                "reference number",
                "description",
                %{},
+               %{},
                %{}
              )
 
@@ -47,6 +49,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
                DateTime.utc_now(),
                "reference number",
                "description",
+               %{},
                %{},
                %{}
              )
@@ -62,6 +65,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
                DateTime.utc_now(),
                "reference number 2",
                "description",
+               %{},
                %{
                  left: [%{account: expense_account, amount: Decimal.new(100)}],
                  right: [%{account: asset_account, amount: Decimal.new(100)}]
@@ -74,6 +78,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
     assert {:ok, updated_journal_entry} =
              JournalEntry.update(journal_entry, %{
                description: "second updated description",
+               journal_entry_details: %{approved_by: "example@example.com"},
                posted: false,
                t_accounts: %{
                  left: [%{account: expense_account, amount: Decimal.new(200)}],

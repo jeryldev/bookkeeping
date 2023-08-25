@@ -9,6 +9,7 @@ defmodule Bookkeeping.Core.JournalEntry do
           transaction_date: DateTime.t(),
           reference_number: String.t(),
           description: String.t(),
+          journal_entry_details: map(),
           line_items: list(LineItem.t()),
           audit_logs: list(AuditLog.t()),
           posted: boolean()
@@ -31,6 +32,7 @@ defmodule Bookkeeping.Core.JournalEntry do
             transaction_date: DateTime.utc_now(),
             reference_number: "",
             description: "",
+            journal_entry_details: %{},
             line_items: [],
             audit_logs: [],
             posted: false
@@ -42,6 +44,7 @@ defmodule Bookkeeping.Core.JournalEntry do
     - transaction_date: The date of the transaction.
     - reference_number: The unique reference number of the journal entry.
     - description: The description of the journal entry.
+    - journal_entry_details: The details of the journal entry.
     - t_accounts: The map of line items. The map must have the following keys:
       - left: The list of maps with account and amount field and represents the entry type of debit.
       - right: The list of maps with account and amount field and represents the entry type of credit.
@@ -51,7 +54,7 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   ## Examples
 
-      iex> JournalEntry.create(DateTime.utc_now(), "reference number", "description", %{
+      iex> JournalEntry.create(DateTime.utc_now(), "reference number", "description", %{}, %{
                  left: [%{account: expense_account, amount: Decimal.new(100)}],
                  right: [%{account: asset_account, amount: Decimal.new(100)}]
                }, %{})
@@ -61,6 +64,7 @@ defmodule Bookkeeping.Core.JournalEntry do
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
         reference_number: "reference number",
         description: "description",
+        journal_entry_details: %{},
         line_items: [
           %LineItem{
             account: expense_account,
@@ -91,15 +95,30 @@ defmodule Bookkeeping.Core.JournalEntry do
       {:error, :invalid_journal_entry}
 
   """
-  @spec create(DateTime.t(), String.t(), String.t(), t_accounts(), map()) ::
+  @spec create(DateTime.t(), String.t(), String.t(), map(), t_accounts(), map()) ::
           {:ok, __MODULE__.t()} | {:error, :invalid_journal_entry}
-  def create(transaction_date, reference_number, description, t_accounts, audit_details)
-      when is_binary(reference_number) and is_binary(description) and is_map(t_accounts) and
+  def create(
+        transaction_date,
+        reference_number,
+        description,
+        journal_entry_details,
+        t_accounts,
+        audit_details
+      )
+      when is_binary(reference_number) and is_binary(description) and
+             is_map(journal_entry_details) and is_map(t_accounts) and
              is_map(audit_details) and not is_nil(transaction_date) do
-    new(transaction_date, reference_number, description, t_accounts, audit_details)
+    new(
+      transaction_date,
+      reference_number,
+      description,
+      journal_entry_details,
+      t_accounts,
+      audit_details
+    )
   end
 
-  def create(_, _, _, _, _), do: {:error, :invalid_journal_entry}
+  def create(_, _, _, _, _, _), do: {:error, :invalid_journal_entry}
 
   @doc """
   Updates a journal entry struct. Update can only be done if the journal entry is not posted.
@@ -202,6 +221,10 @@ defmodule Bookkeeping.Core.JournalEntry do
     transaction_date = Map.get(attrs, :transaction_date, journal_entry.transaction_date)
     reference_number = Map.get(attrs, :reference_number, journal_entry.reference_number)
     description = Map.get(attrs, :description, journal_entry.description)
+
+    journal_entry_details =
+      Map.get(attrs, :journal_entry_details, journal_entry.journal_entry_details)
+
     posted = Map.get(attrs, :posted, journal_entry.posted)
     t_accounts = Map.get(attrs, :t_accounts, %{left: [], right: []})
     audit_details = Map.get(attrs, :audit_details, %{})
@@ -219,6 +242,7 @@ defmodule Bookkeeping.Core.JournalEntry do
           transaction_date,
           reference_number,
           description,
+          journal_entry_details,
           t_accounts,
           audit_log,
           posted
@@ -235,7 +259,14 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   def update(_, _), do: {:error, :invalid_journal_entry}
 
-  defp new(transaction_date, reference_number, description, t_accounts, audit_details) do
+  defp new(
+         transaction_date,
+         reference_number,
+         description,
+         journal_entry_details,
+         t_accounts,
+         audit_details
+       ) do
     with {:ok, line_items} <- LineItem.bulk_create(t_accounts),
          {:ok, audit_log} <- AuditLog.create("journal_entry", "create", audit_details) do
       {:ok,
@@ -244,6 +275,7 @@ defmodule Bookkeeping.Core.JournalEntry do
          transaction_date: transaction_date,
          reference_number: reference_number,
          description: description,
+         journal_entry_details: journal_entry_details,
          line_items: line_items,
          audit_logs: [audit_log]
        }}
@@ -257,6 +289,7 @@ defmodule Bookkeeping.Core.JournalEntry do
          transaction_date,
          reference_number,
          description,
+         journal_entry_details,
          t_accounts,
          audit_log,
          posted
@@ -275,6 +308,7 @@ defmodule Bookkeeping.Core.JournalEntry do
       transaction_date: transaction_date,
       reference_number: reference_number,
       description: description,
+      journal_entry_details: journal_entry_details,
       line_items: line_items,
       audit_logs: [audit_log | existing_audit_logs],
       posted: posted

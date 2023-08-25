@@ -17,8 +17,11 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
       right: [%{account: cash_account, amount: Decimal.new(100)}]
     }
 
+    journal_entry_details = %{approved_by: "John Doe", approved_at: DateTime.utc_now()}
+
     {:ok,
      details: details,
+     journal_entry_details: journal_entry_details,
      cash_account: cash_account,
      expense_account: expense_account,
      t_accounts: t_accounts}
@@ -31,6 +34,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
   test "create journal entry", %{
     details: details,
+    journal_entry_details: journal_entry_details,
     t_accounts: t_accounts
   } do
     assert {:ok, journal_entry_1} =
@@ -38,6 +42,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_1",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -51,6 +56,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
   test "create multiple journal entries on the same day", %{
     details: details,
+    journal_entry_details: journal_entry_details,
     t_accounts: t_accounts
   } do
     assert {:ok, journal_entry_2} =
@@ -58,6 +64,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_2",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -67,6 +74,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_3",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -78,6 +86,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                other_transaction_date,
                "ref_num_4",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -93,6 +102,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
   test "do not create journal entries with duplicate reference numbers", %{
     details: details,
+    journal_entry_details: journal_entry_details,
     t_accounts: t_accounts
   } do
     assert {:ok, _journal_entry_1} =
@@ -100,6 +110,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_5",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -109,6 +120,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_5",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -116,6 +128,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
   test "do not create journal entry with invalid inputs", %{
     details: details,
+    journal_entry_details: journal_entry_details,
     cash_account: cash_account,
     expense_account: expense_account,
     t_accounts: t_accounts
@@ -132,6 +145,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_6",
                "journal entry description",
+               journal_entry_details,
                empty_t_accounts,
                details
              )
@@ -141,6 +155,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_7",
                "journal entry description",
+               journal_entry_details,
                invalid_t_accounts,
                details
              )
@@ -150,17 +165,23 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "invalid_je_1",
                nil,
+               journal_entry_details,
                t_accounts,
                details
              )
   end
 
-  test "search all journal entries", %{details: details, t_accounts: t_accounts} do
+  test "search all journal entries", %{
+    details: details,
+    journal_entry_details: journal_entry_details,
+    t_accounts: t_accounts
+  } do
     assert {:ok, journal_entry_1} =
              AccountingJournal.create_journal_entry(
                DateTime.utc_now(),
                "ref_num_8",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -170,6 +191,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_9",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -183,6 +205,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
   test "find journal entries by transaction date", %{
     details: details,
+    journal_entry_details: journal_entry_details,
     t_accounts: t_accounts
   } do
     assert {:ok, journal_entry_1} =
@@ -190,6 +213,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_10",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -211,12 +235,17 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournal.find_journal_entries_by_transaction_date(nil)
   end
 
-  test "find journal entries by reference number", %{details: details, t_accounts: t_accounts} do
+  test "find journal entries by reference number", %{
+    details: details,
+    journal_entry_details: journal_entry_details,
+    t_accounts: t_accounts
+  } do
     assert {:ok, journal_entry_1} =
              AccountingJournal.create_journal_entry(
                DateTime.utc_now(),
                "ref_num_11",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -234,12 +263,17 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournal.find_journal_entry_by_reference_number(nil)
   end
 
-  test "find journal entries by id", %{details: details, t_accounts: t_accounts} do
+  test "find journal entries by id", %{
+    details: details,
+    journal_entry_details: journal_entry_details,
+    t_accounts: t_accounts
+  } do
     assert {:ok, journal_entry_1} =
              AccountingJournal.create_journal_entry(
                DateTime.utc_now(),
                "ref_num_12",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -258,6 +292,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
   test "find journal entries by transaction date range", %{
     details: details,
+    journal_entry_details: journal_entry_details,
     t_accounts: t_accounts
   } do
     assert {:ok, journal_entry_1} =
@@ -265,6 +300,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_13",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -274,6 +310,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_14",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
@@ -358,6 +395,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
   test "update accounting journal entry", %{
     details: details,
+    journal_entry_details: journal_entry_details,
     cash_account: cash_account,
     expense_account: expense_account,
     t_accounts: t_accounts
@@ -367,6 +405,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                DateTime.utc_now(),
                "ref_num_15",
                "journal entry description",
+               journal_entry_details,
                t_accounts,
                details
              )
