@@ -357,6 +357,86 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     GenServer.call(server, {:find_journal_entries_by_id, id})
   end
 
+  @doc """
+  Returns a list of journal entries by transaction date range.
+
+  Returns `{:ok, list(JournalEntry.t())}` if the journal entries are returned successfully. Otherwise, returns `{:error, :invalid_transaction_date}`.
+
+  ## Examples
+
+      iex> AccountingJournal.find_journal_entries_by_transaction_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
+      {:ok, [%JournalEntry{
+        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        reference_number: "ref_num_1",
+        description: "description",
+        line_items: [
+          %LineItem{
+            account: expense_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :debit, name: "Debit"}
+          },
+          %LineItem{
+            account: cash_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :credit, name: "Credit"}
+          }
+        ],
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "journal_entry",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          },
+          ...
+        ],
+        posted: false
+      }]}
+
+      iex> AccountingJournal.find_journal_entries_by_transaction_date_range(%{year: 2021, month: 10, day: 10}, %{year: 2021, month: 10, day: 10})
+      {:ok, [%JournalEntry{
+        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        reference_number: "ref_num_1",
+        description: "description",
+        line_items: [
+          %LineItem{
+            account: expense_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :debit, name: "Debit"}
+          },
+          %LineItem{
+            account: cash_account,
+            amount: Decimal.new(100),
+            entry_type: %EntryType{type: :credit, name: "Credit"}
+          }
+        ],
+        audit_logs: [
+          %AuditLog{
+            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+            record_type: "journal_entry",
+            action_type: "create",
+            details: %{},
+            created_at: ~U[2021-10-10 10:10:10.000000Z],
+            updated_at: ~U[2021-10-10 10:10:10.000000Z],
+            deleted_at: nil
+          },
+          ...
+        ],
+        posted: false
+      }]}
+
+      iex> AccountingJournal.find_journal_entries_by_transaction_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
+      {:error, :invalid_transaction_date}
+  """
+  @spec find_journal_entries_by_transaction_date_range(
+          DateTime.t() | transaction_date_details(),
+          DateTime.t() | transaction_date_details()
+        ) :: {:ok, list(JournalEntry.t())} | {:error, :invalid_transaction_date}
   def find_journal_entries_by_transaction_date_range(
         server \\ __MODULE__,
         from_datetime,
