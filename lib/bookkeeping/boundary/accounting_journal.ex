@@ -357,6 +357,17 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     GenServer.call(server, {:find_journal_entries_by_id, id})
   end
 
+  def find_journal_entries_by_transaction_date_range(
+        server \\ __MODULE__,
+        from_datetime,
+        to_datetime
+      ) do
+    GenServer.call(
+      server,
+      {:find_journal_entries_by_transaction_date_range, from_datetime, to_datetime}
+    )
+  end
+
   @doc """
   Updates a journal entry.
 
@@ -542,17 +553,29 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     end
   end
 
-  # @impl true
-  # def handle_call({:find_journal_entries_by_transaction_date_range, from_datetime, to_datetine},
-  # _from,
-  # journal_entries) do
-  # end
-
   @impl true
   def handle_call({:find_journal_entries_by_id, id}, _from, journal_entries) do
     case find_by_id(journal_entries, id) do
       {:ok, journal_entry} -> {:reply, {:ok, journal_entry}, journal_entries}
       {:error, message} -> {:reply, {:error, message}, journal_entries}
+    end
+  end
+
+  @impl true
+  def handle_call(
+        {:find_journal_entries_by_transaction_date_range, from_datetime, to_datetime},
+        _from,
+        journal_entries
+      ) do
+    with {:ok, from_transaction_date_details} <- get_transaction_date_details(from_datetime),
+         {:ok, to_transaction_date_details} <- get_transaction_date_details(to_datetime) do
+      je_list =
+        find_by_range(journal_entries, from_transaction_date_details, to_transaction_date_details)
+
+      {:reply, {:ok, je_list}, journal_entries}
+    else
+      {:error, message} ->
+        {:reply, {:error, message}, journal_entries}
     end
   end
 
@@ -582,6 +605,22 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
     journal_entries
     |> Task.async_stream(fn {k, je} ->
       if Map.take(k, tdd_keys) == transaction_date_details, do: je, else: nil
+    end)
+    |> Enum.reduce([], fn {:ok, je_list}, acc ->
+      if is_list(je_list), do: je_list ++ acc, else: acc
+    end)
+  end
+
+  defp find_by_range(journal_entries, from_transaction_date_details, to_transaction_date_details) do
+    from_tdd_keys = Map.keys(from_transaction_date_details)
+    to_tdd_keys = Map.keys(to_transaction_date_details)
+
+    journal_entries
+    |> Task.async_stream(fn {k, je_list} ->
+      if Map.take(k, from_tdd_keys) >= from_transaction_date_details and
+           Map.take(k, to_tdd_keys) <= to_transaction_date_details,
+         do: je_list,
+         else: nil
     end)
     |> Enum.reduce([], fn {:ok, je_list}, acc ->
       if is_list(je_list), do: je_list ++ acc, else: acc

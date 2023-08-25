@@ -256,6 +256,106 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournal.find_journal_entries_by_id(nil)
   end
 
+  test "find journal entries by transaction date range", %{
+    details: details,
+    t_accounts: t_accounts
+  } do
+    assert {:ok, journal_entry_1} =
+             AccountingJournal.create_journal_entry(
+               DateTime.utc_now(),
+               "ref_num_13",
+               "journal entry description",
+               t_accounts,
+               details
+             )
+
+    assert {:ok, journal_entry_2} =
+             AccountingJournal.create_journal_entry(
+               DateTime.utc_now(),
+               "ref_num_14",
+               "journal entry description",
+               t_accounts,
+               details
+             )
+
+    current_from_date_details =
+      journal_entry_1.transaction_date
+      |> DateTime.add(-10, :day)
+      |> Map.take([:year, :month])
+
+    current_to_date_details =
+      journal_entry_2.transaction_date
+      |> DateTime.add(10, :day)
+      |> Map.take([:year, :month])
+
+    assert {:ok, journal_entries} =
+             AccountingJournal.find_journal_entries_by_transaction_date_range(
+               current_from_date_details,
+               current_to_date_details
+             )
+
+    assert journal_entries |> length() >= 2
+    assert Enum.member?(journal_entries, journal_entry_1)
+    assert Enum.member?(journal_entries, journal_entry_2)
+
+    assert {:error, :invalid_transaction_date} =
+             AccountingJournal.find_journal_entries_by_transaction_date_range(
+               nil,
+               journal_entry_1.transaction_date
+             )
+
+    assert {:error, :invalid_transaction_date} =
+             AccountingJournal.find_journal_entries_by_transaction_date_range(
+               journal_entry_1.transaction_date,
+               nil
+             )
+
+    from_date_details = Map.take(journal_entry_1.transaction_date, [:year, :month])
+    to_date_details = Map.take(journal_entry_2.transaction_date, [:year, :month])
+
+    assert {:ok, journal_entries} =
+             AccountingJournal.find_journal_entries_by_transaction_date_range(
+               from_date_details,
+               to_date_details
+             )
+
+    assert journal_entries |> length() >= 2
+    assert Enum.member?(journal_entries, journal_entry_1)
+    assert Enum.member?(journal_entries, journal_entry_2)
+
+    past_from_date_details =
+      journal_entry_1.transaction_date
+      |> DateTime.add(-100, :day)
+      |> Map.take([:year, :month])
+
+    past_to_date_details =
+      journal_entry_2.transaction_date
+      |> DateTime.add(-50, :day)
+      |> Map.take([:year, :month])
+
+    assert {:ok, []} =
+             AccountingJournal.find_journal_entries_by_transaction_date_range(
+               past_from_date_details,
+               past_to_date_details
+             )
+
+    future_from_date_details =
+      journal_entry_1.transaction_date
+      |> DateTime.add(100, :day)
+      |> Map.take([:year, :month])
+
+    future_to_date_details =
+      journal_entry_2.transaction_date
+      |> DateTime.add(150, :day)
+      |> Map.take([:year, :month])
+
+    assert {:ok, []} =
+             AccountingJournal.find_journal_entries_by_transaction_date_range(
+               future_from_date_details,
+               future_to_date_details
+             )
+  end
+
   test "update accounting journal entry", %{
     details: details,
     cash_account: cash_account,
@@ -265,7 +365,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry} =
              AccountingJournal.create_journal_entry(
                DateTime.utc_now(),
-               "ref_num_13",
+               "ref_num_15",
                "journal entry description",
                t_accounts,
                details
