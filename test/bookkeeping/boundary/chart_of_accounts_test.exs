@@ -14,17 +14,17 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
   end
 
   test "create account", %{description: description, details: details} do
+    assert {:ok, _account} =
+             ChartOfAccounts.create_account("1000101", "Cash Test", "asset")
+
     assert {:ok, account} =
              ChartOfAccounts.create_account("1000", "Cash1", "asset", description, details)
 
     assert account.code == "1000"
     assert account.name == "Cash1"
 
-    assert {:ok, %{message: "Account already exists", account: existing_account}} =
+    assert {:error, :account_already_exists} =
              ChartOfAccounts.create_account("1000", "Cash1", "asset", description, details)
-
-    assert existing_account.code == "1000"
-    assert existing_account.name == "Cash1"
 
     assert {:error, :invalid_account} =
              ChartOfAccounts.create_account(
@@ -38,6 +38,33 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
     assert {:error, :invalid_account} =
              ChartOfAccounts.create_account("1003", "", "asset", description, details)
+  end
+
+  test "load default accounts" do
+    assert {:ok, %{ok: _oks, error: _errors}} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/valid_chart_of_accounts.csv"
+             )
+
+    assert {:error, :invalid_file} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/invalid_file.csv"
+             )
+
+    assert {:error, %{ok: _oks, error: _errors}} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/invalid_chart_of_accounts.csv"
+             )
+
+    assert {:error, :invalid_file} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/empty_chart_of_accounts.csv"
+             )
+
+    assert {:error, %{ok: _oks, error: _errors}} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/decode_error_chart_of_accounts.csv"
+             )
   end
 
   test "update account" do
