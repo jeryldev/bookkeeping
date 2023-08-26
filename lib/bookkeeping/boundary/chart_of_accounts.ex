@@ -8,6 +8,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   use GenServer
 
   alias Bookkeeping.Core.Account
+  alias NimbleCSV.RFC4180, as: CSV
 
   @typedoc """
   The state of the Chart Of Accounts GenServer.
@@ -117,26 +118,73 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
         ]
       }}
   """
+  @spec create_account(String.t(), String.t(), String.t()) ::
+          {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
+  def create_account(server \\ __MODULE__, code, name, account_type),
+    do: create_account_record(server, code, name, account_type)
+
   @spec create_account(String.t(), String.t(), String.t(), String.t(), map()) ::
-          {:ok, Account.t()} | {:error, :invalid_account}
-  def create_account(
-        server \\ __MODULE__,
-        code,
-        name,
-        account_type,
-        description,
-        audit_details
-      ) do
-    with true <- is_binary(code) and is_binary(name) and account_type in @account_types,
-         {:error, :not_found} <- GenServer.call(server, {:find_account_by_code, code}),
-         {:error, :not_found} <- GenServer.call(server, {:find_account_by_name, name}) do
-      GenServer.call(
-        server,
-        {:create_account, code, name, account_type, description, audit_details}
-      )
+          {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
+  def create_account(server \\ __MODULE__, code, name, account_type, description, audit_details),
+    do: create_account_record(server, code, name, account_type, description, audit_details)
+
+  @doc """
+  Loads default accounts from a CSV file.
+
+  Arguments:
+    - path: The path of the CSV file. The path to the default accounts is "../assets/chart_of_accounts.csv".
+
+  Returns `{:ok, %{ok: list(map()), error: list(map())}}` if the accounts are loaded successfully. If all items are encountered an error, return `{:error, %{ok: list(map()), error: list(map())}}`.
+
+  ## Examples
+
+      iex> Bookkeeping.Boundary.ChartOfAccounts.load_default_accounts(server, "../assets/chart_of_accounts.csv")
+      {:ok,
+      %{
+        ok: [
+          %{account_code: "1000", account_name: "Cash"},
+          %{account_code: "1010", account_name: "Petty Cash"},
+          %{account_code: "1020", account_name: "Cash on Hand"},
+          %{account_code: "1030", account_name: "Cash in Bank"}
+        ],
+        error: []
+      }}
+
+      iex> Bookkeeping.Boundary.ChartOfAccounts.load_default_accounts(server, "../priv/data/invalid_chart_of_accounts.csv")
+      {:error,
+      %{
+        ok: [],
+        error: [
+          %{
+            account_code: "1000",
+            account_name: "Cash",
+            error: :account_already_exists
+          },
+          %{
+            account_code: "1001",
+            account_name: "Cash",
+            error: :account_already_exists
+          },
+          %{
+            account_code: "1002",
+            account_name: "Cash",
+            error: :invalid_account
+          },
+          %{
+            account_code: "1003",
+            account_name: "Cash",
+            error: :invalid_account
+          }
+        ]
+      }}
+  """
+  def load_default_accounts(server \\ __MODULE__, path) do
+    with file_path <- Path.expand(path, __DIR__),
+         true <- File.exists?(file_path),
+         {:ok, csv} <- read_csv(file_path) do
+      bulk_create_account_records(server, csv)
     else
-      {:ok, account} -> {:ok, %{message: "Account already exists", account: account}}
-      _ -> {:error, :invalid_account}
+      _ -> {:error, :invalid_file}
     end
   end
 
@@ -358,5 +406,95 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
     field_map = %{"code" => :code, "name" => :name}
     sorted_accounts = Enum.sort_by(Map.values(accounts), &Map.get(&1, field_map[field]))
     {:reply, {:ok, sorted_accounts}, accounts}
+  end
+
+  defp create_account_record(
+         server,
+         code,
+         name,
+         account_type,
+         description \\ "",
+         audit_details \\ %{}
+       ) do
+    with true <- is_binary(code) and is_binary(name) and account_type in @account_types,
+         {:error, :not_found} <- GenServer.call(server, {:find_account_by_code, code}),
+         {:error, :not_found} <- GenServer.call(server, {:find_account_by_name, name}) do
+      GenServer.call(
+        server,
+        {:create_account, code, name, account_type, description, audit_details}
+      )
+    else
+      {:ok, _account} -> {:error, :account_already_exists}
+      _ -> {:error, :invalid_account}
+    end
+  end
+
+  defp bulk_create_account_records(server, csv) when is_list(csv) and csv != [] do
+    results =
+      Enum.reduce(
+        csv,
+        %{ok: [], error: []},
+        fn csv_item, acc ->
+          account_code = Map.get(csv_item, "Account Code")
+          account_name = Map.get(csv_item, "Account Name")
+          account_type = Map.get(csv_item, "Account Type")
+          description = Map.get(csv_item, "Description", "")
+          audit_details = Map.get(csv_item, "Audit Details", "{}")
+
+          with {:ok, audit_details} <- Jason.decode(audit_details),
+               {:ok, _} <-
+                 create_account_record(
+                   server,
+                   account_code,
+                   account_name,
+                   account_type,
+                   description,
+                   audit_details
+                 ) do
+            oks = acc.ok ++ [%{account_code: account_code, account_name: account_name}]
+            Map.put(acc, :ok, oks)
+          else
+            {:error, %Jason.DecodeError{} = _error} ->
+              errors =
+                acc.error ++
+                  [
+                    %{
+                      account_code: account_code,
+                      account_name: account_name,
+                      error: :invalid_csv_item
+                    }
+                  ]
+
+              Map.put(acc, :error, errors)
+
+            {:error, error} ->
+              errors =
+                acc.error ++
+                  [%{account_code: account_code, account_name: account_name, error: error}]
+
+              Map.put(acc, :error, errors)
+          end
+        end
+      )
+
+    if results.ok == [],
+      do: {:error, results},
+      else: {:ok, results}
+  end
+
+  defp bulk_create_account_records(_server, _csv), do: {:error, :invalid_file}
+
+  defp read_csv(path) do
+    csv_inputs =
+      path
+      |> File.stream!()
+      |> CSV.parse_stream(skip_headers: false)
+      |> Stream.transform(nil, fn
+        headers, nil -> {[], headers}
+        row, headers -> {[Enum.zip(headers, row) |> Map.new()], headers}
+      end)
+      |> Enum.to_list()
+
+    {:ok, csv_inputs}
   end
 end
