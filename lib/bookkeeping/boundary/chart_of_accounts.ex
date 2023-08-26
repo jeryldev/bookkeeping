@@ -150,7 +150,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
         error: []
       }}
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.load_default_accounts(server, "../priv/data/invalid_chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.load_default_accounts(server, "../assets/invalid_chart_of_accounts.csv")
       {:error,
       %{
         ok: [],
@@ -184,7 +184,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
          {:ok, csv} <- read_csv(file_path) do
       bulk_create_account_records(server, csv)
     else
-      _ -> {:error, :invalid_file}
+      _error -> {:error, :invalid_file}
     end
   end
 
@@ -324,6 +324,20 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
       else: {:error, :invalid_field}
   end
 
+  @doc """
+  Resets the accounts.
+
+  Returns `{:ok, []}`.
+
+  ## Examples
+
+      iex> Bookkeeping.Boundary.ChartOfAccounts.reset_accounts(server)
+      {:ok, []}
+  """
+  def reset_accounts(server \\ __MODULE__) do
+    GenServer.call(server, :reset_accounts)
+  end
+
   @impl true
   @spec init(chart_of_account_state()) :: {:ok, chart_of_account_state()}
   def init(chart_of_account), do: {:ok, chart_of_account}
@@ -406,6 +420,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
     field_map = %{"code" => :code, "name" => :name}
     sorted_accounts = Enum.sort_by(Map.values(accounts), &Map.get(&1, field_map[field]))
     {:reply, {:ok, sorted_accounts}, accounts}
+  end
+
+  @impl true
+  def handle_call(:reset_accounts, _from, _accounts) do
+    {:reply, {:ok, []}, %{}}
   end
 
   defp create_account_record(

@@ -41,6 +41,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
   end
 
   test "load default accounts" do
+    assert {:ok, []} = ChartOfAccounts.reset_accounts()
+
     assert {:ok, %{ok: _oks, error: _errors}} =
              ChartOfAccounts.load_default_accounts(
                "../../../test/bookkeeping/assets/valid_chart_of_accounts.csv"
@@ -167,6 +169,29 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     assert account_3_index < account_2_index
 
     assert {:error, :invalid_field} = ChartOfAccounts.all_sorted_accounts("invalid")
+  end
+
+  test "reset accounts" do
+    assert {:ok, account_1} =
+             ChartOfAccounts.create_account("10010000101", "Cash5", "asset", "", %{})
+
+    assert {:ok, account_2} =
+             ChartOfAccounts.create_account("10020000101", "Receivable5", "asset", "", %{})
+
+    assert {:ok, account_3} =
+             ChartOfAccounts.create_account("10030000101", "Inventory5", "asset", "", %{})
+
+    assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+    assert Enum.member?(accounts, account_1)
+    assert Enum.member?(accounts, account_2)
+    assert Enum.member?(accounts, account_3)
+
+    assert {:ok, []} = ChartOfAccounts.reset_accounts()
+
+    assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+    refute Enum.member?(accounts, account_1)
+    refute Enum.member?(accounts, account_2)
+    refute Enum.member?(accounts, account_3)
   end
 
   defp find_account_index(accounts, code), do: Enum.find_index(accounts, &(&1.code == code))
