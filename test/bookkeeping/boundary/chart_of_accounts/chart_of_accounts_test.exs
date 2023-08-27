@@ -1,6 +1,6 @@
 defmodule Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Boundary.ChartOfAccounts.{ChartOfAccountsServer, ChartOfAccountsBackup}
+  alias Bookkeeping.Boundary.ChartOfAccounts.{ChartOfAccountsBackup, ChartOfAccountsServer}
 
   setup do
     description = "description"
