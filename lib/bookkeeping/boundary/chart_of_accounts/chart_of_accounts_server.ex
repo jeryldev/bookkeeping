@@ -1,12 +1,13 @@
-defmodule Bookkeeping.Boundary.ChartOfAccounts do
+defmodule Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsServer do
   @moduledoc """
-  Bookkeeping.Boundary.ChartOfAccounts is a GenServer that manages the chart of accounts.
+  Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsServer is a GenServer that manages the chart of accounts.
   Chart of Accounts is a list of all accounts used by a business.
   The Chart Of Accounts GenServer is responsible for creating, updating, and searching accounts.
   The state of the Chart Of Accounts GenServer is a map in which the keys are the account codes and the values are the account structs.
   """
   use GenServer
 
+  alias Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsBackup
   alias Bookkeeping.Core.Account
   alias NimbleCSV.RFC4180, as: CSV
 
@@ -73,9 +74,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
       {:ok, #PID<0.123.0>}
   """
   @spec start_link(Keyword.t()) :: {:ok, pid}
-  def start_link(opts \\ []) do
-    name = Keyword.get(opts, :name, __MODULE__)
-    GenServer.start_link(__MODULE__, %{}, name: name)
+  def start_link(options \\ []) do
+    GenServer.start_link(__MODULE__, %{}, options)
   end
 
   @doc """
@@ -340,7 +340,9 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
 
   @impl true
   @spec init(chart_of_account_state()) :: {:ok, chart_of_account_state()}
-  def init(chart_of_account), do: {:ok, chart_of_account}
+  def init(_chart_of_accounts) do
+    ChartOfAccountsBackup.get()
+  end
 
   @impl true
   def handle_call(
@@ -423,8 +425,14 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts do
   end
 
   @impl true
-  def handle_call(:reset_accounts, _from, _accounts) do
+  def handle_call(:reset_accounts, _from, _chart_of_accounts) do
+    ChartOfAccountsBackup.update(%{})
     {:reply, {:ok, []}, %{}}
+  end
+
+  @impl true
+  def terminate(_reason, chart_of_accounts) do
+    ChartOfAccountsBackup.update(chart_of_accounts)
   end
 
   defp create_account_record(
