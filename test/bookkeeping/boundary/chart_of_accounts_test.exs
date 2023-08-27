@@ -14,17 +14,17 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
   end
 
   test "create account", %{description: description, details: details} do
+    assert {:ok, _account} =
+             ChartOfAccounts.create_account("1000101", "Cash Test", "asset")
+
     assert {:ok, account} =
              ChartOfAccounts.create_account("1000", "Cash1", "asset", description, details)
 
     assert account.code == "1000"
     assert account.name == "Cash1"
 
-    assert {:ok, %{message: "Account already exists", account: existing_account}} =
+    assert {:error, :account_already_exists} =
              ChartOfAccounts.create_account("1000", "Cash1", "asset", description, details)
-
-    assert existing_account.code == "1000"
-    assert existing_account.name == "Cash1"
 
     assert {:error, :invalid_account} =
              ChartOfAccounts.create_account(
@@ -38,6 +38,35 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
     assert {:error, :invalid_account} =
              ChartOfAccounts.create_account("1003", "", "asset", description, details)
+  end
+
+  test "load default accounts" do
+    assert {:ok, []} = ChartOfAccounts.reset_accounts()
+
+    assert {:ok, %{ok: _oks, error: _errors}} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/valid_chart_of_accounts.csv"
+             )
+
+    assert {:error, :invalid_file} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/invalid_file.csv"
+             )
+
+    assert {:error, %{ok: _oks, error: _errors}} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/invalid_chart_of_accounts.csv"
+             )
+
+    assert {:error, :invalid_file} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/empty_chart_of_accounts.csv"
+             )
+
+    assert {:error, %{ok: _oks, error: _errors}} =
+             ChartOfAccounts.load_default_accounts(
+               "../../../test/bookkeeping/assets/decode_error_chart_of_accounts.csv"
+             )
   end
 
   test "update account" do
@@ -140,6 +169,29 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     assert account_3_index < account_2_index
 
     assert {:error, :invalid_field} = ChartOfAccounts.all_sorted_accounts("invalid")
+  end
+
+  test "reset accounts" do
+    assert {:ok, account_1} =
+             ChartOfAccounts.create_account("10010000101", "Cash5", "asset", "", %{})
+
+    assert {:ok, account_2} =
+             ChartOfAccounts.create_account("10020000101", "Receivable5", "asset", "", %{})
+
+    assert {:ok, account_3} =
+             ChartOfAccounts.create_account("10030000101", "Inventory5", "asset", "", %{})
+
+    assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+    assert Enum.member?(accounts, account_1)
+    assert Enum.member?(accounts, account_2)
+    assert Enum.member?(accounts, account_3)
+
+    assert {:ok, []} = ChartOfAccounts.reset_accounts()
+
+    assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+    refute Enum.member?(accounts, account_1)
+    refute Enum.member?(accounts, account_2)
+    refute Enum.member?(accounts, account_3)
   end
 
   defp find_account_index(accounts, code), do: Enum.find_index(accounts, &(&1.code == code))
