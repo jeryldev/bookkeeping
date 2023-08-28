@@ -138,7 +138,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.load_default_accounts(server, "../assets/chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.load_accounts(server, "../assets/chart_of_accounts.csv")
       {:ok,
       %{
         ok: [
@@ -150,7 +150,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         error: []
       }}
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.load_default_accounts(server, "../assets/invalid_chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.load_accounts(server, "../assets/invalid_chart_of_accounts.csv")
       {:error,
       %{
         ok: [],
@@ -178,7 +178,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         ]
       }}
   """
-  def load_default_accounts(server \\ __MODULE__, path) do
+  def load_accounts(server \\ __MODULE__, path) do
     with file_path <- Path.expand(path, __DIR__),
          true <- File.exists?(file_path),
          {:ok, csv} <- read_csv(file_path) do
