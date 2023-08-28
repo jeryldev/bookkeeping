@@ -132,13 +132,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   Loads default accounts from a CSV file.
 
   Arguments:
-    - path: The path of the CSV file. The path to the default accounts is "../assets/chart_of_accounts.csv".
+    - path: The path of the CSV file. The path to the default accounts is "../assets/sample_chart_of_accounts.csv".
 
   Returns `{:ok, %{ok: list(map()), error: list(map())}}` if the accounts are loaded successfully. If all items are encountered an error, return `{:error, %{ok: list(map()), error: list(map())}}`.
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.load_accounts(server, "../assets/chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.load_accounts(server, "../assets/sample_chart_of_accounts.csv")
       {:ok,
       %{
         ok: [
@@ -182,7 +182,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
     with file_path <- Path.expand(path, __DIR__),
          true <- File.exists?(file_path),
          {:ok, csv} <- read_csv(file_path) do
-      bulk_create_account_records(server, csv)
+      bulk_create_accounts(server, csv)
     else
       _error -> {:error, :invalid_file}
     end
@@ -457,7 +457,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
     end
   end
 
-  defp bulk_create_account_records(server, csv) when is_list(csv) and csv != [] do
+  defp bulk_create_accounts(server, csv) when is_list(csv) and csv != [] do
     results =
       Enum.reduce(
         csv,
@@ -510,7 +510,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       else: {:ok, results}
   end
 
-  defp bulk_create_account_records(_server, _csv), do: {:error, :invalid_file}
+  defp bulk_create_accounts(_server, _csv), do: {:error, :invalid_file}
 
   defp read_csv(path) do
     csv_inputs =
