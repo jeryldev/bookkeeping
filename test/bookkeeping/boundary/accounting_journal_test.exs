@@ -483,6 +483,42 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert Enum.member?(journal_entries, third_journal_entry_update)
   end
 
+  test "reset journal entries", %{
+    details: details,
+    journal_entry_details: journal_entry_details,
+    t_accounts: t_accounts
+  } do
+    assert {:ok, journal_entry_1} =
+             AccountingJournalServer.create_journal_entry(
+               DateTime.utc_now(),
+               "ref_num_16",
+               "journal entry description",
+               journal_entry_details,
+               t_accounts,
+               details
+             )
+
+    assert {:ok, journal_entry_2} =
+             AccountingJournalServer.create_journal_entry(
+               DateTime.utc_now(),
+               "ref_num_17",
+               "journal entry description",
+               journal_entry_details,
+               t_accounts,
+               details
+             )
+
+    assert {:ok, journal_entries} = AccountingJournalServer.all_journal_entries()
+    assert Enum.member?(journal_entries, journal_entry_1)
+    assert Enum.member?(journal_entries, journal_entry_2)
+
+    assert {:ok, []} = AccountingJournalServer.reset_journal_entries()
+
+    assert {:ok, journal_entries} = AccountingJournalServer.all_journal_entries()
+    refute Enum.member?(journal_entries, journal_entry_1)
+    refute Enum.member?(journal_entries, journal_entry_2)
+  end
+
   test "test accounting journal with working backup", %{
     details: details,
     journal_entry_details: journal_entry_details,

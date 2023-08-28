@@ -561,6 +561,21 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
     GenServer.call(server, {:update_journal_entry, journal_entry, attrs})
   end
 
+  @doc """
+  Resets the journal entries.
+
+  Returns `{:ok, list(JournalEntry.t())}` if the journal entries are reset successfully.
+
+  ## Examples
+
+      iex> AccountingJournal.reset_journal_entries()
+      {:ok, []}
+  """
+  @spec reset_journal_entries() :: {:ok, list(JournalEntry.t())}
+  def reset_journal_entries(server \\ __MODULE__) do
+    GenServer.call(server, :reset_accounts)
+  end
+
   @impl true
   @spec init(journal_entries_state()) :: {:ok, journal_entries_state()}
   def init(_journal_entries) do
@@ -677,6 +692,12 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       {:error, message} ->
         {:reply, {:error, message}, journal_entries}
     end
+  end
+
+  @impl true
+  def handle_call(:reset_accounts, _from, _journal_entries) do
+    AccountingJournalBackup.update(%{})
+    {:reply, {:ok, []}, %{}}
   end
 
   @impl true

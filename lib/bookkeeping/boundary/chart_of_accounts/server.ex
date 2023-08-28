@@ -334,6 +334,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       iex> Bookkeeping.Boundary.ChartOfAccounts.reset_accounts(server)
       {:ok, []}
   """
+  @spec reset_accounts() :: {:ok, list(Account.t())}
   def reset_accounts(server \\ __MODULE__) do
     GenServer.call(server, :reset_accounts)
   end
