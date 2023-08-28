@@ -1,16 +1,16 @@
-defmodule Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsBackup do
+defmodule Bookkeeping.Boundary.ChartOfAccounts.Backup do
   @moduledoc """
-  Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsBackup is responsible for storing the chart of accounts in a backup file.
+  Bookkeeping.Boundary.ChartOfAccounts.Backup is responsible for storing the chart of accounts in a backup file.
   """
   use Agent
-  alias Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsServer
+  alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
 
   @doc """
   Starts the ChartOfAccountsBackup agent.
 
   ## Examples
 
-      iex> {:ok, pid} = Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsBackup.start_link()
+      iex> {:ok, pid} = Bookkeeping.Boundary.ChartOfAccounts.Backup.start_link()
       {:ok, #PID<0.0.0>}
   """
   @spec start_link(ChartOfAccountsServer.chart_of_account_state()) :: {:error, any} | {:ok, pid}
@@ -23,7 +23,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsBackup do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsBackup.get()
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Backup.get()
       {:ok, chart_of_accounts}
   """
   @spec get :: {:ok, ChartOfAccountsServer.chart_of_account_state()}
@@ -37,7 +37,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsBackup do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsBackup.update(%{})
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Backup.update(%{})
       {:ok, :backup_updated}
   """
   @spec update(ChartOfAccountsServer.chart_of_account_state()) :: {:ok, :backup_updated}

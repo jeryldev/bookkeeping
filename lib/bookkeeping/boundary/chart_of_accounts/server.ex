@@ -1,13 +1,13 @@
-defmodule Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsServer do
+defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   @moduledoc """
-  Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsServer is a GenServer that manages the chart of accounts.
+  Bookkeeping.Boundary.ChartOfAccounts.Server is a GenServer that manages the chart of accounts.
   Chart of Accounts is a list of all accounts used by a business.
   The Chart Of Accounts GenServer is responsible for creating, updating, and searching accounts.
   The state of the Chart Of Accounts GenServer is a map in which the keys are the account codes and the values are the account structs.
   """
   use GenServer
 
-  alias Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsBackup
+  alias Bookkeeping.Boundary.ChartOfAccounts.Backup, as: ChartOfAccountsBackup
   alias Bookkeeping.Core.Account
   alias NimbleCSV.RFC4180, as: CSV
 
