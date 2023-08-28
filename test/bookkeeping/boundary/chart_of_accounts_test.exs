@@ -46,27 +46,27 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     assert {:ok, []} = ChartOfAccountsServer.reset_accounts()
 
     assert {:ok, %{ok: _oks, error: _errors}} =
-             ChartOfAccountsServer.load_default_accounts(
+             ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/valid_chart_of_accounts.csv"
              )
 
     assert {:error, :invalid_file} =
-             ChartOfAccountsServer.load_default_accounts(
+             ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/invalid_file.csv"
              )
 
     assert {:error, %{ok: _oks, error: _errors}} =
-             ChartOfAccountsServer.load_default_accounts(
+             ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/invalid_chart_of_accounts.csv"
              )
 
     assert {:error, :invalid_file} =
-             ChartOfAccountsServer.load_default_accounts(
+             ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/empty_chart_of_accounts.csv"
              )
 
     assert {:error, %{ok: _oks, error: _errors}} =
-             ChartOfAccountsServer.load_default_accounts(
+             ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/decode_error_chart_of_accounts.csv"
              )
   end

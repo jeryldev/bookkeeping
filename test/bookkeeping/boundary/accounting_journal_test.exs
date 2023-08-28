@@ -527,7 +527,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
-               "ref_num_16",
+               "ref_num_18",
                "journal entry description",
                journal_entry_details,
                t_accounts,
@@ -537,7 +537,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
-               "ref_num_17",
+               "ref_num_19",
                "journal entry description",
                journal_entry_details,
                t_accounts,
