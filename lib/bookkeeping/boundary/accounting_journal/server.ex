@@ -1,12 +1,13 @@
-defmodule Bookkeeping.Boundary.AccountingJournal do
+defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   @moduledoc """
-  Bookkeeping.Boundary.AccountingJournal is a GenServer that represents the accounting journal.
+  Bookkeeping.Boundary.AccountingJournal.Server is a GenServer that represents the accounting journal.
   Accounting Journal is a record of all relevant business transactions in terms of money or a record.
   The Accounting Journal GenServer is responsible for creating, updating, and searching journal entries.
   The state of Accounting Journal GenServer is a map in which the keys are maps of transaction date details (year, month, day) and the values are lists of journal entries.
   """
   use GenServer
 
+  alias Bookkeeping.Boundary.AccountingJournal.Backup, as: AccountingJournalBackup
   alias Bookkeeping.Core.JournalEntry
 
   @typedoc """
@@ -91,9 +92,8 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
       {:ok, #PID<0.123.0>}
   """
   @spec start_link(Keyword.t()) :: {:ok, pid}
-  def start_link(opts \\ []) do
-    name = Keyword.get(opts, :name, __MODULE__)
-    GenServer.start_link(__MODULE__, %{}, name: name)
+  def start_link(options \\ []) do
+    GenServer.start_link(__MODULE__, %{}, options)
   end
 
   @spec create_journal_entry(
@@ -563,7 +563,9 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
 
   @impl true
   @spec init(journal_entries_state()) :: {:ok, journal_entries_state()}
-  def init(journal_entries), do: {:ok, journal_entries}
+  def init(_journal_entries) do
+    AccountingJournalBackup.get()
+  end
 
   @impl true
   def handle_call(
@@ -675,6 +677,11 @@ defmodule Bookkeeping.Boundary.AccountingJournal do
       {:error, message} ->
         {:reply, {:error, message}, journal_entries}
     end
+  end
+
+  @impl true
+  def terminate(_reason, journal_entries) do
+    AccountingJournalBackup.update(journal_entries)
   end
 
   defp get_transaction_date_details(datetime)
