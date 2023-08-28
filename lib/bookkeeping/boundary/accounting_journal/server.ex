@@ -573,7 +573,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   """
   @spec reset_journal_entries() :: {:ok, list(JournalEntry.t())}
   def reset_journal_entries(server \\ __MODULE__) do
-    GenServer.call(server, :reset_accounts)
+    GenServer.call(server, :reset_journal_entries)
   end
 
   @impl true
@@ -695,7 +695,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   end
 
   @impl true
-  def handle_call(:reset_accounts, _from, _journal_entries) do
+  def handle_call(:reset_journal_entries, _from, _journal_entries) do
     AccountingJournalBackup.update(%{})
     {:reply, {:ok, []}, %{}}
   end
