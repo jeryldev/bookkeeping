@@ -5,6 +5,9 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Supervisor do
   """
   use Supervisor
 
+  alias Bookkeeping.Boundary.ChartOfAccounts.Backup, as: ChartOfAccountsBackup
+  alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
+
   def start_link(options \\ []) do
     Supervisor.start_link(__MODULE__, :ok, options)
   end
@@ -12,9 +15,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Supervisor do
   @impl true
   def init(_init_arg) do
     children = [
-      {Bookkeeping.Boundary.ChartOfAccounts.Backup, %{}},
-      {Bookkeeping.Boundary.ChartOfAccounts.Server,
-       [name: Bookkeeping.Boundary.ChartOfAccounts.Server]}
+      {ChartOfAccountsBackup, %{}},
+      {ChartOfAccountsServer, [name: ChartOfAccountsServer]}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)
