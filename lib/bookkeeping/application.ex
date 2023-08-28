@@ -5,15 +5,16 @@ defmodule Bookkeeping.Application do
 
   use Application
 
+  alias Bookkeeping.Boundary.AccountingJournal.Supervisor, as: AccountingJournalSupervisor
+  alias Bookkeeping.Boundary.ChartOfAccounts.Supervisor, as: ChartOfAccountsSupervisor
+
   @impl true
   def start(_type, _args) do
     children = [
       # Starts a worker by calling: Bookkeeping.Worker.start_link(arg)
       # {Bookkeeping.Worker, arg}
-      # {Bookkeeping.Boundary.ChartOfAccounts, []},
-      {Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsSupervisor,
-       [name: Bookkeeping.Boundary.ChartOfAccounts.ChartOfAccountsSupervisor]},
-      {Bookkeeping.Boundary.AccountingJournal, []}
+      {ChartOfAccountsSupervisor, [name: ChartOfAccountsSupervisor]},
+      {AccountingJournalSupervisor, [name: AccountingJournalSupervisor]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
