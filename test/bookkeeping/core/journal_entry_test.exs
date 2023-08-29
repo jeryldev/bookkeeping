@@ -22,13 +22,13 @@ defmodule Bookkeeping.Core.JournalEntryTest do
     assert {:ok, _journal_entry} =
              JournalEntry.create(
                DateTime.utc_now(),
-               "reference number",
-               "description",
-               %{},
                %{
                  left: [%{account: expense_account, amount: Decimal.new(100)}],
                  right: [%{account: asset_account, amount: Decimal.new(100)}]
                },
+               "reference number",
+               "description",
+               %{},
                details
              )
   end
@@ -37,9 +37,9 @@ defmodule Bookkeeping.Core.JournalEntryTest do
     assert {:error, :invalid_journal_entry} =
              JournalEntry.create(
                nil,
+               %{},
                "reference number",
                "description",
-               %{},
                %{},
                %{}
              )
@@ -47,9 +47,9 @@ defmodule Bookkeeping.Core.JournalEntryTest do
     assert {:error, :invalid_line_items} =
              JournalEntry.create(
                DateTime.utc_now(),
+               %{},
                "reference number",
                "description",
-               %{},
                %{},
                %{}
              )
@@ -63,13 +63,13 @@ defmodule Bookkeeping.Core.JournalEntryTest do
     assert {:ok, journal_entry} =
              JournalEntry.create(
                DateTime.utc_now(),
-               "reference number 2",
-               "description",
-               %{},
                %{
                  left: [%{account: expense_account, amount: Decimal.new(100)}],
                  right: [%{account: asset_account, amount: Decimal.new(100)}]
                },
+               "reference number 2",
+               "description",
+               %{},
                details
              )
 

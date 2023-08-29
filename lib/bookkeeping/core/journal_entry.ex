@@ -7,10 +7,10 @@ defmodule Bookkeeping.Core.JournalEntry do
   @type t :: %__MODULE__{
           id: UUID.t(),
           transaction_date: DateTime.t(),
+          line_items: list(LineItem.t()),
           reference_number: String.t(),
           description: String.t(),
           journal_entry_details: map(),
-          line_items: list(LineItem.t()),
           audit_logs: list(AuditLog.t()),
           posted: boolean()
         }
@@ -95,14 +95,14 @@ defmodule Bookkeeping.Core.JournalEntry do
       {:error, :invalid_journal_entry}
 
   """
-  @spec create(DateTime.t(), String.t(), String.t(), map(), t_accounts(), map()) ::
+  @spec create(DateTime.t(), t_accounts(), String.t(), String.t(), map(), map()) ::
           {:ok, __MODULE__.t()} | {:error, :invalid_journal_entry}
   def create(
         transaction_date,
+        t_accounts,
         reference_number,
         description,
         journal_entry_details,
-        t_accounts,
         audit_details
       )
       when is_binary(reference_number) and is_binary(description) and
@@ -110,10 +110,10 @@ defmodule Bookkeeping.Core.JournalEntry do
              is_map(audit_details) and not is_nil(transaction_date) do
     new(
       transaction_date,
+      t_accounts,
       reference_number,
       description,
       journal_entry_details,
-      t_accounts,
       audit_details
     )
   end
@@ -240,10 +240,10 @@ defmodule Bookkeeping.Core.JournalEntry do
         process_journal_entry_update(
           journal_entry,
           transaction_date,
+          t_accounts,
           reference_number,
           description,
           journal_entry_details,
-          t_accounts,
           audit_log,
           posted
         )
@@ -261,10 +261,10 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   defp new(
          transaction_date,
+         t_accounts,
          reference_number,
          description,
          journal_entry_details,
-         t_accounts,
          audit_details
        ) do
     with {:ok, line_items} <- LineItem.bulk_create(t_accounts),
@@ -273,10 +273,10 @@ defmodule Bookkeeping.Core.JournalEntry do
        %__MODULE__{
          id: UUID.uuid4(),
          transaction_date: transaction_date,
+         line_items: line_items,
          reference_number: reference_number,
          description: description,
          journal_entry_details: journal_entry_details,
-         line_items: line_items,
          audit_logs: [audit_log]
        }}
     else
@@ -287,10 +287,10 @@ defmodule Bookkeeping.Core.JournalEntry do
   defp process_journal_entry_update(
          current_journal_entry,
          transaction_date,
+         t_accounts,
          reference_number,
          description,
          journal_entry_details,
-         t_accounts,
          audit_log,
          posted
        ) do

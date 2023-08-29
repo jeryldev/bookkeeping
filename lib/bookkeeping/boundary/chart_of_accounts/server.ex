@@ -46,6 +46,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   """
   @type chart_of_account_state :: %{Account.account_code() => Account.t()}
 
+  @type coa_pid :: atom | pid | {atom, any} | {:via, atom, any}
+
   @account_types [
     "asset",
     "liability",
@@ -70,7 +72,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.start_link()
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.start_link()
       {:ok, #PID<0.123.0>}
   """
   @spec start_link(Keyword.t()) :: {:ok, pid}
@@ -92,7 +94,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.create_account(server, "1000", "Cash", "asset", "", %{})
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.create_account(server, "1000", "Cash", "asset", "", %{})
       {:ok,
       %Bookkeeping.Core.Account{
         code: "1000",
@@ -118,12 +120,12 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         ]
       }}
   """
-  @spec create_account(String.t(), String.t(), String.t()) ::
+  @spec create_account(coa_pid(), String.t(), String.t(), String.t()) ::
           {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
   def create_account(server \\ __MODULE__, code, name, account_type),
     do: create_account_record(server, code, name, account_type)
 
-  @spec create_account(String.t(), String.t(), String.t(), String.t(), map()) ::
+  @spec create_account(coa_pid, String.t(), String.t(), String.t(), String.t(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
   def create_account(server \\ __MODULE__, code, name, account_type, description, audit_details),
     do: create_account_record(server, code, name, account_type, description, audit_details)
@@ -132,13 +134,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   Loads default accounts from a CSV file.
 
   Arguments:
-    - path: The path of the CSV file. The path to the default accounts is "../assets/chart_of_accounts.csv".
+    - path: The path of the CSV file. The path to the default accounts is "../assets/sample_chart_of_accounts.csv".
 
   Returns `{:ok, %{ok: list(map()), error: list(map())}}` if the accounts are loaded successfully. If all items are encountered an error, return `{:error, %{ok: list(map()), error: list(map())}}`.
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.load_default_accounts(server, "../assets/chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.load_accounts(server, "../assets/sample_chart_of_accounts.csv")
       {:ok,
       %{
         ok: [
@@ -150,7 +152,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         error: []
       }}
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.load_default_accounts(server, "../assets/invalid_chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.load_accounts(server, "../assets/invalid_chart_of_accounts.csv")
       {:error,
       %{
         ok: [],
@@ -178,11 +180,16 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         ]
       }}
   """
-  def load_default_accounts(server \\ __MODULE__, path) do
+  @spec load_accounts(coa_pid(), String.t()) ::
+          {:ok, %{ok: list(Account.t()), error: list(map())}}
+          | {:error, %{ok: list(Account.t()), error: list(map())}}
+          | {:error, %{message: :invalid_csv, errors: list(map())}}
+          | {:error, :invalid_file}
+  def load_accounts(server \\ __MODULE__, path) do
     with file_path <- Path.expand(path, __DIR__),
          true <- File.exists?(file_path),
          {:ok, csv} <- read_csv(file_path) do
-      bulk_create_account_records(server, csv)
+      bulk_create_accounts(server, csv)
     else
       _error -> {:error, :invalid_file}
     end
@@ -199,7 +206,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.update_account(server, account, %{name: "Cash and cash equivalents"})
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.update_account(server, account, %{name: "Cash and cash equivalents"})
       {:ok,
       %Bookkeeping.Core.Account{
         code: "1000",
@@ -225,7 +232,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         ]
       }}
   """
-  @spec update_account(Account.t(), map()) :: {:ok, Account.t()} | {:error, :invalid_account}
+  @spec update_account(coa_pid(), Account.t(), map()) ::
+          {:ok, Account.t()} | {:error, :invalid_account}
   def update_account(server \\ __MODULE__, account, attrs) do
     if is_struct(account, Account),
       do: GenServer.call(server, {:update_account, account, attrs}),
@@ -239,10 +247,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.all_accounts(server)
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.all_accounts(server)
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec all_accounts() :: {:ok, list(Account.t())}
+  @spec all_accounts(coa_pid()) :: {:ok, list(Account.t())}
   def all_accounts(server \\ __MODULE__) do
     GenServer.call(server, :all_accounts)
   end
@@ -257,10 +265,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.find_account_by_code(server, "1000")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.find_account_by_code(server, "1000")
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec find_account_by_code(String.t()) :: {:ok, Account.t()} | {:error, :not_found}
+  @spec find_account_by_code(coa_pid(), String.t()) :: {:ok, Account.t()} | {:error, :not_found}
   def find_account_by_code(server \\ __MODULE__, code) do
     if is_binary(code),
       do: GenServer.call(server, {:find_account_by_code, code}),
@@ -277,10 +285,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.find_account_by_name(server, "Cash")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.find_account_by_name(server, "Cash")
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec find_account_by_name(String.t()) :: {:ok, Account.t()} | {:error, :not_found}
+  @spec find_account_by_name(coa_pid(), String.t()) :: {:ok, Account.t()} | {:error, :not_found}
   def find_account_by_name(server \\ __MODULE__, name) do
     if is_binary(name),
       do: GenServer.call(server, {:find_account_by_name, name}),
@@ -297,10 +305,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.search_accounts(server, "1000")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.search_accounts(server, "1000")
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec search_accounts(String.t()) :: {:ok, list(Account.t())} | {:error, :invalid_query}
+  @spec search_accounts(coa_pid(), String.t()) ::
+          {:ok, list(Account.t())} | {:error, :invalid_query}
   def search_accounts(server \\ __MODULE__, query) do
     if is_binary(query),
       do: GenServer.call(server, {:search_accounts, query}),
@@ -314,10 +323,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.all_sorted_accounts(server, :code)
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.all_sorted_accounts(server, :code)
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec all_sorted_accounts(atom()) :: {:ok, list(Account.t())} | {:error, :invalid_field}
+  @spec all_sorted_accounts(coa_pid(), atom()) ::
+          {:ok, list(Account.t())} | {:error, :invalid_field}
   def all_sorted_accounts(server \\ __MODULE__, field) do
     if field in ["code", "name"],
       do: GenServer.call(server, {:sort_accounts, field}),
@@ -331,9 +341,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.reset_accounts(server)
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.reset_accounts(server)
       {:ok, []}
   """
+  @spec reset_accounts(coa_pid()) :: {:ok, list(Account.t())}
   def reset_accounts(server \\ __MODULE__) do
     GenServer.call(server, :reset_accounts)
   end
@@ -456,60 +467,113 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
     end
   end
 
-  defp bulk_create_account_records(server, csv) when is_list(csv) and csv != [] do
-    results =
+  defp bulk_create_accounts(server, csv) when is_list(csv) and csv != [] do
+    with %{ok: ok_create_params, error: []} <- generate_bulk_create_params(csv),
+         {:ok, result} <- bulk_create_acc_records(server, ok_create_params) do
+      {:ok, result}
+    else
+      %{ok: _ok_create_params, error: errors} ->
+        {:error, %{message: :invalid_csv, errors: errors}}
+
+      {:error, result} ->
+        {:error, result}
+    end
+  end
+
+  defp bulk_create_accounts(_server, _csv), do: {:error, :invalid_file}
+
+  defp bulk_create_acc_records(server, create_params_list) do
+    result =
       Enum.reduce(
-        csv,
+        create_params_list,
         %{ok: [], error: []},
-        fn csv_item, acc ->
-          account_code = Map.get(csv_item, "Account Code")
-          account_name = Map.get(csv_item, "Account Name")
-          account_type = Map.get(csv_item, "Account Type")
-          description = Map.get(csv_item, "Description", "")
-          audit_details = Map.get(csv_item, "Audit Details", "{}")
-
-          with {:ok, audit_details} <- Jason.decode(audit_details),
-               {:ok, _} <-
-                 create_account_record(
-                   server,
-                   account_code,
-                   account_name,
-                   account_type,
-                   description,
-                   audit_details
-                 ) do
-            oks = acc.ok ++ [%{account_code: account_code, account_name: account_name}]
-            Map.put(acc, :ok, oks)
-          else
-            {:error, %Jason.DecodeError{} = _error} ->
-              errors =
-                acc.error ++
-                  [
-                    %{
-                      account_code: account_code,
-                      account_name: account_name,
-                      error: :invalid_csv_item
-                    }
-                  ]
-
-              Map.put(acc, :error, errors)
+        fn params, acc ->
+          case create_account_record(
+                 server,
+                 params.account_code,
+                 params.account_name,
+                 params.account_type,
+                 params.description,
+                 params.audit_details
+               ) do
+            {:ok, account} ->
+              Map.put(acc, :ok, [account | acc.ok])
 
             {:error, error} ->
               errors =
                 acc.error ++
-                  [%{account_code: account_code, account_name: account_name, error: error}]
+                  [
+                    %{
+                      account_code: params.account_code,
+                      account_name: params.account_name,
+                      error: error
+                    }
+                  ]
 
               Map.put(acc, :error, errors)
           end
         end
       )
 
-    if results.ok == [],
-      do: {:error, results},
-      else: {:ok, results}
+    if result.ok == [], do: {:error, result}, else: {:ok, result}
   end
 
-  defp bulk_create_account_records(_server, _csv), do: {:error, :invalid_file}
+  defp generate_bulk_create_params(csv) do
+    Enum.reduce(
+      csv,
+      %{ok: [], error: []},
+      fn csv_item, acc ->
+        account_code = Map.get(csv_item, "Account Code")
+        account_name = Map.get(csv_item, "Account Name")
+        account_type = Map.get(csv_item, "Account Type")
+        description = Map.get(csv_item, "Description", "")
+        audit_details = Map.get(csv_item, "Audit Details", "{}")
+
+        valid_csv_items? =
+          is_binary(account_code) and account_code != "" and is_binary(account_name) and
+            account_name != "" and is_binary(description) and account_type in @account_types
+
+        with true <- valid_csv_items?,
+             {:ok, audit_details} <- Jason.decode(audit_details) do
+          valid_params = %{
+            account_code: account_code,
+            account_name: account_name,
+            account_type: account_type,
+            description: description,
+            audit_details: audit_details
+          }
+
+          Map.put(acc, :ok, acc.ok ++ [valid_params])
+        else
+          {:error, %Jason.DecodeError{} = _error} ->
+            errors =
+              acc.error ++
+                [
+                  %{
+                    account_code: account_code,
+                    account_name: account_name,
+                    error: :invalid_csv_item
+                  }
+                ]
+
+            Map.put(acc, :error, errors)
+
+          _ ->
+            errors =
+              acc.error ++
+                [
+                  %{
+                    account_code: account_code,
+                    account_name: account_name,
+                    error: :invalid_csv_item
+                  }
+                ]
+
+            Map.put(acc, :error, errors)
+        end
+      end
+    )
+  end
 
   defp read_csv(path) do
     csv_inputs =
