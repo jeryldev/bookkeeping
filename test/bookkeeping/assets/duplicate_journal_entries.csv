@@ -1,0 +1,7 @@
+Reference Number,Transaction Date,Account Name,Debit,Credit,Posted,Description,Journal Entry Details,Audit Details
+1004,08-12-2023,"Property, Plant, and Equipment",20000,,No,,{},"{""created_by"": ""example@example.com""}"
+,08-12-2023,,20000,,No,,{},"{""created_by"": ""example@example.com""}"
+1004,08-12-2023,Accounts Payable,,5000,No,,{},"{""created_by"": ""example@example.com""}"
+1004,08-12-2023,Long-term Debt,,10000,No,,{},"{""created_by"": ""example@example.com""}"
+1004,08-12-2023,Short-term Debt,,5000,No,,{},"{""created_by"": ""example@example.com""}"
+1004,08-12-2023,Cash,,20000,No,,{},"{""created_by"": ""example@example.com""}"
