@@ -2,6 +2,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   use ExUnit.Case, async: true
   alias Bookkeeping.Boundary.AccountingJournal.Backup, as: AccountingJournalBackup
   alias Bookkeeping.Boundary.AccountingJournal.Server, as: AccountingJournalServer
+  alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
   alias Bookkeeping.Core.Account
 
   setup do
@@ -38,13 +39,22 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     journal_entry_details: journal_entry_details,
     t_accounts: t_accounts
   } do
+    assert {:ok, journal_entry_0} =
+             AccountingJournalServer.create_journal_entry(
+               DateTime.utc_now(),
+               t_accounts,
+               "ref_num_0"
+             )
+
+    assert journal_entry_0.reference_number == "ref_num_0"
+
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_1",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -63,20 +73,20 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_2",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
     assert {:ok, journal_entry_3} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_3",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -85,10 +95,10 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_4} =
              AccountingJournalServer.create_journal_entry(
                other_transaction_date,
+               t_accounts,
                "ref_num_4",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -109,20 +119,20 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, _journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_5",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
     assert {:error, :duplicate_reference_number} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_5",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
   end
@@ -144,30 +154,30 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:error, :invalid_line_items} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               empty_t_accounts,
                "ref_num_6",
                "journal entry description",
                journal_entry_details,
-               empty_t_accounts,
                details
              )
 
     assert {:error, :unbalanced_line_items} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               invalid_t_accounts,
                "ref_num_7",
                "journal entry description",
                journal_entry_details,
-               invalid_t_accounts,
                details
              )
 
     assert {:error, :invalid_journal_entry} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "invalid_je_1",
                nil,
                journal_entry_details,
-               t_accounts,
                details
              )
   end
@@ -180,20 +190,20 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_8",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_9",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -212,10 +222,10 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_10",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -244,10 +254,10 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_11",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -272,10 +282,10 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_12",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -299,20 +309,20 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_13",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_14",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -394,6 +404,52 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
   end
 
+  test "load journal entries" do
+    assert {:ok, []} = ChartOfAccountsServer.reset_accounts()
+
+    assert {:ok, _charts_of_accounts} =
+             ChartOfAccountsServer.load_accounts(
+               "../../../../test/bookkeeping/assets/valid_chart_of_accounts.csv"
+             )
+
+    # importing a valid file
+    assert {:ok, %{ok: created_journals, error: []}} =
+             AccountingJournalServer.load_journal_entries(
+               "../../../../test/bookkeeping/assets/valid_journal_entries.csv"
+             )
+
+    assert created_journals |> length() == 2
+
+    # importing a journal entry with duplicate reference numbers and invalid accounts
+    assert {:error, %{error: errors, ok: []}} =
+             AccountingJournalServer.load_journal_entries(
+               "../../../../test/bookkeeping/assets/valid_journal_entries.csv"
+             )
+
+    assert errors == [
+             %{error: :duplicate_reference_number, reference_number: "1001"},
+             %{error: :duplicate_reference_number, reference_number: "1007"}
+           ]
+
+    # importing a file with invalid journal entries
+    assert {:error, %{errors: _errors, message: :invalid_csv}} =
+             AccountingJournalServer.load_journal_entries(
+               "../../../../test/bookkeeping/assets/invalid_journal_entries.csv"
+             )
+
+    # importing an empty file
+    assert {:error, :invalid_file} =
+             AccountingJournalServer.load_journal_entries(
+               "../../../../test/bookkeeping/assets/empty_journal_entries.csv"
+             )
+
+    # importing journal entries with empty fields
+    assert {:error, :invalid_file} =
+             AccountingJournalServer.load_journal_entries(
+               "../../../../test/bookkeeping/assets/empty_journal_entries.csv"
+             )
+  end
+
   test "update accounting journal entry", %{
     details: details,
     journal_entry_details: journal_entry_details,
@@ -404,10 +460,10 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_15",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -491,20 +547,20 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_16",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_17",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
@@ -527,20 +583,20 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_18",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
+               t_accounts,
                "ref_num_19",
                "journal entry description",
                journal_entry_details,
-               t_accounts,
                details
              )
 
