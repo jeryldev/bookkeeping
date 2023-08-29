@@ -2,7 +2,7 @@ Account Code,Account Name,Account Type,Description,Audit Details
 101,Cash,asset,Cash,"{""approved_by"": ""example@example.com""}"
 102,Accounts Receivable,asset,Accounts Receivable,"{""approved_by"": ""example@example.com""}"
 103,Inventory,asset,Inventory,"{""approved_by"": ""example@example.com""}"
-104,"Property,  Plant, and Equipment",asset,"Property,  Plant, and Equipment","{""approved_by"": ""example@example.com""}"
+104,"Property, Plant, and Equipment",asset,"Property,  Plant, and Equipment","{""approved_by"": ""example@example.com""}"
 105,Investments,asset,Investments,"{""approved_by"": ""example@example.com""}"
 106,Prepaid Expenses,asset,Prepaid Expenses,"{""approved_by"": ""example@example.com""}"
 201,Accounts Payable,liability,Accounts Payable,"{""approved_by"": ""example@example.com""}"
