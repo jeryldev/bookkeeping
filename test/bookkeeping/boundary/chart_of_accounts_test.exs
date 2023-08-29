@@ -45,29 +45,46 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
   test "load default accounts" do
     assert {:ok, []} = ChartOfAccountsServer.reset_accounts()
 
+    # importing a valid file
     assert {:ok, %{ok: _oks, error: _errors}} =
              ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/valid_chart_of_accounts.csv"
              )
 
+    # importing an invalid or missing file
     assert {:error, :invalid_file} =
              ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/invalid_file.csv"
              )
 
-    assert {:error, %{ok: _oks, error: _errors}} =
+    # importing accounts with empty fields
+    assert {:error, %{message: :invalid_csv, errors: _errors}} =
              ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/invalid_chart_of_accounts.csv"
              )
 
+    # importing an empty file
     assert {:error, :invalid_file} =
              ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/empty_chart_of_accounts.csv"
              )
 
-    assert {:error, %{ok: _oks, error: _errors}} =
+    # importing accounts with invalid account type
+    assert {:error, %{message: :invalid_csv, errors: _errors}} =
              ChartOfAccountsServer.load_accounts(
                "../../../../test/bookkeeping/assets/decode_error_chart_of_accounts.csv"
+             )
+
+    # importing duplicate accounts in a single file
+    assert {:ok, %{ok: _oks, error: _errors}} =
+             ChartOfAccountsServer.load_accounts(
+               "../../../../test/bookkeeping/assets/duplicate_chart_of_accounts.csv"
+             )
+
+    # importing the file twice
+    assert {:error, %{ok: _oks, error: _errors}} =
+             ChartOfAccountsServer.load_accounts(
+               "../../../../test/bookkeeping/assets/duplicate_chart_of_accounts.csv"
              )
   end
 
