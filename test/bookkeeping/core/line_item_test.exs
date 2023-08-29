@@ -22,7 +22,7 @@ defmodule Bookkeeping.Core.LineItemTest do
 
     refute bulk_create_result == []
 
-    assert {:error, :invalid_line_items} =
+    assert {:error, %{message: :invalid_line_items, errors: [:invalid_account, :invalid_account]}} =
              LineItem.bulk_create(%{
                left: [%{account: "expense_account", amount: Decimal.new(100)}],
                right: [%{account: "asset_account", amount: Decimal.new(100)}]
@@ -36,10 +36,16 @@ defmodule Bookkeeping.Core.LineItemTest do
                right: [%{account: "asset_account", amount: Decimal.new(100)}]
              })
 
-    assert {:error, :unbalanced_line_items} =
+    assert {:error, :invalid_line_items} =
              LineItem.bulk_create(%{
                left: [%{account: expense_account, amount: Decimal.new(100)}],
                right: []
+             })
+
+    assert {:error, :unbalanced_line_items} =
+             LineItem.bulk_create(%{
+               left: [%{account: expense_account, amount: Decimal.new(100)}],
+               right: [%{account: asset_account, amount: Decimal.new(200)}]
              })
 
     assert {:error, [:invalid_account]} =

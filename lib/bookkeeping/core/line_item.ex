@@ -52,8 +52,11 @@ defmodule Bookkeeping.Core.LineItem do
          }
        ]}
   """
-  @spec bulk_create(t_accounts()) :: {:ok, list(__MODULE__.t())} | {:error, :invalid_line_item}
-  def bulk_create(t_accounts) when is_map(t_accounts) and map_size(t_accounts) > 0 do
+  @spec bulk_create(t_accounts()) ::
+          {:ok, list(__MODULE__.t())}
+          | {:error, %{message: :invalid_line_items, errors: list(atom())}}
+          | {:error, :invalid_line_item}
+  def bulk_create(%{left: left, right: right} = t_accounts) when left != [] and right != [] do
     bulk_create_result =
       t_accounts
       |> Task.async_stream(fn
@@ -73,7 +76,7 @@ defmodule Bookkeeping.Core.LineItem do
 
     case bulk_create_result.created_line_items do
       [] ->
-        {:error, :invalid_line_items}
+        {:error, %{message: :invalid_line_items, errors: bulk_create_result.errors}}
 
       created_line_items ->
         cond do
