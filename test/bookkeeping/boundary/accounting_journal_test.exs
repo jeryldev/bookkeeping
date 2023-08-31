@@ -404,17 +404,17 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
   end
 
-  test "load journal entries" do
+  test "import journal entries" do
     assert {:ok, []} = ChartOfAccountsServer.reset_accounts()
 
     assert {:ok, _charts_of_accounts} =
-             ChartOfAccountsServer.load_accounts(
+             ChartOfAccountsServer.import_accounts(
                "../../../../test/bookkeeping/assets/valid_chart_of_accounts.csv"
              )
 
     # importing a valid file
     assert {:ok, %{ok: created_journals, error: []}} =
-             AccountingJournalServer.load_journal_entries(
+             AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/valid_journal_entries.csv"
              )
 
@@ -422,7 +422,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     # importing a journal entry with duplicate reference numbers and invalid accounts
     assert {:error, %{error: errors, ok: []}} =
-             AccountingJournalServer.load_journal_entries(
+             AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/valid_journal_entries.csv"
              )
 
@@ -433,21 +433,30 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     # importing a file with invalid journal entries
     assert {:error, %{errors: _errors, message: :invalid_csv}} =
-             AccountingJournalServer.load_journal_entries(
+             AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/invalid_journal_entries.csv"
              )
 
-    # importing an empty file
+    # importing a missing file
     assert {:error, :invalid_file} =
-             AccountingJournalServer.load_journal_entries(
+             AccountingJournalServer.import_journal_entries(
+               "../../../../test/bookkeeping/assets/missing_file.csv"
+             )
+
+    # importing a file with empty fields
+    assert {:error, :invalid_file} =
+             AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/empty_journal_entries.csv"
              )
 
-    # importing journal entries with empty fields
-    assert {:error, :invalid_file} =
-             AccountingJournalServer.load_journal_entries(
-               "../../../../test/bookkeeping/assets/empty_journal_entries.csv"
+    # importing a partially valid file
+    assert {:ok, %{error: errors, ok: oks}} =
+             AccountingJournalServer.import_journal_entries(
+               "../../../../test/bookkeeping/assets/partially_valid_journal_entries.csv"
              )
+
+    assert errors == [%{error: :unbalanced_line_items, reference_number: "1009"}]
+    assert Enum.count(oks) == 1
   end
 
   test "update accounting journal entry", %{

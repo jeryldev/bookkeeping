@@ -15,8 +15,8 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   # test notes
   # alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: COA
   # alias Bookkeeping.Boundary.AccountingJournal.Server, as: AJ
-  # COA.load_accounts "../../assets/sample_chart_of_accounts.csv"
-  # AJ.load_journal_entries "../../assets/sample_journal_entries.csv"
+  # COA.import_accounts "../../assets/sample_chart_of_accounts.csv"
+  # AJ.import_journal_entries "../../assets/sample_journal_entries.csv"
 
   @typedoc """
   The state of the Accounting Journal GenServer.
@@ -266,16 +266,16 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   end
 
   @doc """
-  Loads journal entries from a CSV file.
+  Imports journal entries from a CSV file.
 
   Arguments:
     - path: The path of the CSV file.
 
-  Returns `{:ok, %{ok: list(JournalEntry.t()), error: list(map())}}` if the journal entries are loaded successfully. Otherwise, returns `{:error, %{message: :invalid_csv, errors: list(map())}}`.
+  Returns `{:ok, %{ok: list(JournalEntry.t()), error: list(map())}}` if the journal entries are imported successfully. Otherwise, returns `{:error, %{message: :invalid_csv, errors: list(map())}}`.
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.AccountingJournal.Server.load_journal_entries(server, "../../assets/sample_journal_entries.csv")
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.import_journal_entries(server, "../../assets/sample_journal_entries.csv")
       {:ok,
       %{
         error: [],
@@ -466,12 +466,12 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
         ]
       }}
   """
-  @spec load_journal_entries(aj_pid(), String.t()) ::
+  @spec import_journal_entries(aj_pid(), String.t()) ::
           {:ok, %{ok: list(JournalEntry.t()), error: list(map())}}
           | {:error, %{ok: list(JournalEntry.t()), error: list(map())}}
           | {:error, %{message: :invalid_csv, errors: list(map())}}
           | {:error, :invalid_file}
-  def load_journal_entries(server \\ __MODULE__, path) do
+  def import_journal_entries(server \\ __MODULE__, path) do
     with file_path <- Path.expand(path, __DIR__),
          true <- File.exists?(file_path),
          {:ok, csv} <- read_csv(file_path) do

@@ -131,16 +131,16 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
     do: create_account_record(server, code, name, account_type, description, audit_details)
 
   @doc """
-  Loads default accounts from a CSV file.
+  Imports default accounts from a CSV file.
 
   Arguments:
     - path: The path of the CSV file. The path to the default accounts is "../assets/sample_chart_of_accounts.csv".
 
-  Returns `{:ok, %{ok: list(map()), error: list(map())}}` if the accounts are loaded successfully. If all items are encountered an error, return `{:error, %{ok: list(map()), error: list(map())}}`.
+  Returns `{:ok, %{ok: list(map()), error: list(map())}}` if the accounts are imported successfully. If all items are encountered an error, return `{:error, %{ok: list(map()), error: list(map())}}`.
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.load_accounts(server, "../assets/sample_chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.import_accounts(server, "../assets/sample_chart_of_accounts.csv")
       {:ok,
       %{
         ok: [
@@ -152,7 +152,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         error: []
       }}
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.load_accounts(server, "../assets/invalid_chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.import_accounts(server, "../assets/invalid_chart_of_accounts.csv")
       {:error,
       %{
         ok: [],
@@ -180,12 +180,12 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         ]
       }}
   """
-  @spec load_accounts(coa_pid(), String.t()) ::
+  @spec import_accounts(coa_pid(), String.t()) ::
           {:ok, %{ok: list(Account.t()), error: list(map())}}
           | {:error, %{ok: list(Account.t()), error: list(map())}}
           | {:error, %{message: :invalid_csv, errors: list(map())}}
           | {:error, :invalid_file}
-  def load_accounts(server \\ __MODULE__, path) do
+  def import_accounts(server \\ __MODULE__, path) do
     with file_path <- Path.expand(path, __DIR__),
          true <- File.exists?(file_path),
          {:ok, csv} <- read_csv(file_path) do
