@@ -6,6 +6,7 @@ Reference Number,Transaction Date,Account Name,Debit,Credit,Posted,Description,J
 1002,08-12-2023,Short-term Debt,,5000,no,,{},"{""created_by"": ""example@example.com""}"
 1002,08-12-2023,Cash,,20000,no,,{},"{""created_by"": ""example@example.com""}"
 1003,,Cash,20000,,no,,{},"{""created_by"": ""example@example.com""}"
+
 1003,08-15-2023-11,Service Revenue,,30000,no,,{},"{""created_by"": ""example@example.com""}"
 1005,,Cash,20000,,no,,{},"{""created_by"": ""example@example.com""}"
 1005,08-15-2023,Service Revenue,,,no,,{},"{""created_by"": ""example@example.com""}"
