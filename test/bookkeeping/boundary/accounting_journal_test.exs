@@ -437,17 +437,26 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                "../../../../test/bookkeeping/assets/invalid_journal_entries.csv"
              )
 
-    # importing an empty file
+    # importing a missing file
+    assert {:error, :invalid_file} =
+             AccountingJournalServer.import_journal_entries(
+               "../../../../test/bookkeeping/assets/missing_file.csv"
+             )
+
+    # importing a file with empty fields
     assert {:error, :invalid_file} =
              AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/empty_journal_entries.csv"
              )
 
-    # importing journal entries with empty fields
-    assert {:error, :invalid_file} =
+    # importing a partially valid file
+    assert {:ok, %{error: errors, ok: oks}} =
              AccountingJournalServer.import_journal_entries(
-               "../../../../test/bookkeeping/assets/empty_journal_entries.csv"
+               "../../../../test/bookkeeping/assets/partially_valid_journal_entries.csv"
              )
+
+    assert errors == [%{error: :unbalanced_line_items, reference_number: "1009"}]
+    assert Enum.count(oks) == 1
   end
 
   test "update accounting journal entry", %{

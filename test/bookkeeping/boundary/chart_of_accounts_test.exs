@@ -86,6 +86,22 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
              ChartOfAccountsServer.import_accounts(
                "../../../../test/bookkeeping/assets/duplicate_chart_of_accounts.csv"
              )
+
+    # importing a partially valid file
+    assert {:ok, %{error: errors, ok: oks}} =
+             ChartOfAccountsServer.import_accounts(
+               "../../../../test/bookkeeping/assets/partially_valid_chart_of_accounts.csv"
+             )
+
+    assert errors == [
+             %{
+               error: :account_already_exists,
+               account_code: "1000001012",
+               account_name: "Accounts Receivable Bulk Test 2"
+             }
+           ]
+
+    assert Enum.count(oks) == 8
   end
 
   test "update account" do
