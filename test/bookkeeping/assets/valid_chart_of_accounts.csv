@@ -7,3 +7,4 @@ Account Code,Account Name,Account Type,Description,Audit Details
 201,Accounts Payable,liability,Accounts Payable,"{""approved_by"": ""example@example.com""}"
 202,Short-term Debt,liability,Short-term Debt,"{""approved_by"": ""example@example.com""}"
 203,Long-term Debt,liability,Long-term Debt,"{""approved_by"": ""example@example.com""}"
+402,Service Revenue,revenue,Service Revenue,"{""approved_by"": ""example@example.com""}"

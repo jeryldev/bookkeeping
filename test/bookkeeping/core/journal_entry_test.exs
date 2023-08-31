@@ -4,12 +4,8 @@ defmodule Bookkeeping.Core.JournalEntryTest do
 
   setup do
     details = %{email: "example@example.com"}
-
-    {:ok, asset_account} =
-      Account.create("10000", "cash", "asset", "description", details)
-
-    {:ok, expense_account} =
-      Account.create("20000", "rent", "expense", "description", details)
+    {:ok, asset_account} = Account.create("10000", "cash", "asset", "description", details)
+    {:ok, expense_account} = Account.create("20000", "rent", "expense", "description", details)
 
     {:ok, details: details, asset_account: asset_account, expense_account: expense_account}
   end
@@ -25,6 +21,90 @@ defmodule Bookkeeping.Core.JournalEntryTest do
                %{
                  left: [%{account: expense_account, amount: Decimal.new(100)}],
                  right: [%{account: asset_account, amount: Decimal.new(100)}]
+               },
+               "reference number",
+               "description",
+               %{},
+               details
+             )
+  end
+
+  test "disallow journal entry with invalid t_accounts", %{
+    details: details,
+    asset_account: asset_account,
+    expense_account: expense_account
+  } do
+    assert {:error, [:invalid_account]} =
+             JournalEntry.create(
+               DateTime.utc_now(),
+               %{
+                 left: [%{account: "expense_account", amount: Decimal.new(100)}],
+                 right: [%{account: asset_account, amount: Decimal.new(100)}]
+               },
+               "reference number",
+               "description",
+               %{},
+               details
+             )
+
+    assert {:error, [:invalid_account]} =
+             JournalEntry.create(
+               DateTime.utc_now(),
+               %{
+                 left: [%{account: expense_account, amount: Decimal.new(100)}],
+                 right: [%{account: "asset_account", amount: Decimal.new(100)}]
+               },
+               "reference number",
+               "description",
+               %{},
+               details
+             )
+
+    assert {:error, :unbalanced_line_items} =
+             JournalEntry.create(
+               DateTime.utc_now(),
+               %{
+                 left: [%{account: expense_account, amount: Decimal.new(100)}],
+                 right: [%{account: asset_account, amount: Decimal.new(200)}]
+               },
+               "reference number",
+               "description",
+               %{},
+               details
+             )
+
+    assert {:error, [:invalid_amount]} =
+             JournalEntry.create(
+               DateTime.utc_now(),
+               %{
+                 left: [%{account: expense_account, amount: 100}],
+                 right: [%{account: asset_account, amount: Decimal.new(200)}]
+               },
+               "reference number",
+               "description",
+               %{},
+               details
+             )
+
+    assert {:error, [:invalid_amount]} =
+             JournalEntry.create(
+               DateTime.utc_now(),
+               %{
+                 left: [%{account: expense_account, amount: Decimal.new(200)}],
+                 right: [%{account: asset_account, amount: 200}]
+               },
+               "reference number",
+               "description",
+               %{},
+               details
+             )
+
+    assert {:error, [:invalid_amount]} =
+             JournalEntry.create(
+               DateTime.utc_now(),
+               %{
+                 left: [%{account: expense_account, amount: 100}],
+                 right: [%{account: asset_account, amount: Decimal.new(200)}]
                },
                "reference number",
                "description",

@@ -14,6 +14,11 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     {:ok, expense_account} =
       Account.create("20_000", "expense", "expense", "expense account description", %{})
 
+    {:ok, other_expense_account} =
+      Account.create("20_010", "expense", "expense", "expense account description", %{})
+
+    {:ok, inactive_expense_account} = Account.update(other_expense_account, %{active: false})
+
     t_accounts = %{
       left: [%{account: expense_account, amount: Decimal.new(100)}],
       right: [%{account: cash_account, amount: Decimal.new(100)}]
@@ -26,6 +31,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
      journal_entry_details: journal_entry_details,
      cash_account: cash_account,
      expense_account: expense_account,
+     inactive_expense_account: inactive_expense_account,
      t_accounts: t_accounts}
   end
 
@@ -142,6 +148,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     journal_entry_details: journal_entry_details,
     cash_account: cash_account,
     expense_account: expense_account,
+    inactive_expense_account: inactive_expense_account,
     t_accounts: t_accounts
   } do
     empty_t_accounts = %{left: [], right: []}
@@ -177,6 +184,45 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                t_accounts,
                "invalid_je_1",
                nil,
+               journal_entry_details,
+               details
+             )
+
+    assert {:error, [:inactive_account]} =
+             AccountingJournalServer.create_journal_entry(
+               DateTime.utc_now(),
+               %{
+                 left: [%{account: inactive_expense_account, amount: Decimal.new(100)}],
+                 right: [%{account: cash_account, amount: Decimal.new(200)}]
+               },
+               "invalid_je_2",
+               "journal entry description",
+               journal_entry_details,
+               details
+             )
+
+    assert {:error, :unbalanced_line_items} =
+             AccountingJournalServer.create_journal_entry(
+               DateTime.utc_now(),
+               %{
+                 left: [%{account: expense_account, amount: Decimal.new(100)}],
+                 right: [%{account: cash_account, amount: Decimal.new(200)}]
+               },
+               "invalid_je_2",
+               "journal entry description",
+               journal_entry_details,
+               details
+             )
+
+    assert {:error, :invalid_line_items} =
+             AccountingJournalServer.create_journal_entry(
+               DateTime.utc_now(),
+               %{
+                 left: [%{account: expense_account, amount: Decimal.new(100)}],
+                 right: []
+               },
+               "invalid_je_2",
+               "journal entry description",
                journal_entry_details,
                details
              )

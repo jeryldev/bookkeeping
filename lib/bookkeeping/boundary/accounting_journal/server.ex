@@ -1261,7 +1261,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   defp generate_bulk_create_params(csv) do
     Enum.reduce(csv, %{ok: [], error: []}, fn csv_item, acc ->
       reference_number = Map.get(csv_item, "Reference Number", "")
-      csv_posted = Map.get(csv_item, "Posted", "No")
+      csv_posted = Map.get(csv_item, "Posted", "no")
       description = Map.get(csv_item, "Description", "")
       journal_entry_details = Map.get(csv_item, "Journal Entry Details", "{}")
       audit_details = Map.get(csv_item, "Audit Details", "{}")
@@ -1269,9 +1269,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       valid_csv_items? =
         is_binary(reference_number) and reference_number != "" and
           is_binary(description) and is_binary(journal_entry_details) and
-          is_binary(audit_details) and csv_posted in ["Yes", "No"]
+          is_binary(audit_details) and is_binary(csv_posted)
 
-      posted = if csv_posted == "Yes", do: true, else: false
+      posted_field = csv_posted |> String.trim() |> String.downcase()
+      posted = if posted_field == "yes", do: true, else: false
 
       with true <- valid_csv_items?,
            {:ok, transaction_date} <- parse_transaction_date(csv_item),
