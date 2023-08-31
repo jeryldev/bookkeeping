@@ -404,17 +404,17 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
   end
 
-  test "load journal entries" do
+  test "import journal entries" do
     assert {:ok, []} = ChartOfAccountsServer.reset_accounts()
 
     assert {:ok, _charts_of_accounts} =
-             ChartOfAccountsServer.load_accounts(
+             ChartOfAccountsServer.import_accounts(
                "../../../../test/bookkeeping/assets/valid_chart_of_accounts.csv"
              )
 
     # importing a valid file
     assert {:ok, %{ok: created_journals, error: []}} =
-             AccountingJournalServer.load_journal_entries(
+             AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/valid_journal_entries.csv"
              )
 
@@ -422,7 +422,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     # importing a journal entry with duplicate reference numbers and invalid accounts
     assert {:error, %{error: errors, ok: []}} =
-             AccountingJournalServer.load_journal_entries(
+             AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/valid_journal_entries.csv"
              )
 
@@ -433,19 +433,19 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     # importing a file with invalid journal entries
     assert {:error, %{errors: _errors, message: :invalid_csv}} =
-             AccountingJournalServer.load_journal_entries(
+             AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/invalid_journal_entries.csv"
              )
 
     # importing an empty file
     assert {:error, :invalid_file} =
-             AccountingJournalServer.load_journal_entries(
+             AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/empty_journal_entries.csv"
              )
 
     # importing journal entries with empty fields
     assert {:error, :invalid_file} =
-             AccountingJournalServer.load_journal_entries(
+             AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/empty_journal_entries.csv"
              )
   end
