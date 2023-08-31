@@ -68,8 +68,7 @@ defmodule Bookkeeping.Core.LineItemTest do
   end
 
   test "create line item with valid account, amount, and binary_entry_type", %{details: details} do
-    assert {:ok, asset_account} =
-             Account.create("10000", "cash", "asset", "description", details)
+    assert {:ok, asset_account} = Account.create("10000", "cash", "asset", "description", details)
 
     assert {:ok, line_item} =
              LineItem.create(%{account: asset_account, amount: Decimal.new(100)}, :debit)

@@ -454,7 +454,9 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
          description \\ "",
          audit_details \\ %{}
        ) do
-    with true <- is_binary(code) and is_binary(name) and account_type in @account_types,
+    valid_fields? = is_binary(code) and is_binary(name) and account_type in @account_types
+
+    with true <- valid_fields?,
          {:error, :not_found} <- GenServer.call(server, {:find_account_by_code, code}),
          {:error, :not_found} <- GenServer.call(server, {:find_account_by_name, name}) do
       GenServer.call(

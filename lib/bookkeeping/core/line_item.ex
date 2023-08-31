@@ -33,7 +33,7 @@ defmodule Bookkeeping.Core.LineItem do
       - left: The list of maps with account and amount field and represents the entry type of debit.
       - right: The list of maps with account and amount field and represents the entry type of credit.
 
-  Returns `{:ok, [%LineItem{}, ...]}` if the line item is valid. Otherwise, returns `{:error, :invalid_line_item}`.
+  Returns `{:ok, [%LineItem{}, ...]}` if the line item is valid. Otherwise, returns `{:error, :invalid_line_items}`.
 
   ## Examples
 
@@ -55,7 +55,7 @@ defmodule Bookkeeping.Core.LineItem do
   @spec bulk_create(t_accounts()) ::
           {:ok, list(__MODULE__.t())}
           | {:error, %{message: :invalid_line_items, errors: list(atom())}}
-          | {:error, :invalid_line_item}
+          | {:error, :invalid_line_items}
   def bulk_create(%{left: left, right: right} = t_accounts) when left != [] and right != [] do
     bulk_create_result =
       t_accounts
@@ -96,7 +96,7 @@ defmodule Bookkeeping.Core.LineItem do
       - account_amount_pair: The map with account and amount field.
       - atom_entry_type: The atom that represents the entry type of the line item. The atom must be either `:debit` or `:credit`.
 
-    Returns `{:ok, %LineItem{}}` if the line item is valid. Otherwise, returns `{:error, :invalid_line_item}`.
+    Returns `{:ok, %LineItem{}}` if the line item is valid. Otherwise, returns `{:error, :invalid_line_items}`, `{:error, :unbalanced_line_items}`, or `{:error, list(:invalid_amount | :invalid_account | :inactive_account)}`.
 
     ## Examples
 
@@ -112,7 +112,10 @@ defmodule Bookkeeping.Core.LineItem do
          }}
   """
   @spec create(account_amount_pair(), EntryType.t()) ::
-          {:ok, __MODULE__.t()} | {:error, :invalid_line_item}
+          {:ok, __MODULE__.t()}
+          | {:error, :invalid_line_items}
+          | {:error, :unbalanced_line_items}
+          | {:error, list(:invalid_amount | :invalid_account | :inactive_account)}
   def create(account_amount_pair, atom_entry_type) do
     with {:ok, %{account: account, amount: amount}} <-
            validate_account_and_amount(account_amount_pair),
@@ -120,7 +123,7 @@ defmodule Bookkeeping.Core.LineItem do
       {:ok, %__MODULE__{account: account, amount: amount, entry_type: entry_type}}
     else
       {:error, message} -> {:error, message}
-      _ -> {:error, :invalid_line_item}
+      _ -> {:error, :invalid_line_items}
     end
   end
 
@@ -140,7 +143,7 @@ defmodule Bookkeeping.Core.LineItem do
       {:ok, %{account: account, amount: amount}}
     else
       {:error, message} -> {:error, message}
-      _ -> {:error, :invalid_line_item}
+      _ -> {:error, :invalid_line_items}
     end
   end
 

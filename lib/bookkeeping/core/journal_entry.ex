@@ -50,7 +50,7 @@ defmodule Bookkeeping.Core.JournalEntry do
       - right: The list of maps with account and amount field and represents the entry type of credit.
     - audit_details: The details of the audit log.
 
-  Returns `{:ok, %JournalEntry{}}` if the journal entry is valid. Otherwise, returns `{:error, :invalid_journal_entry}`.
+  Returns `{:ok, %JournalEntry{}}` if the journal entry is valid. Otherwise, returns `{:error, :invalid_journal_entry}`, `{:error, :invalid_line_items}`, `{:error, :unbalanced_line_items}`, or `{:error, list(:invalid_amount | :invalid_account | :inactive_account)}`.
 
   ## Examples
 
@@ -96,7 +96,11 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   """
   @spec create(DateTime.t(), t_accounts(), String.t(), String.t(), map(), map()) ::
-          {:ok, __MODULE__.t()} | {:error, :invalid_journal_entry}
+          {:ok, __MODULE__.t()}
+          | {:error, :invalid_journal_entry}
+          | {:error, :unbalanced_line_items}
+          | {:error, :invalid_line_items}
+          | {:error, list(:invalid_amount | :invalid_account | :inactive_account)}
   def create(
         transaction_date,
         t_accounts,

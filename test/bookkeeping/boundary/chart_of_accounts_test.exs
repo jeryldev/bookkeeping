@@ -20,13 +20,25 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
              ChartOfAccountsServer.create_account("1000101", "Cash Test", "asset")
 
     assert {:ok, account} =
-             ChartOfAccountsServer.create_account("1000", "Cash1", "asset", description, details)
+             ChartOfAccountsServer.create_account(
+               "1000",
+               "Cash1",
+               "asset",
+               description,
+               details
+             )
 
     assert account.code == "1000"
     assert account.name == "Cash1"
 
     assert {:error, :account_already_exists} =
-             ChartOfAccountsServer.create_account("1000", "Cash1", "asset", description, details)
+             ChartOfAccountsServer.create_account(
+               "1000",
+               "Cash1",
+               "asset",
+               description,
+               details
+             )
 
     assert {:error, :invalid_account} =
              ChartOfAccountsServer.create_account(
@@ -39,7 +51,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
              )
 
     assert {:error, :invalid_account} =
-             ChartOfAccountsServer.create_account("1003", "", "asset", description, details)
+             ChartOfAccountsServer.create_account(
+               "1003",
+               "",
+               "asset",
+               description,
+               details
+             )
   end
 
   test "import default accounts" do
@@ -106,7 +124,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   test "update account" do
     assert {:ok, account} =
-             ChartOfAccountsServer.create_account("1000update", "Cash original", "asset", "", %{})
+             ChartOfAccountsServer.create_account(
+               "1000update",
+               "Cash original",
+               "asset",
+               "",
+               %{}
+             )
 
     assert {:ok, updated_account} =
              ChartOfAccountsServer.update_account(account, %{name: "Cash updated"})
@@ -132,7 +156,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   test "find account by code" do
     assert {:ok, account} =
-             ChartOfAccountsServer.create_account("1001", "Accounts receivable", "asset", "", %{})
+             ChartOfAccountsServer.create_account(
+               "1001",
+               "Accounts receivable",
+               "asset",
+               "",
+               %{}
+             )
 
     assert {:ok, account} = ChartOfAccountsServer.find_account_by_code(account.code)
     assert account.code == "1001"
@@ -214,10 +244,22 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
              ChartOfAccountsServer.create_account("10010000101", "Cash5", "asset", "", %{})
 
     assert {:ok, account_2} =
-             ChartOfAccountsServer.create_account("10020000101", "Receivable5", "asset", "", %{})
+             ChartOfAccountsServer.create_account(
+               "10020000101",
+               "Receivable5",
+               "asset",
+               "",
+               %{}
+             )
 
     assert {:ok, account_3} =
-             ChartOfAccountsServer.create_account("10030000101", "Inventory5", "asset", "", %{})
+             ChartOfAccountsServer.create_account(
+               "10030000101",
+               "Inventory5",
+               "asset",
+               "",
+               %{}
+             )
 
     assert {:ok, accounts} = ChartOfAccountsServer.all_accounts()
     assert Enum.member?(accounts, account_1)
@@ -234,7 +276,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   test "test chart of accounts with working backup" do
     assert {:ok, account_1} =
-             ChartOfAccountsServer.create_account("1001000010101", "Cash6", "asset", "", %{})
+             ChartOfAccountsServer.create_account(
+               "1001000010101",
+               "Cash6",
+               "asset",
+               "",
+               %{}
+             )
 
     assert {:ok, account_2} =
              ChartOfAccountsServer.create_account(
