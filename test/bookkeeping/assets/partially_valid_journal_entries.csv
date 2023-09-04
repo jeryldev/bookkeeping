@@ -1,9 +1,9 @@
-Reference Number,Transaction Date,Account Name,Debit,Credit,Posted,Description,Journal Entry Details,Audit Details
-1008,08-12-2023,"Property, Plant, and Equipment",20000,,no,,{},"{""created_by"": ""example@example.com""}"
-1008,08-12-2023,Inventory,20000,,no,,{},"{""created_by"": ""example@example.com""}"
-1008,08-12-2023,Accounts Payable,,5000,no,,{},"{""created_by"": ""example@example.com""}"
-1008,08-12-2023,Long-term Debt,,10000,no,,{},"{""created_by"": ""example@example.com""}"
-1009,08-12-2023,Inventory,20000,,no,,{},"{""created_by"": ""example@example.com""}"
-1008,08-12-2023,Short-term Debt,,5000,no,,{},"{""created_by"": ""example@example.com""}"
-1008,08-12-2023,Cash,,20000,no,,{},"{""created_by"": ""example@example.com""}"
-1009,08-12-2023,Cash,,19000,no,,{},"{""created_by"": ""example@example.com""}"
+Journal Entry Number,Transaction Date,Account Name,Debit,Credit,Posted,Description,Journal Entry Details,Audit Details,General Ledger Posting Date,Transaction Reference Number
+1008,08-12-2023,"Property, Plant, and Equipment",20000,,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1008,08-12-2023,Inventory,20000,,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1008,08-12-2023,Accounts Payable,,5000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1008,08-12-2023,Long-term Debt,,10000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1009,08-12-2023,Inventory,20000,,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1008,08-12-2023,Short-term Debt,,5000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1008,08-12-2023,Cash,,20000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1009,08-12-2023,Cash,,19000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,

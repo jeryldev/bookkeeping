@@ -3,154 +3,212 @@ defmodule Bookkeeping.Core.JournalEntryTest do
   alias Bookkeeping.Core.{Account, JournalEntry}
 
   setup do
-    details = %{email: "example@example.com"}
-    {:ok, asset_account} = Account.create("10000", "cash", "asset", "description", details)
-    {:ok, expense_account} = Account.create("20000", "rent", "expense", "description", details)
+    transaction_date = DateTime.utc_now()
+    general_ledger_posting_date = DateTime.utc_now()
+    journal_entry_number = "JE100100"
+    transaction_reference_number = "INV100100"
+    audit_details = %{created_by: "example@example.com"}
+    {:ok, asset_account} = Account.create("10000", "cash", "asset", "description", audit_details)
 
-    {:ok, details: details, asset_account: asset_account, expense_account: expense_account}
+    {:ok, revenue_account} =
+      Account.create("20000", "service revenue", "revenue", "description", audit_details)
+
+    t_accounts = %{
+      left: [%{account: asset_account, amount: Decimal.new(100)}],
+      right: [%{account: revenue_account, amount: Decimal.new(100)}]
+    }
+
+    journal_entry_details = %{approved_by: "example@example.com"}
+
+    {:ok,
+     transaction_date: transaction_date,
+     general_ledger_posting_date: general_ledger_posting_date,
+     asset_account: asset_account,
+     revenue_account: revenue_account,
+     t_accounts: t_accounts,
+     journal_entry_number: journal_entry_number,
+     transaction_reference_number: transaction_reference_number,
+     journal_entry_details: journal_entry_details,
+     audit_details: audit_details}
   end
 
   test "create a journal entry", %{
-    details: details,
-    asset_account: asset_account,
-    expense_account: expense_account
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    journal_entry_number: journal_entry_number,
+    transaction_reference_number: transaction_reference_number,
+    journal_entry_details: journal_entry_details,
+    audit_details: audit_details
   } do
     assert {:ok, _journal_entry} =
              JournalEntry.create(
-               DateTime.utc_now(),
-               %{
-                 left: [%{account: expense_account, amount: Decimal.new(100)}],
-                 right: [%{account: asset_account, amount: Decimal.new(100)}]
-               },
-               "reference number",
-               "description",
-               %{},
-               details
+               transaction_date,
+               general_ledger_posting_date,
+               t_accounts,
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
   end
 
   test "disallow journal entry with invalid t_accounts", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
     asset_account: asset_account,
-    expense_account: expense_account
+    revenue_account: revenue_account,
+    journal_entry_number: journal_entry_number,
+    transaction_reference_number: transaction_reference_number,
+    journal_entry_details: journal_entry_details,
+    audit_details: audit_details
   } do
     assert {:error, [:invalid_account]} =
              JournalEntry.create(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{
-                 left: [%{account: "expense_account", amount: Decimal.new(100)}],
+                 left: [%{account: "revenue_account", amount: Decimal.new(100)}],
                  right: [%{account: asset_account, amount: Decimal.new(100)}]
                },
-               "reference number",
-               "description",
-               %{},
-               details
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
 
     assert {:error, [:invalid_account]} =
              JournalEntry.create(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{
-                 left: [%{account: expense_account, amount: Decimal.new(100)}],
+                 left: [%{account: revenue_account, amount: Decimal.new(100)}],
                  right: [%{account: "asset_account", amount: Decimal.new(100)}]
                },
-               "reference number",
-               "description",
-               %{},
-               details
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
 
     assert {:error, :unbalanced_line_items} =
              JournalEntry.create(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{
-                 left: [%{account: expense_account, amount: Decimal.new(100)}],
+                 left: [%{account: revenue_account, amount: Decimal.new(100)}],
                  right: [%{account: asset_account, amount: Decimal.new(200)}]
                },
-               "reference number",
-               "description",
-               %{},
-               details
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
 
     assert {:error, [:invalid_amount]} =
              JournalEntry.create(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{
-                 left: [%{account: expense_account, amount: 100}],
+                 left: [%{account: revenue_account, amount: 100}],
                  right: [%{account: asset_account, amount: Decimal.new(200)}]
                },
-               "reference number",
-               "description",
-               %{},
-               details
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
 
     assert {:error, [:invalid_amount]} =
              JournalEntry.create(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{
-                 left: [%{account: expense_account, amount: Decimal.new(200)}],
+                 left: [%{account: revenue_account, amount: Decimal.new(200)}],
                  right: [%{account: asset_account, amount: 200}]
                },
-               "reference number",
-               "description",
-               %{},
-               details
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
 
     assert {:error, [:invalid_amount]} =
              JournalEntry.create(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{
-                 left: [%{account: expense_account, amount: 100}],
+                 left: [%{account: revenue_account, amount: 100}],
                  right: [%{account: asset_account, amount: Decimal.new(200)}]
                },
-               "reference number",
-               "description",
-               %{},
-               details
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
   end
 
-  test "disallow journal entry with invalid fields" do
+  test "disallow journal entry with invalid fields", %{
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    journal_entry_number: journal_entry_number,
+    transaction_reference_number: transaction_reference_number,
+    journal_entry_details: journal_entry_details,
+    audit_details: audit_details
+  } do
     assert {:error, :invalid_journal_entry} =
              JournalEntry.create(
                nil,
+               nil,
                %{},
-               "reference number",
-               "description",
-               %{},
-               %{}
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
 
     assert {:error, :invalid_line_items} =
              JournalEntry.create(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{},
-               "reference number",
-               "description",
-               %{},
-               %{}
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
   end
 
   test "update journal entry", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
     asset_account: asset_account,
-    expense_account: expense_account
+    revenue_account: revenue_account,
+    journal_entry_number: journal_entry_number,
+    transaction_reference_number: transaction_reference_number,
+    journal_entry_details: journal_entry_details,
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry} =
              JournalEntry.create(
-               DateTime.utc_now(),
-               %{
-                 left: [%{account: expense_account, amount: Decimal.new(100)}],
-                 right: [%{account: asset_account, amount: Decimal.new(100)}]
-               },
-               "reference number 2",
-               "description",
-               %{},
-               details
+               transaction_date,
+               general_ledger_posting_date,
+               t_accounts,
+               journal_entry_number,
+               transaction_reference_number,
+               "journal entry description",
+               journal_entry_details,
+               audit_details
              )
 
     assert {:error, :invalid_journal_entry} = JournalEntry.update(journal_entry, %{})
@@ -158,16 +216,16 @@ defmodule Bookkeeping.Core.JournalEntryTest do
     assert {:ok, updated_journal_entry} =
              JournalEntry.update(journal_entry, %{
                description: "second updated description",
-               journal_entry_details: %{approved_by: "example@example.com"},
+               journal_entry_details: %{approved_by: "other_example@example.com"},
                posted: false,
                t_accounts: %{
-                 left: [%{account: expense_account, amount: Decimal.new(200)}],
-                 right: [%{account: asset_account, amount: Decimal.new(200)}]
+                 left: [%{account: asset_account, amount: Decimal.new(200)}],
+                 right: [%{account: revenue_account, amount: Decimal.new(200)}]
                }
              })
 
     assert updated_journal_entry.transaction_date == journal_entry.transaction_date
-    assert updated_journal_entry.reference_number == journal_entry.reference_number
+    assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
     refute updated_journal_entry.description == journal_entry.description
 
     assert {:ok, updated_journal_entry} =
@@ -177,7 +235,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
              })
 
     assert updated_journal_entry.transaction_date == journal_entry.transaction_date
-    assert updated_journal_entry.reference_number == journal_entry.reference_number
+    assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
     refute updated_journal_entry.description == journal_entry.description
     refute updated_journal_entry.posted == journal_entry.posted
 
@@ -186,8 +244,8 @@ defmodule Bookkeeping.Core.JournalEntryTest do
                description: "third description update",
                posted: true,
                t_accounts: %{
-                 left: [%{account: expense_account, amount: Decimal.new(200)}],
-                 right: [%{account: asset_account, amount: Decimal.new(200)}]
+                 left: [%{account: asset_account, amount: Decimal.new(200)}],
+                 right: [%{account: revenue_account, amount: Decimal.new(200)}]
                }
              })
   end
