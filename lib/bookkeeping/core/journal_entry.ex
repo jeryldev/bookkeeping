@@ -7,8 +7,10 @@ defmodule Bookkeeping.Core.JournalEntry do
   @type t :: %__MODULE__{
           id: UUID.t(),
           transaction_date: DateTime.t(),
+          general_ledger_posting_date: DateTime.t(),
           line_items: list(LineItem.t()),
           journal_entry_number: String.t(),
+          transaction_reference_number: String.t(),
           description: String.t(),
           journal_entry_details: map(),
           audit_logs: list(AuditLog.t()),
@@ -30,7 +32,9 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   defstruct id: UUID.uuid4(),
             transaction_date: DateTime.utc_now(),
+            general_ledger_posting_date: DateTime.utc_now(),
             journal_entry_number: "",
+            transaction_reference_number: "",
             description: "",
             journal_entry_details: %{},
             line_items: [],
@@ -41,10 +45,12 @@ defmodule Bookkeeping.Core.JournalEntry do
   Creates a new journal entry struct.
 
   Arguments:
-    - transaction_date: The date of the transaction.
-    - journal_entry_number: The unique reference number of the journal entry.
-    - description: The description of the journal entry.
-    - journal_entry_details: The details of the journal entry.
+    - transaction_date: The date of the transaction. This is usually the date of the source document (i.e. invoice date, check date, etc.)
+    - general_ledger_posting_date: The date of the General Ledger posting. This is usually the date when the journal entry is posted to the General Ledger.
+    - journal_entry_number: The unique reference number of the journal entry. This is an auto-generated unique sequential identifier that is distinct from the transaction reference number (i.e. JE001000, JE001002, etc).
+    - description: The description of the journal entry. This is usually the description of the source document (i.e. invoice description, check description, etc.)
+    - transaction_reference_number: The reference number of the transaction. This is usually the reference number of the source document (i.e. invoice number, check number, etc.)
+    - journal_entry_details: The details of the journal entry. The details are usually the details of the source document (i.e. invoice details, check details, etc.)
     - t_accounts: The map of line items. The map must have the following keys:
       - left: The list of maps with account and amount field and represents the entry type of debit.
       - right: The list of maps with account and amount field and represents the entry type of credit.
@@ -54,25 +60,27 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   ## Examples
 
-      iex> JournalEntry.create(DateTime.utc_now(), "reference number", "description", %{}, %{
-                 left: [%{account: expense_account, amount: Decimal.new(100)}],
-                 right: [%{account: asset_account, amount: Decimal.new(100)}]
-               }, %{})
+      iex> JournalEntry.create(DateTime.utc_now(), DateTime.utc_now(), %{
+                 left: [%{account: asset_account, amount: Decimal.new(100)}],
+                 right: [%{account: revenue_account, amount: Decimal.new(100)}]
+               }, "JE001001", "INV001001", "description", %{}, %{})
       {:ok,
       %JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "reference number",
+        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
+        journal_entry_number: "JE001001",
+        transaction_reference_number: "INV001001",
         description: "description",
         journal_entry_details: %{},
         line_items: [
           %LineItem{
-            account: expense_account,
+            account: asset_account,
             amount: Decimal.new(100),
             entry_type: :debit
           },
           %LineItem{
-            account: asset_account,
+            account: revenue_account,
             amount: Decimal.new(100),
             entry_type: :credit
           }
@@ -95,7 +103,16 @@ defmodule Bookkeeping.Core.JournalEntry do
       {:error, :invalid_journal_entry}
 
   """
-  @spec create(DateTime.t(), t_accounts(), String.t(), String.t(), map(), map()) ::
+  @spec create(
+          DateTime.t(),
+          DateTime.t(),
+          t_accounts(),
+          String.t(),
+          String.t(),
+          String.t(),
+          map(),
+          map()
+        ) ::
           {:ok, __MODULE__.t()}
           | {:error, :invalid_journal_entry}
           | {:error, :unbalanced_line_items}
@@ -103,26 +120,35 @@ defmodule Bookkeeping.Core.JournalEntry do
           | {:error, list(:invalid_amount | :invalid_account | :inactive_account)}
   def create(
         transaction_date,
+        general_ledger_posting_date,
         t_accounts,
         journal_entry_number,
+        transaction_reference_number,
+        description,
+        journal_entry_details,
+        audit_details
+      ) do
+    valid_fields? =
+      is_binary(journal_entry_number) and is_binary(transaction_reference_number) and
+        is_binary(description) and is_map(journal_entry_details) and is_map(t_accounts) and
+        is_map(audit_details) and not is_nil(transaction_date) and
+        not is_nil(general_ledger_posting_date)
+
+    if valid_fields? do
+      new(
+        transaction_date,
+        general_ledger_posting_date,
+        t_accounts,
+        journal_entry_number,
+        transaction_reference_number,
         description,
         journal_entry_details,
         audit_details
       )
-      when is_binary(journal_entry_number) and is_binary(description) and
-             is_map(journal_entry_details) and is_map(t_accounts) and
-             is_map(audit_details) and not is_nil(transaction_date) do
-    new(
-      transaction_date,
-      t_accounts,
-      journal_entry_number,
-      description,
-      journal_entry_details,
-      audit_details
-    )
+    else
+      {:error, :invalid_journal_entry}
+    end
   end
-
-  def create(_, _, _, _, _, _), do: {:error, :invalid_journal_entry}
 
   @doc """
   Updates a journal entry struct. Update can only be done if the journal entry is not posted.
@@ -223,7 +249,15 @@ defmodule Bookkeeping.Core.JournalEntry do
   def update(journal_entry, attrs)
       when is_map(attrs) and map_size(attrs) > 0 and journal_entry.posted == false do
     transaction_date = Map.get(attrs, :transaction_date, journal_entry.transaction_date)
-    journal_entry_number = Map.get(attrs, :journal_entry_number, journal_entry.journal_entry_number)
+
+    general_ledger_posting_date = Map.get(attrs, :general_ledger_posting_date, journal_entry.general_ledger_posting_date)
+
+    journal_entry_number =
+      Map.get(attrs, :journal_entry_number, journal_entry.journal_entry_number)
+
+    transaction_reference_number =
+      Map.get(attrs, :transaction_reference_number, journal_entry.transaction_reference_number)
+
     description = Map.get(attrs, :description, journal_entry.description)
 
     journal_entry_details =
@@ -234,9 +268,10 @@ defmodule Bookkeeping.Core.JournalEntry do
     audit_details = Map.get(attrs, :audit_details, %{})
 
     valid_fields? =
-      is_binary(journal_entry_number) and journal_entry_number != "" and is_binary(description) and
-        not is_nil(transaction_date) and is_boolean(posted) and is_map(t_accounts) and
-        is_map(audit_details)
+      is_binary(journal_entry_number) and journal_entry_number != "" and
+        is_binary(transaction_reference_number) and transaction_reference_number != "" and
+        is_binary(description) and not is_nil(transaction_date) and not is_nil(general_ledger_posting_date) and
+        is_boolean(posted) and is_map(t_accounts) and is_map(audit_details)
 
     with true <- valid_fields?,
          {:ok, audit_log} <- AuditLog.create("journal_entry", "update", audit_details) do
@@ -244,8 +279,10 @@ defmodule Bookkeeping.Core.JournalEntry do
         process_journal_entry_update(
           journal_entry,
           transaction_date,
+          general_ledger_posting_date,
           t_accounts,
           journal_entry_number,
+          transaction_reference_number,
           description,
           journal_entry_details,
           audit_log,
@@ -265,8 +302,10 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   defp new(
          transaction_date,
+         general_ledger_posting_date,
          t_accounts,
          journal_entry_number,
+         transaction_reference_number,
          description,
          journal_entry_details,
          audit_details
@@ -277,8 +316,10 @@ defmodule Bookkeeping.Core.JournalEntry do
        %__MODULE__{
          id: UUID.uuid4(),
          transaction_date: transaction_date,
+         general_ledger_posting_date: general_ledger_posting_date,
          line_items: line_items,
          journal_entry_number: journal_entry_number,
+         transaction_reference_number: transaction_reference_number,
          description: description,
          journal_entry_details: journal_entry_details,
          audit_logs: [audit_log]
@@ -291,8 +332,10 @@ defmodule Bookkeeping.Core.JournalEntry do
   defp process_journal_entry_update(
          current_journal_entry,
          transaction_date,
+         general_ledger_posting_date,
          t_accounts,
          journal_entry_number,
+         transaction_reference_number,
          description,
          journal_entry_details,
          audit_log,
@@ -310,7 +353,9 @@ defmodule Bookkeeping.Core.JournalEntry do
 
     update_params = %{
       transaction_date: transaction_date,
+      general_ledger_posting_date: general_ledger_posting_date,
       journal_entry_number: journal_entry_number,
+      transaction_reference_number: transaction_reference_number,
       description: description,
       journal_entry_details: journal_entry_details,
       line_items: line_items,
