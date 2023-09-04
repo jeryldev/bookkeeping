@@ -214,48 +214,26 @@ defmodule Bookkeeping.Core.JournalEntry do
   @spec update(__MODULE__.t(), map()) :: {:ok, __MODULE__.t()} | {:error, :invalid_journal_entry}
   def update(journal_entry, attrs)
       when is_map(attrs) and map_size(attrs) > 0 and journal_entry.posted == false do
-    transaction_date = Map.get(attrs, :transaction_date, journal_entry.transaction_date)
-
-    general_ledger_posting_date = Map.get(attrs, :general_ledger_posting_date, journal_entry.general_ledger_posting_date)
-
-    journal_entry_number =
-      Map.get(attrs, :journal_entry_number, journal_entry.journal_entry_number)
-
-    transaction_reference_number =
-      Map.get(attrs, :transaction_reference_number, journal_entry.transaction_reference_number)
-
-    description = Map.get(attrs, :description, journal_entry.description)
-
-    journal_entry_details =
-      Map.get(attrs, :journal_entry_details, journal_entry.journal_entry_details)
-
-    posted = Map.get(attrs, :posted, journal_entry.posted)
-    t_accounts = Map.get(attrs, :t_accounts, %{left: [], right: []})
-    audit_details = Map.get(attrs, :audit_details, %{})
-
-    valid_fields? =
-      is_binary(journal_entry_number) and journal_entry_number != "" and
-        is_binary(transaction_reference_number) and transaction_reference_number != "" and
-        is_binary(description) and not is_nil(transaction_date) and not is_nil(general_ledger_posting_date) and
-        is_boolean(posted) and is_map(t_accounts) and is_map(audit_details)
-
-    with true <- valid_fields?,
-         {:ok, audit_log} <- AuditLog.create("journal_entry", "update", audit_details) do
-      updated_journal_entry =
-        process_journal_entry_update(
-          journal_entry,
-          transaction_date,
-          general_ledger_posting_date,
-          t_accounts,
-          journal_entry_number,
-          transaction_reference_number,
-          description,
-          journal_entry_details,
-          audit_log,
-          posted
-        )
-
-      {:ok, updated_journal_entry}
+    with {:ok, params} <- validate_update_params(journal_entry, attrs),
+         {:ok, audit_log} <- AuditLog.create("journal_entry", "update", params.audit_details),
+         {:ok, initial_je_update} <-
+           update_dates_and_line_items(
+             journal_entry,
+             params.transaction_date,
+             params.general_ledger_posting_date,
+             params.t_accounts
+           ),
+         {:ok, final_je_update} <-
+           update_other_journal_entry_details(
+             initial_je_update,
+             params.journal_entry_number,
+             params.transaction_reference_number,
+             params.description,
+             params.journal_entry_details,
+             audit_log,
+             params.posted
+           ) do
+      {:ok, final_je_update}
     else
       _ -> {:error, :invalid_journal_entry}
     end
@@ -295,23 +273,44 @@ defmodule Bookkeeping.Core.JournalEntry do
     end
   end
 
-  defp process_journal_entry_update(
-         current_journal_entry,
+  defp validate_update_fields(params) do
+    is_binary(params.journal_entry_number) and params.journal_entry_number != "" and
+      is_binary(params.transaction_reference_number) and is_binary(params.description) and
+      not is_nil(params.transaction_date) and not is_nil(params.general_ledger_posting_date) and
+      is_boolean(params.posted) and is_map(params.t_accounts) and is_map(params.audit_details)
+  end
+
+  defp validate_update_params(journal_entry, attrs) do
+    params = %{
+      transaction_date: Map.get(attrs, :transaction_date, journal_entry.transaction_date),
+      general_ledger_posting_date:
+        Map.get(attrs, :general_ledger_posting_date, journal_entry.general_ledger_posting_date),
+      t_accounts: Map.get(attrs, :t_accounts, %{left: [], right: []}),
+      journal_entry_number:
+        Map.get(attrs, :journal_entry_number, journal_entry.journal_entry_number),
+      transaction_reference_number:
+        Map.get(attrs, :transaction_reference_number, journal_entry.transaction_reference_number),
+      description: Map.get(attrs, :description, journal_entry.description),
+      journal_entry_details:
+        Map.get(attrs, :journal_entry_details, journal_entry.journal_entry_details),
+      posted: Map.get(attrs, :posted, journal_entry.posted),
+      audit_details: Map.get(attrs, :audit_details, %{})
+    }
+
+    if validate_update_fields(params),
+      do: {:ok, params},
+      else: {:error, :invalid_journal_entry}
+  end
+
+  defp update_dates_and_line_items(
+         journal_entry,
          transaction_date,
          general_ledger_posting_date,
-         t_accounts,
-         journal_entry_number,
-         transaction_reference_number,
-         description,
-         journal_entry_details,
-         audit_log,
-         posted
+         t_accounts
        ) do
-    existing_audit_logs = Map.get(current_journal_entry, :audit_logs, [])
-
     line_items =
       if t_accounts == %{left: [], right: []} do
-        current_journal_entry.line_items
+        journal_entry.line_items
       else
         {:ok, line_items} = LineItem.bulk_create(t_accounts)
         line_items
@@ -320,15 +319,32 @@ defmodule Bookkeeping.Core.JournalEntry do
     update_params = %{
       transaction_date: transaction_date,
       general_ledger_posting_date: general_ledger_posting_date,
+      line_items: line_items
+    }
+
+    {:ok, Map.merge(journal_entry, update_params)}
+  end
+
+  defp update_other_journal_entry_details(
+         journal_entry,
+         journal_entry_number,
+         transaction_reference_number,
+         description,
+         journal_entry_details,
+         audit_log,
+         posted
+       ) do
+    existing_audit_logs = Map.get(journal_entry, :audit_logs, [])
+
+    update_params = %{
       journal_entry_number: journal_entry_number,
       transaction_reference_number: transaction_reference_number,
       description: description,
       journal_entry_details: journal_entry_details,
-      line_items: line_items,
       audit_logs: [audit_log | existing_audit_logs],
       posted: posted
     }
 
-    Map.merge(current_journal_entry, update_params)
+    {:ok, Map.merge(journal_entry, update_params)}
   end
 end

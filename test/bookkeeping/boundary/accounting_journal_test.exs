@@ -43,6 +43,17 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     journal_entry_details = %{approved_by: "John Doe", approved_at: DateTime.utc_now()}
 
+    create_je_params = %{
+      transaction_date: transaction_date,
+      general_ledger_posting_date: general_ledger_posting_date,
+      t_accounts: t_accounts,
+      journal_entry_number: journal_entry_number,
+      transaction_reference_number: transaction_reference_number,
+      description: description,
+      journal_entry_details: journal_entry_details,
+      audit_details: audit_details
+    }
+
     {:ok,
      transaction_date: transaction_date,
      general_ledger_posting_date: general_ledger_posting_date,
@@ -54,7 +65,8 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
      inactive_revenue_account: inactive_revenue_account,
      description: description,
      journal_entry_details: journal_entry_details,
-     audit_details: audit_details}
+     audit_details: audit_details,
+     create_je_params: create_je_params}
   end
 
   test "start link" do
@@ -62,36 +74,18 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert server in Process.list()
   end
 
-  test "create journal entry", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
+  test "create journal entry", %{create_je_params: create_je_params} do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_0")
+
     assert {:ok, journal_entry_0} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_0"
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert journal_entry_0.journal_entry_number == "ref_num_0"
 
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_1")
+
     assert {:ok, journal_entry_1} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_1",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert journal_entry_1.journal_entry_number == "ref_num_1"
     assert journal_entry_1.description == "journal entry description"
@@ -100,52 +94,24 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert journal_entry_1.posted == false
   end
 
-  test "create multiple journal entries on the same day", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
-    assert {:ok, journal_entry_2} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_2",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+  test "create multiple journal entries on the same day", %{create_je_params: create_je_params} do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_2")
+    assert {:ok, journal_entry_2} = AccountingJournalServer.create_journal_entry(params)
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_3")
 
     assert {:ok, journal_entry_3} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_3",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     other_transaction_date = DateTime.add(journal_entry_2.transaction_date, 10, :day)
 
+    params =
+      create_je_params
+      |> Map.put(:transaction_date, other_transaction_date)
+      |> Map.put(:general_ledger_posting_date, other_transaction_date)
+      |> Map.put(:journal_entry_number, "ref_num_4")
+
     assert {:ok, journal_entry_4} =
-             AccountingJournalServer.create_journal_entry(
-               other_transaction_date,
-               other_transaction_date,
-               t_accounts,
-               "ref_num_4",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert {:ok, found_journal_entries} =
              journal_entry_2.transaction_date
@@ -157,50 +123,21 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "do not create journal entries with duplicate reference numbers", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
+    create_je_params: create_je_params
   } do
-    assert {:ok, _journal_entry_1} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_5",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_5")
+    assert {:ok, _journal_entry_1} = AccountingJournalServer.create_journal_entry(params)
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_5")
 
     assert {:error, :duplicate_journal_entry_number} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_5",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
   end
 
   test "do not create journal entry with invalid inputs", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
     cash_account: cash_account,
     revenue_account: revenue_account,
     inactive_revenue_account: inactive_revenue_account,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
+    create_je_params: create_je_params
   } do
     empty_t_accounts = %{left: [], right: []}
 
@@ -209,120 +146,74 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
       right: [%{account: revenue_account, amount: Decimal.new(200)}]
     }
 
+    params =
+      create_je_params
+      |> Map.put(:t_accounts, empty_t_accounts)
+      |> Map.put(:journal_entry_number, "ref_num_6")
+
     assert {:error, :invalid_line_items} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               empty_t_accounts,
-               "ref_num_6",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
+
+    params =
+      create_je_params
+      |> Map.put(:t_accounts, invalid_t_accounts)
+      |> Map.put(:journal_entry_number, "ref_num_7")
 
     assert {:error, :unbalanced_line_items} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               invalid_t_accounts,
-               "ref_num_7",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
+
+    params =
+      create_je_params
+      |> Map.put(:description, nil)
+      |> Map.put(:journal_entry_number, "invalid_je_1")
 
     assert {:error, :invalid_journal_entry} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "invalid_je_1",
-               transaction_reference_number,
-               nil,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
+
+    params =
+      create_je_params
+      |> Map.put(:t_accounts, %{
+        left: [%{account: cash_account, amount: Decimal.new(100)}],
+        right: [%{account: inactive_revenue_account, amount: Decimal.new(200)}]
+      })
+      |> Map.put(:journal_entry_number, "invalid_je_2")
 
     assert {:error, [:inactive_account]} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               %{
-                 left: [%{account: cash_account, amount: Decimal.new(100)}],
-                 right: [%{account: inactive_revenue_account, amount: Decimal.new(200)}]
-               },
-               "invalid_je_2",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
+
+    params =
+      create_je_params
+      |> Map.put(:t_accounts, %{
+        left: [%{account: cash_account, amount: Decimal.new(100)}],
+        right: [%{account: revenue_account, amount: Decimal.new(200)}]
+      })
+      |> Map.put(:journal_entry_number, "invalid_je_2")
 
     assert {:error, :unbalanced_line_items} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               %{
-                 left: [%{account: cash_account, amount: Decimal.new(100)}],
-                 right: [%{account: revenue_account, amount: Decimal.new(200)}]
-               },
-               "invalid_je_2",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
+
+    params =
+      create_je_params
+      |> Map.put(:t_accounts, %{
+        left: [%{account: cash_account, amount: Decimal.new(100)}],
+        right: []
+      })
+      |> Map.put(:journal_entry_number, "invalid_je_2")
 
     assert {:error, :invalid_line_items} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               %{
-                 left: [%{account: cash_account, amount: Decimal.new(100)}],
-                 right: []
-               },
-               "invalid_je_2",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
   end
 
-  test "search all journal entries", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
+  test "search all journal entries", %{create_je_params: create_je_params} do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_8")
+
     assert {:ok, journal_entry_1} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_8",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
+
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_9")
 
     assert {:ok, journal_entry_2} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_9",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert {:ok, all_journal_entries} = AccountingJournalServer.all_journal_entries()
 
@@ -331,26 +222,11 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert Enum.member?(all_journal_entries, journal_entry_2)
   end
 
-  test "find journal entries by transaction date", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
+  test "find journal entries by transaction date", %{create_je_params: create_je_params} do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_10")
+
     assert {:ok, journal_entry_1} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_10",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert {:ok, je_result_1} =
              journal_entry_1.transaction_date
@@ -369,26 +245,11 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournalServer.find_journal_entries_by_transaction_date(nil)
   end
 
-  test "find journal entries by reference number", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
+  test "find journal entries by reference number", %{create_je_params: create_je_params} do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_11")
+
     assert {:ok, journal_entry_1} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_11",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert {:ok, found_journal_entry} =
              journal_entry_1.journal_entry_number
@@ -403,26 +264,11 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournalServer.find_journal_entry_by_journal_entry_number(nil)
   end
 
-  test "find journal entries by id", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
+  test "find journal entries by id", %{create_je_params: create_je_params} do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_12")
+
     assert {:ok, journal_entry_1} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_12",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert {:ok, found_journal_entry} =
              AccountingJournalServer.find_journal_entries_by_id(journal_entry_1.id)
@@ -436,38 +282,16 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournalServer.find_journal_entries_by_id(nil)
   end
 
-  test "find journal entries by transaction date range", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
+  test "find journal entries by transaction date range", %{create_je_params: create_je_params} do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_13")
+
     assert {:ok, journal_entry_1} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_13",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
+
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_14")
 
     assert {:ok, journal_entry_2} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_14",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     current_from_date_details =
       journal_entry_1.transaction_date
@@ -610,27 +434,14 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "update accounting journal entry", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
     cash_account: cash_account,
     revenue_account: revenue_account,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
+    create_je_params: create_je_params
   } do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_15")
+
     assert {:ok, journal_entry} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_15",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert {:error, :invalid_journal_entry} =
              AccountingJournalServer.update_journal_entry(journal_entry, %{})
@@ -704,38 +515,16 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert Enum.member?(journal_entries, third_journal_entry_update)
   end
 
-  test "reset journal entries", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
+  test "reset journal entries", %{create_je_params: create_je_params} do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_16")
+
     assert {:ok, journal_entry_1} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_16",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
+
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_17")
 
     assert {:ok, journal_entry_2} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_17",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert {:ok, journal_entries} = AccountingJournalServer.all_journal_entries()
     assert Enum.member?(journal_entries, journal_entry_1)
@@ -748,38 +537,16 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     refute Enum.member?(journal_entries, journal_entry_2)
   end
 
-  test "test accounting journal with working backup", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    transaction_reference_number: transaction_reference_number,
-    description: description,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
+  test "test accounting journal with working backup", %{create_je_params: create_je_params} do
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_18")
+
     assert {:ok, journal_entry_1} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_18",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
+
+    params = Map.put(create_je_params, :journal_entry_number, "ref_num_19")
 
     assert {:ok, journal_entry_2} =
-             AccountingJournalServer.create_journal_entry(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               "ref_num_19",
-               transaction_reference_number,
-               description,
-               journal_entry_details,
-               audit_details
-             )
+             AccountingJournalServer.create_journal_entry(params)
 
     assert {:ok, journal_entries} = AccountingJournalServer.all_journal_entries()
     assert Enum.member?(journal_entries, journal_entry_1)

@@ -85,6 +85,17 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
           transaction_date_details => list(JournalEntry.t())
         }
 
+  @type create_journal_entry_params :: %{
+          transaction_date: DateTime.t(),
+          general_ledger_posting_date: DateTime.t(),
+          t_accounts: aj_t_accounts(),
+          journal_entry_number: String.t(),
+          transaction_reference_number: String.t(),
+          description: String.t(),
+          journal_entry_details: map(),
+          audit_details: map()
+        }
+
   @type transaction_date_details :: %{
           year: integer(),
           month: integer(),
@@ -137,10 +148,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.AccountingJournal.Server.create_journal_entry(
-      ...>   ~U[2021-10-10 10:10:10.000000Z],
-      ...>   ~U[2021-10-10 10:10:10.000000Z],
-      ...>   %{
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.create_journal_entry(%{
+      ...>   transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+      ...>   general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
+      ...>   t_accounts: %{
       ...>     left: [
       ...>       %{
       ...>         account: "Cash",
@@ -154,12 +165,12 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>       }
       ...>     ]
       ...>   },
-      ...>   "JE001001",
-      ...>   "INV001001",
-      ...>   "description",
-      ...>   %{},
-      ...>   %{}
-      ...> )
+      ...>   journal_entry_number: "JE001001",
+      ...>   transaction_reference_number: "INV001001",
+      ...>   description: "description",
+      ...>   journal_entry_details: %{},
+      ...>   audit_details: %{}
+      ...> })
       %{:ok, %Bookkeeping.Core.JournalEntry{
           id: "7a034a93-52d8-4b79-b198-32ae3b19ee0f",
           transaction_date: ~U[2021-10-10 10:10:10.000000Z],
@@ -238,57 +249,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
           posted: false
       }}
   """
-  @spec create_journal_entry(aj_pid, DateTime.t(), DateTime.t(), aj_t_accounts(), String.t()) ::
+  @spec create_journal_entry(aj_pid(), create_journal_entry_params()) ::
           {:ok, JournalEntry.t()} | {:error, :invalid_journal_entry}
-  def create_journal_entry(
-        server \\ __MODULE__,
-        transaction_date,
-        general_ledger_posting_date,
-        t_accounts,
-        journal_entry_number
-      ) do
-    create_journal_record(
-      server,
-      transaction_date,
-      general_ledger_posting_date,
-      t_accounts,
-      journal_entry_number
-    )
-  end
-
-  @spec create_journal_entry(
-          aj_pid(),
-          DateTime.t(),
-          DateTime.t(),
-          aj_t_accounts(),
-          String.t(),
-          String.t(),
-          String.t(),
-          map(),
-          map()
-        ) :: {:ok, JournalEntry.t()} | {:error, :invalid_journal_entry}
-  def create_journal_entry(
-        server \\ __MODULE__,
-        transaction_date,
-        general_ledger_posting_date,
-        t_accounts,
-        journal_entry_number,
-        transaction_reference_number,
-        description,
-        journal_entry_details,
-        audit_details
-      ) do
-    create_journal_record(
-      server,
-      transaction_date,
-      general_ledger_posting_date,
-      t_accounts,
-      journal_entry_number,
-      transaction_reference_number,
-      description,
-      journal_entry_details,
-      audit_details
-    )
+  def create_journal_entry(server \\ __MODULE__, create_journal_entry_params) do
+    create_journal_record(server, create_journal_entry_params)
   end
 
   @doc """
@@ -982,25 +946,19 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   end
 
   @impl true
-  def handle_call(
-        {:create_journal_entry, transaction_date, general_ledger_posting_date, t_accounts,
-         journal_entry_number, transaction_reference_number, description, journal_entry_details,
-         audit_details},
-        _from,
-        journal_entries
-      ) do
+  def handle_call({:create_journal_entry, params}, _from, journal_entries) do
     with {:error, :not_found} <-
-           find_by_journal_entry_number(journal_entries, journal_entry_number),
+           find_by_journal_entry_number(journal_entries, params.journal_entry_number),
          {:ok, journal_entry} <-
            JournalEntry.create(
-             transaction_date,
-             general_ledger_posting_date,
-             t_accounts,
-             journal_entry_number,
-             transaction_reference_number,
-             description,
-             journal_entry_details,
-             audit_details
+             params.transaction_date,
+             params.general_ledger_posting_date,
+             params.t_accounts,
+             params.journal_entry_number,
+             params.transaction_reference_number,
+             params.description,
+             params.journal_entry_details,
+             params.audit_details
            ) do
       transaction_date_details = Map.take(journal_entry.transaction_date, [:year, :month, :day])
 
@@ -1224,25 +1182,11 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
     end)
   end
 
-  defp create_journal_record(
-         server,
-         transaction_date,
-         general_ledger_posting_date,
-         t_accounts,
-         journal_entry_number,
-         transaction_reference_number \\ "",
-         description \\ "",
-         journal_entry_details \\ %{},
-         audit_details \\ %{}
-       ) do
-    updated_t_accounts = update_t_accounts(t_accounts)
+  defp create_journal_record(server, params) do
+    t_accounts = params |> Map.get(:t_accounts, %{}) |> update_t_accounts()
+    updated_params = Map.put(params, :t_accounts, t_accounts)
 
-    GenServer.call(
-      server,
-      {:create_journal_entry, transaction_date, general_ledger_posting_date, updated_t_accounts,
-       journal_entry_number, transaction_reference_number, description, journal_entry_details,
-       audit_details}
-    )
+    GenServer.call(server, {:create_journal_entry, updated_params})
   end
 
   defp update_t_accounts(t_accounts) do
@@ -1278,17 +1222,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   defp bulk_create_je_records(server, create_params_list) do
     result =
       Enum.reduce(create_params_list, %{ok: [], error: []}, fn params, acc ->
-        case create_journal_record(
-               server,
-               params.transaction_date,
-               params.general_ledger_posting_date,
-               params.t_accounts,
-               params.journal_entry_number,
-               params.transaction_reference_number,
-               params.description,
-               params.journal_entry_details,
-               params.audit_details
-             ) do
+        case create_journal_record(server, params) do
           {:ok, journal_entry} ->
             Map.put(acc, :ok, [journal_entry | acc.ok])
 
