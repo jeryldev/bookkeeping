@@ -8,7 +8,7 @@ defmodule Bookkeeping.Core.JournalEntry do
           id: UUID.t(),
           transaction_date: DateTime.t(),
           line_items: list(LineItem.t()),
-          reference_number: String.t(),
+          journal_entry_number: String.t(),
           description: String.t(),
           journal_entry_details: map(),
           audit_logs: list(AuditLog.t()),
@@ -30,7 +30,7 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   defstruct id: UUID.uuid4(),
             transaction_date: DateTime.utc_now(),
-            reference_number: "",
+            journal_entry_number: "",
             description: "",
             journal_entry_details: %{},
             line_items: [],
@@ -42,7 +42,7 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   Arguments:
     - transaction_date: The date of the transaction.
-    - reference_number: The unique reference number of the journal entry.
+    - journal_entry_number: The unique reference number of the journal entry.
     - description: The description of the journal entry.
     - journal_entry_details: The details of the journal entry.
     - t_accounts: The map of line items. The map must have the following keys:
@@ -62,7 +62,7 @@ defmodule Bookkeeping.Core.JournalEntry do
       %JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        reference_number: "reference number",
+        journal_entry_number: "reference number",
         description: "description",
         journal_entry_details: %{},
         line_items: [
@@ -104,18 +104,18 @@ defmodule Bookkeeping.Core.JournalEntry do
   def create(
         transaction_date,
         t_accounts,
-        reference_number,
+        journal_entry_number,
         description,
         journal_entry_details,
         audit_details
       )
-      when is_binary(reference_number) and is_binary(description) and
+      when is_binary(journal_entry_number) and is_binary(description) and
              is_map(journal_entry_details) and is_map(t_accounts) and
              is_map(audit_details) and not is_nil(transaction_date) do
     new(
       transaction_date,
       t_accounts,
-      reference_number,
+      journal_entry_number,
       description,
       journal_entry_details,
       audit_details
@@ -129,7 +129,7 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   Arguments:
     - journal_entry: The journal entry to be updated.
-    - attrs: The attributes to be updated. The editable attributes are `transaction_date`, `reference_number`, `description`, `posted`, `t_accounts`, and `audit_details`.
+    - attrs: The attributes to be updated. The editable attributes are `transaction_date`, `journal_entry_number`, `description`, `posted`, `t_accounts`, and `audit_details`.
 
   Returns `{:ok, %JournalEntry{}}` if the journal entry is valid. Otherwise, returns `{:error, :invalid_journal_entry}`.
 
@@ -146,7 +146,7 @@ defmodule Bookkeeping.Core.JournalEntry do
       %JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        reference_number: "reference number",
+        journal_entry_number: "reference number",
         description: "description",
         line_items: [
           %LineItem{
@@ -179,7 +179,7 @@ defmodule Bookkeeping.Core.JournalEntry do
       %JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        reference_number: "reference number",
+        journal_entry_number: "reference number",
         description: "updated description",
         line_items: [
           %LineItem{
@@ -223,7 +223,7 @@ defmodule Bookkeeping.Core.JournalEntry do
   def update(journal_entry, attrs)
       when is_map(attrs) and map_size(attrs) > 0 and journal_entry.posted == false do
     transaction_date = Map.get(attrs, :transaction_date, journal_entry.transaction_date)
-    reference_number = Map.get(attrs, :reference_number, journal_entry.reference_number)
+    journal_entry_number = Map.get(attrs, :journal_entry_number, journal_entry.journal_entry_number)
     description = Map.get(attrs, :description, journal_entry.description)
 
     journal_entry_details =
@@ -234,7 +234,7 @@ defmodule Bookkeeping.Core.JournalEntry do
     audit_details = Map.get(attrs, :audit_details, %{})
 
     valid_fields? =
-      is_binary(reference_number) and reference_number != "" and is_binary(description) and
+      is_binary(journal_entry_number) and journal_entry_number != "" and is_binary(description) and
         not is_nil(transaction_date) and is_boolean(posted) and is_map(t_accounts) and
         is_map(audit_details)
 
@@ -245,7 +245,7 @@ defmodule Bookkeeping.Core.JournalEntry do
           journal_entry,
           transaction_date,
           t_accounts,
-          reference_number,
+          journal_entry_number,
           description,
           journal_entry_details,
           audit_log,
@@ -266,7 +266,7 @@ defmodule Bookkeeping.Core.JournalEntry do
   defp new(
          transaction_date,
          t_accounts,
-         reference_number,
+         journal_entry_number,
          description,
          journal_entry_details,
          audit_details
@@ -278,7 +278,7 @@ defmodule Bookkeeping.Core.JournalEntry do
          id: UUID.uuid4(),
          transaction_date: transaction_date,
          line_items: line_items,
-         reference_number: reference_number,
+         journal_entry_number: journal_entry_number,
          description: description,
          journal_entry_details: journal_entry_details,
          audit_logs: [audit_log]
@@ -292,7 +292,7 @@ defmodule Bookkeeping.Core.JournalEntry do
          current_journal_entry,
          transaction_date,
          t_accounts,
-         reference_number,
+         journal_entry_number,
          description,
          journal_entry_details,
          audit_log,
@@ -310,7 +310,7 @@ defmodule Bookkeeping.Core.JournalEntry do
 
     update_params = %{
       transaction_date: transaction_date,
-      reference_number: reference_number,
+      journal_entry_number: journal_entry_number,
       description: description,
       journal_entry_details: journal_entry_details,
       line_items: line_items,

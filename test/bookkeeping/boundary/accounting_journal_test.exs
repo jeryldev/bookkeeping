@@ -52,7 +52,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                "ref_num_0"
              )
 
-    assert journal_entry_0.reference_number == "ref_num_0"
+    assert journal_entry_0.journal_entry_number == "ref_num_0"
 
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
@@ -64,7 +64,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                details
              )
 
-    assert journal_entry_1.reference_number == "ref_num_1"
+    assert journal_entry_1.journal_entry_number == "ref_num_1"
     assert journal_entry_1.description == "journal entry description"
     assert journal_entry_1.line_items |> length() == 2
     assert journal_entry_1.audit_logs
@@ -132,7 +132,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                details
              )
 
-    assert {:error, :duplicate_reference_number} =
+    assert {:error, :duplicate_journal_entry_number} =
              AccountingJournalServer.create_journal_entry(
                DateTime.utc_now(),
                t_accounts,
@@ -308,16 +308,16 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
 
     assert {:ok, found_journal_entry} =
-             journal_entry_1.reference_number
-             |> AccountingJournalServer.find_journal_entry_by_reference_number()
+             journal_entry_1.journal_entry_number
+             |> AccountingJournalServer.find_journal_entry_by_journal_entry_number()
 
-    assert found_journal_entry.reference_number == journal_entry_1.reference_number
+    assert found_journal_entry.journal_entry_number == journal_entry_1.journal_entry_number
 
     assert {:error, :not_found} =
-             AccountingJournalServer.find_journal_entry_by_reference_number("invalid_ref_num")
+             AccountingJournalServer.find_journal_entry_by_journal_entry_number("invalid_ref_num")
 
-    assert {:error, :invalid_reference_number} =
-             AccountingJournalServer.find_journal_entry_by_reference_number(nil)
+    assert {:error, :invalid_journal_entry_number} =
+             AccountingJournalServer.find_journal_entry_by_journal_entry_number(nil)
   end
 
   test "find journal entries by id", %{
@@ -473,15 +473,22 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
 
     assert errors == [
-             %{error: :duplicate_reference_number, reference_number: "1001"},
-             %{error: :duplicate_reference_number, reference_number: "1007"}
+             %{error: :duplicate_journal_entry_number, journal_entry_number: "1001"},
+             %{error: :duplicate_journal_entry_number, journal_entry_number: "1007"}
            ]
 
     # importing a file with invalid journal entries
-    assert {:error, %{errors: _errors, message: :invalid_csv}} =
+    assert {:error, %{errors: errors, message: :invalid_csv}} =
              AccountingJournalServer.import_journal_entries(
                "../../../../test/bookkeeping/assets/invalid_journal_entries.csv"
              )
+
+    assert errors == [
+             %{error: :invalid_transaction_date, journal_entry_number: "1003"},
+             %{error: :invalid_csv_item, journal_entry_number: ""},
+             %{error: :invalid_transaction_date, journal_entry_number: "1003"},
+             %{error: :invalid_transaction_date, journal_entry_number: "1005"}
+           ]
 
     # importing a missing file
     assert {:error, :invalid_file} =
@@ -501,7 +508,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                "../../../../test/bookkeeping/assets/partially_valid_journal_entries.csv"
              )
 
-    assert errors == [%{error: :unbalanced_line_items, reference_number: "1009"}]
+    assert errors == [%{error: :unbalanced_line_items, journal_entry_number: "1009"}]
     assert Enum.count(oks) == 1
   end
 
@@ -543,7 +550,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     assert updated_journal_entry.id == journal_entry.id
     refute updated_journal_entry.transaction_date == journal_entry.transaction_date
-    assert updated_journal_entry.reference_number == journal_entry.reference_number
+    assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
     assert updated_journal_entry.description == "second updated description"
     assert updated_journal_entry.posted == false
     assert updated_journal_entry.line_items |> length() == 2
@@ -561,7 +568,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     assert third_journal_entry_update.id == journal_entry.id
     refute third_journal_entry_update.transaction_date == journal_entry.transaction_date
-    assert third_journal_entry_update.reference_number == journal_entry.reference_number
+    assert third_journal_entry_update.journal_entry_number == journal_entry.journal_entry_number
     assert third_journal_entry_update.description == "third updated description"
     assert third_journal_entry_update.posted == true
     assert third_journal_entry_update.line_items |> length() == 2

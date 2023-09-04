@@ -167,7 +167,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
              })
 
     assert updated_journal_entry.transaction_date == journal_entry.transaction_date
-    assert updated_journal_entry.reference_number == journal_entry.reference_number
+    assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
     refute updated_journal_entry.description == journal_entry.description
 
     assert {:ok, updated_journal_entry} =
@@ -177,7 +177,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
              })
 
     assert updated_journal_entry.transaction_date == journal_entry.transaction_date
-    assert updated_journal_entry.reference_number == journal_entry.reference_number
+    assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
     refute updated_journal_entry.description == journal_entry.description
     refute updated_journal_entry.posted == journal_entry.posted
 
