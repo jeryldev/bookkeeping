@@ -6,33 +6,55 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   alias Bookkeeping.Core.Account
 
   setup do
-    details = %{email: "example@example.com"}
+    transaction_date = DateTime.utc_now()
+    general_ledger_posting_date = DateTime.utc_now()
+    journal_entry_number = "JE100100"
+    transaction_reference_number = "INV100100"
+    description = "journal entry description"
+    audit_details = %{email: "example@example.com"}
 
     {:ok, cash_account} =
       Account.create("10_000", "cash", "asset", "cash account description", %{})
 
-    {:ok, expense_account} =
-      Account.create("20_000", "expense", "expense", "expense account description", %{})
+    {:ok, revenue_account} =
+      Account.create(
+        "20_000",
+        "sales revenue",
+        "revenue",
+        "sales revenue account description",
+        %{}
+      )
 
-    {:ok, other_expense_account} =
-      Account.create("20_010", "expense", "expense", "expense account description", %{})
+    {:ok, other_revenue_account} =
+      Account.create(
+        "20_010",
+        "service revenue",
+        "revenue",
+        "service revenue account description",
+        %{}
+      )
 
-    {:ok, inactive_expense_account} = Account.update(other_expense_account, %{active: false})
+    {:ok, inactive_revenue_account} = Account.update(other_revenue_account, %{active: false})
 
     t_accounts = %{
-      left: [%{account: expense_account, amount: Decimal.new(100)}],
-      right: [%{account: cash_account, amount: Decimal.new(100)}]
+      left: [%{account: cash_account, amount: Decimal.new(100)}],
+      right: [%{account: revenue_account, amount: Decimal.new(100)}]
     }
 
     journal_entry_details = %{approved_by: "John Doe", approved_at: DateTime.utc_now()}
 
     {:ok,
-     details: details,
-     journal_entry_details: journal_entry_details,
+     transaction_date: transaction_date,
+     general_ledger_posting_date: general_ledger_posting_date,
+     journal_entry_number: journal_entry_number,
+     transaction_reference_number: transaction_reference_number,
+     t_accounts: t_accounts,
      cash_account: cash_account,
-     expense_account: expense_account,
-     inactive_expense_account: inactive_expense_account,
-     t_accounts: t_accounts}
+     revenue_account: revenue_account,
+     inactive_revenue_account: inactive_revenue_account,
+     description: description,
+     journal_entry_details: journal_entry_details,
+     audit_details: audit_details}
   end
 
   test "start link" do
@@ -41,13 +63,18 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "create journal entry", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry_0} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_0"
              )
@@ -56,12 +83,14 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_1",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert journal_entry_1.journal_entry_number == "ref_num_1"
@@ -72,28 +101,36 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "create multiple journal entries on the same day", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_2",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, journal_entry_3} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_3",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     other_transaction_date = DateTime.add(journal_entry_2.transaction_date, 10, :day)
@@ -101,11 +138,13 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_4} =
              AccountingJournalServer.create_journal_entry(
                other_transaction_date,
+               other_transaction_date,
                t_accounts,
                "ref_num_4",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, found_journal_entries} =
@@ -118,139 +157,171 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "do not create journal entries with duplicate reference numbers", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, _journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_5",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:error, :duplicate_journal_entry_number} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_5",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
   end
 
   test "do not create journal entry with invalid inputs", %{
-    details: details,
-    journal_entry_details: journal_entry_details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
     cash_account: cash_account,
-    expense_account: expense_account,
-    inactive_expense_account: inactive_expense_account,
-    t_accounts: t_accounts
+    revenue_account: revenue_account,
+    inactive_revenue_account: inactive_revenue_account,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
+    journal_entry_details: journal_entry_details,
+    audit_details: audit_details
   } do
     empty_t_accounts = %{left: [], right: []}
 
     invalid_t_accounts = %{
-      left: [%{account: expense_account, amount: Decimal.new(100)}],
-      right: [%{account: cash_account, amount: Decimal.new(200)}]
+      left: [%{account: cash_account, amount: Decimal.new(100)}],
+      right: [%{account: revenue_account, amount: Decimal.new(200)}]
     }
 
     assert {:error, :invalid_line_items} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                empty_t_accounts,
                "ref_num_6",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:error, :unbalanced_line_items} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                invalid_t_accounts,
                "ref_num_7",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:error, :invalid_journal_entry} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "invalid_je_1",
+               transaction_reference_number,
                nil,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:error, [:inactive_account]} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{
-                 left: [%{account: inactive_expense_account, amount: Decimal.new(100)}],
-                 right: [%{account: cash_account, amount: Decimal.new(200)}]
+                 left: [%{account: cash_account, amount: Decimal.new(100)}],
+                 right: [%{account: inactive_revenue_account, amount: Decimal.new(200)}]
                },
                "invalid_je_2",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:error, :unbalanced_line_items} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{
-                 left: [%{account: expense_account, amount: Decimal.new(100)}],
-                 right: [%{account: cash_account, amount: Decimal.new(200)}]
+                 left: [%{account: cash_account, amount: Decimal.new(100)}],
+                 right: [%{account: revenue_account, amount: Decimal.new(200)}]
                },
                "invalid_je_2",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:error, :invalid_line_items} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                %{
-                 left: [%{account: expense_account, amount: Decimal.new(100)}],
+                 left: [%{account: cash_account, amount: Decimal.new(100)}],
                  right: []
                },
                "invalid_je_2",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
   end
 
   test "search all journal entries", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_8",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_9",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, all_journal_entries} = AccountingJournalServer.all_journal_entries()
@@ -261,18 +332,24 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "find journal entries by transaction date", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_10",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, je_result_1} =
@@ -288,23 +365,29 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     assert is_list(je_result_2)
 
-    assert {:error, :invalid_transaction_date} =
+    assert {:error, :invalid_date} =
              AccountingJournalServer.find_journal_entries_by_transaction_date(nil)
   end
 
   test "find journal entries by reference number", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_11",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, found_journal_entry} =
@@ -321,18 +404,24 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "find journal entries by id", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_12",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, found_journal_entry} =
@@ -348,28 +437,36 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "find journal entries by transaction date range", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_13",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_14",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     current_from_date_details =
@@ -392,13 +489,13 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert Enum.member?(journal_entries, journal_entry_1)
     assert Enum.member?(journal_entries, journal_entry_2)
 
-    assert {:error, :invalid_transaction_date} =
+    assert {:error, :invalid_date} =
              AccountingJournalServer.find_journal_entries_by_transaction_date_range(
                nil,
                journal_entry_1.transaction_date
              )
 
-    assert {:error, :invalid_transaction_date} =
+    assert {:error, :invalid_date} =
              AccountingJournalServer.find_journal_entries_by_transaction_date_range(
                journal_entry_1.transaction_date,
                nil
@@ -484,10 +581,10 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
 
     assert errors == [
-             %{error: :invalid_transaction_date, journal_entry_number: "1003"},
+             %{error: :invalid_date, journal_entry_number: "1003"},
              %{error: :invalid_csv_item, journal_entry_number: ""},
-             %{error: :invalid_transaction_date, journal_entry_number: "1003"},
-             %{error: :invalid_transaction_date, journal_entry_number: "1005"}
+             %{error: :invalid_date, journal_entry_number: "1003"},
+             %{error: :invalid_date, journal_entry_number: "1005"}
            ]
 
     # importing a missing file
@@ -513,20 +610,26 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "update accounting journal entry", %{
-    details: details,
-    journal_entry_details: journal_entry_details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
     cash_account: cash_account,
-    expense_account: expense_account,
-    t_accounts: t_accounts
+    revenue_account: revenue_account,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
+    journal_entry_details: journal_entry_details,
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_15",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:error, :invalid_journal_entry} =
@@ -543,7 +646,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                description: "second updated description",
                posted: false,
                t_accounts: %{
-                 left: [%{account: expense_account, amount: Decimal.new(200)}],
+                 left: [%{account: revenue_account, amount: Decimal.new(200)}],
                  right: [%{account: cash_account, amount: Decimal.new(200)}]
                }
              })
@@ -561,7 +664,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                description: "third updated description",
                posted: true,
                t_accounts: %{
-                 left: [%{account: expense_account, amount: Decimal.new(300)}],
+                 left: [%{account: revenue_account, amount: Decimal.new(300)}],
                  right: [%{account: cash_account, amount: Decimal.new(300)}]
                }
              })
@@ -579,7 +682,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                description: "fourth updated description",
                posted: false,
                t_accounts: %{
-                 left: [%{account: expense_account, amount: Decimal.new(400)}],
+                 left: [%{account: revenue_account, amount: Decimal.new(400)}],
                  right: [%{account: cash_account, amount: Decimal.new(400)}]
                }
              })
@@ -602,28 +705,36 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "reset journal entries", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_16",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_17",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, journal_entries} = AccountingJournalServer.all_journal_entries()
@@ -638,28 +749,36 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   end
 
   test "test accounting journal with working backup", %{
-    details: details,
+    transaction_date: transaction_date,
+    general_ledger_posting_date: general_ledger_posting_date,
+    t_accounts: t_accounts,
+    transaction_reference_number: transaction_reference_number,
+    description: description,
     journal_entry_details: journal_entry_details,
-    t_accounts: t_accounts
+    audit_details: audit_details
   } do
     assert {:ok, journal_entry_1} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_18",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, journal_entry_2} =
              AccountingJournalServer.create_journal_entry(
-               DateTime.utc_now(),
+               transaction_date,
+               general_ledger_posting_date,
                t_accounts,
                "ref_num_19",
-               "journal entry description",
+               transaction_reference_number,
+               description,
                journal_entry_details,
-               details
+               audit_details
              )
 
     assert {:ok, journal_entries} = AccountingJournalServer.all_journal_entries()

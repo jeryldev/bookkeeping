@@ -13,7 +13,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
     {:ok, revenue_account} =
       Account.create("20000", "service revenue", "revenue", "description", audit_details)
 
-    line_items = %{
+    t_accounts = %{
       left: [%{account: asset_account, amount: Decimal.new(100)}],
       right: [%{account: revenue_account, amount: Decimal.new(100)}]
     }
@@ -25,7 +25,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
      general_ledger_posting_date: general_ledger_posting_date,
      asset_account: asset_account,
      revenue_account: revenue_account,
-     line_items: line_items,
+     t_accounts: t_accounts,
      journal_entry_number: journal_entry_number,
      transaction_reference_number: transaction_reference_number,
      journal_entry_details: journal_entry_details,
@@ -35,7 +35,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
   test "create a journal entry", %{
     transaction_date: transaction_date,
     general_ledger_posting_date: general_ledger_posting_date,
-    line_items: line_items,
+    t_accounts: t_accounts,
     journal_entry_number: journal_entry_number,
     transaction_reference_number: transaction_reference_number,
     journal_entry_details: journal_entry_details,
@@ -45,7 +45,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
              JournalEntry.create(
                transaction_date,
                general_ledger_posting_date,
-               line_items,
+               t_accounts,
                journal_entry_number,
                transaction_reference_number,
                "journal entry description",
@@ -191,7 +191,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
   test "update journal entry", %{
     transaction_date: transaction_date,
     general_ledger_posting_date: general_ledger_posting_date,
-    line_items: line_items,
+    t_accounts: t_accounts,
     asset_account: asset_account,
     revenue_account: revenue_account,
     journal_entry_number: journal_entry_number,
@@ -203,7 +203,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
              JournalEntry.create(
                transaction_date,
                general_ledger_posting_date,
-               line_items,
+               t_accounts,
                journal_entry_number,
                transaction_reference_number,
                "journal entry description",

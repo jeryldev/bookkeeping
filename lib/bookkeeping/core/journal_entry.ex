@@ -47,13 +47,13 @@ defmodule Bookkeeping.Core.JournalEntry do
   Arguments:
     - transaction_date: The date of the transaction. This is usually the date of the source document (i.e. invoice date, check date, etc.)
     - general_ledger_posting_date: The date of the General Ledger posting. This is usually the date when the journal entry is posted to the General Ledger.
-    - journal_entry_number: The unique reference number of the journal entry. This is an auto-generated unique sequential identifier that is distinct from the transaction reference number (i.e. JE001000, JE001002, etc).
-    - description: The description of the journal entry. This is usually the description of the source document (i.e. invoice description, check description, etc.)
-    - transaction_reference_number: The reference number of the transaction. This is usually the reference number of the source document (i.e. invoice number, check number, etc.)
-    - journal_entry_details: The details of the journal entry. The details are usually the details of the source document (i.e. invoice details, check details, etc.)
     - t_accounts: The map of line items. The map must have the following keys:
       - left: The list of maps with account and amount field and represents the entry type of debit.
       - right: The list of maps with account and amount field and represents the entry type of credit.
+    - journal_entry_number: The unique reference number of the journal entry. This is an auto-generated unique sequential identifier that is distinct from the transaction reference number (i.e. JE001000, JE001002, etc).
+    - transaction_reference_number: The reference number of the transaction. This is usually the reference number of the source document (i.e. invoice number, check number, etc.)
+    - description: The description of the journal entry. This is usually the description of the source document (i.e. invoice description, check description, etc.)
+    - journal_entry_details: The details of the journal entry. The details are usually the details of the source document (i.e. invoice details, check details, etc.)
     - audit_details: The details of the audit log.
 
   Returns `{:ok, %JournalEntry{}}` if the journal entry is valid. Otherwise, returns `{:error, :invalid_journal_entry}`, `{:error, :invalid_line_items}`, `{:error, :unbalanced_line_items}`, or `{:error, list(:invalid_amount | :invalid_account | :inactive_account)}`.
@@ -161,51 +161,14 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   ## Examples
 
-      iex> JournalEntry.update(journal_entry, %{})
-      {:error, :invalid_journal_entry}
-
-      iex> {:ok, journal_entry} = JournalEntry.create(DateTime.utc_now(), "reference number", "description", %{
-                 left: [%{account: expense_account, amount: Decimal.new(100)}],
-                 right: [%{account: asset_account, amount: Decimal.new(100)}]
-               }, %{})
-      {:ok,
-      %JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "reference number",
-        description: "description",
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: :debit
-          },
-          %LineItem{
-            account: asset_account,
-            amount: Decimal.new(100),
-            entry_type: :credit
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ],
-        posted: false
-      }}
-
       iex> JournalEntry.update(journal_entry, %{description: "updated description",posted: true})
       {:ok,
       %JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "reference number",
+        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
+        journal_entry_number: "JE001001",
+        transaction_reference_number: "INV001001",
         description: "updated description",
         line_items: [
           %LineItem{
@@ -244,6 +207,9 @@ defmodule Bookkeeping.Core.JournalEntry do
 
       iex> JournalEntry.update(journal_entry, %{transaction_date: DateTime.utc_now()})
       {:error, :already_posted_journal_entry}
+
+      iex> JournalEntry.update(not_existing_journal_entry, %{})
+      {:error, :invalid_journal_entry}
   """
   @spec update(__MODULE__.t(), map()) :: {:ok, __MODULE__.t()} | {:error, :invalid_journal_entry}
   def update(journal_entry, attrs)

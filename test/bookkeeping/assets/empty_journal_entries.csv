@@ -1,1 +1,1 @@
-Reference Number,Transaction Date,Account Name,Debit,Credit,Posted,Description,Journal Entry Details,Audit Details
+Journal Entry Number,Transaction Date,Account Name,Debit,Credit,Posted,Description,Journal Entry Details,Audit Details,General Ledger Posting Date,Transaction Reference Number
