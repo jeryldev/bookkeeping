@@ -82,12 +82,6 @@ defmodule Bookkeeping.Core.AuditLog do
   def create(record_type, action_type, audit_details)
       when is_binary(record_type) and record_type != "" and is_binary(action_type) and
              action_type in @action_types and is_map(audit_details) do
-    new(record_type, action_type, audit_details)
-  end
-
-  def create(_, _, _), do: {:error, :invalid_audit_log}
-
-  defp new(record_type, action_type, details) do
     datetime = DateTime.utc_now()
     created_at = if action_type == "create", do: datetime, else: nil
     deleted_at = if action_type == "delete", do: datetime, else: nil
@@ -96,10 +90,12 @@ defmodule Bookkeeping.Core.AuditLog do
      %__MODULE__{
        record_type: record_type,
        action_type: action_type,
-       details: details,
+       details: audit_details,
        created_at: created_at,
        updated_at: datetime,
        deleted_at: deleted_at
      }}
   end
+
+  def create(_, _, _), do: {:error, :invalid_audit_log}
 end
