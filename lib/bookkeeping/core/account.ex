@@ -91,7 +91,20 @@ defmodule Bookkeeping.Core.Account do
              is_binary(description) and code != "" and name != "" and
              binary_account_type in @account_types and
              is_binary(description) and is_map(audit_details) do
-    new(code, name, binary_account_type, description, audit_details)
+    with {:ok, account_type} <- AccountType.create(binary_account_type),
+         {:ok, audit_log} <- AuditLog.create("account", "create", audit_details) do
+      {:ok,
+       %__MODULE__{
+         code: code,
+         name: name,
+         description: description,
+         account_type: account_type,
+         audit_logs: [audit_log]
+       }}
+    else
+      {:error, message} -> {:error, message}
+      _ -> {:error, :invalid_account}
+    end
   end
 
   def create(_, _, _, _, _), do: {:error, :invalid_account}
@@ -168,23 +181,6 @@ defmodule Bookkeeping.Core.Account do
 
       {:ok, Map.merge(account, update_params)}
     else
-      _ -> {:error, :invalid_account}
-    end
-  end
-
-  defp new(code, name, binary_account_type, description, audit_details) do
-    with {:ok, account_type} <- AccountType.create(binary_account_type),
-         {:ok, audit_log} <- AuditLog.create("account", "create", audit_details) do
-      {:ok,
-       %__MODULE__{
-         code: code,
-         name: name,
-         description: description,
-         account_type: account_type,
-         audit_logs: [audit_log]
-       }}
-    else
-      {:error, message} -> {:error, message}
       _ -> {:error, :invalid_account}
     end
   end
