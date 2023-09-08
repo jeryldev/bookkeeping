@@ -224,7 +224,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
                }
              })
 
-    assert updated_journal_entry.transaction_date == journal_entry.transaction_date
+    assert updated_journal_entry.general_ledger_posting_date == journal_entry.general_ledger_posting_date
     assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
     refute updated_journal_entry.description == journal_entry.description
 
@@ -234,7 +234,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
                posted: true
              })
 
-    assert updated_journal_entry.transaction_date == journal_entry.transaction_date
+    assert updated_journal_entry.general_ledger_posting_date == journal_entry.general_ledger_posting_date
     assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
     refute updated_journal_entry.description == journal_entry.description
     refute updated_journal_entry.posted == journal_entry.posted
