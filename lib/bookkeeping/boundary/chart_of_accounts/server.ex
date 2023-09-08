@@ -44,9 +44,9 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       ...>   ...
       ...> }
   """
-  @type chart_of_account_state :: %{Account.account_code() => Account.t()}
+  @type chart_of_accounts_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
 
-  @type coa_pid :: atom | pid | {atom, any} | {:via, atom, any}
+  @type chart_of_account_state :: %{Account.account_code() => Account.t()}
 
   @account_types [
     "asset",
@@ -120,12 +120,19 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         ]
       }}
   """
-  @spec create_account(coa_pid(), String.t(), String.t(), String.t()) ::
+  @spec create_account(chart_of_accounts_server_pid(), String.t(), String.t(), String.t()) ::
           {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
   def create_account(server \\ __MODULE__, code, name, account_type),
     do: create_account_record(server, code, name, account_type)
 
-  @spec create_account(coa_pid, String.t(), String.t(), String.t(), String.t(), map()) ::
+  @spec create_account(
+          chart_of_accounts_server_pid,
+          String.t(),
+          String.t(),
+          String.t(),
+          String.t(),
+          map()
+        ) ::
           {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
   def create_account(server \\ __MODULE__, code, name, account_type, description, audit_details),
     do: create_account_record(server, code, name, account_type, description, audit_details)
@@ -180,7 +187,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         ]
       }}
   """
-  @spec import_accounts(coa_pid(), String.t()) ::
+  @spec import_accounts(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, %{ok: list(Account.t()), error: list(map())}}
           | {:error, %{ok: list(Account.t()), error: list(map())}}
           | {:error, %{message: :invalid_csv, errors: list(map())}}
@@ -232,7 +239,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         ]
       }}
   """
-  @spec update_account(coa_pid(), Account.t(), map()) ::
+  @spec update_account(chart_of_accounts_server_pid(), Account.t(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account}
   def update_account(server \\ __MODULE__, account, attrs) do
     if is_struct(account, Account),
@@ -250,7 +257,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.all_accounts(server)
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec all_accounts(coa_pid()) :: {:ok, list(Account.t())}
+  @spec all_accounts(chart_of_accounts_server_pid()) :: {:ok, list(Account.t())}
   def all_accounts(server \\ __MODULE__) do
     GenServer.call(server, :all_accounts)
   end
@@ -268,7 +275,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.find_account_by_code(server, "1000")
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec find_account_by_code(coa_pid(), String.t()) :: {:ok, Account.t()} | {:error, :not_found}
+  @spec find_account_by_code(chart_of_accounts_server_pid(), String.t()) ::
+          {:ok, Account.t()} | {:error, :not_found}
   def find_account_by_code(server \\ __MODULE__, code) do
     if is_binary(code),
       do: GenServer.call(server, {:find_account_by_code, code}),
@@ -288,7 +296,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.find_account_by_name(server, "Cash")
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec find_account_by_name(coa_pid(), String.t()) :: {:ok, Account.t()} | {:error, :not_found}
+  @spec find_account_by_name(chart_of_accounts_server_pid(), String.t()) ::
+          {:ok, Account.t()} | {:error, :not_found}
   def find_account_by_name(server \\ __MODULE__, name) do
     if is_binary(name),
       do: GenServer.call(server, {:find_account_by_name, name}),
@@ -308,7 +317,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.search_accounts(server, "1000")
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec search_accounts(coa_pid(), String.t()) ::
+  @spec search_accounts(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, list(Account.t())} | {:error, :invalid_query}
   def search_accounts(server \\ __MODULE__, query) do
     if is_binary(query),
@@ -326,7 +335,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.all_sorted_accounts(server, :code)
       {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
   """
-  @spec all_sorted_accounts(coa_pid(), atom()) ::
+  @spec all_sorted_accounts(chart_of_accounts_server_pid(), atom()) ::
           {:ok, list(Account.t())} | {:error, :invalid_field}
   def all_sorted_accounts(server \\ __MODULE__, field) do
     if field in ["code", "name"],
@@ -344,7 +353,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.reset_accounts(server)
       {:ok, []}
   """
-  @spec reset_accounts(coa_pid()) :: {:ok, list(Account.t())}
+  @spec reset_accounts(chart_of_accounts_server_pid()) :: {:ok, list(Account.t())}
   def reset_accounts(server \\ __MODULE__) do
     GenServer.call(server, :reset_accounts)
   end
