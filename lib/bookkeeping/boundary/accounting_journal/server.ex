@@ -12,7 +12,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   alias Bookkeeping.Core.JournalEntry
   alias NimbleCSV.RFC4180, as: CSV
 
-  # test notes
+  ### Test Notes ###
   # alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: COA
   # alias Bookkeeping.Boundary.AccountingJournal.Server, as: AJ
   # COA.import_accounts "../../assets/sample_chart_of_accounts.csv"
@@ -79,16 +79,14 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>  ...
       ...> }
   """
-  @type aj_pid :: atom | pid | {atom, any} | {:via, atom, any}
+  @type accounting_journal_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
 
-  @type journal_entries_state :: %{
-          transaction_date_details => list(JournalEntry.t())
-        }
+  @type journal_entries_state :: %{general_ledger_posting_date_details => list(JournalEntry.t())}
 
   @type create_journal_entry_params :: %{
           transaction_date: DateTime.t(),
           general_ledger_posting_date: DateTime.t(),
-          t_accounts: aj_t_accounts(),
+          t_accounts: accounting_journal_t_accounts(),
           journal_entry_number: String.t(),
           transaction_reference_number: String.t(),
           description: String.t(),
@@ -96,18 +94,18 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
           audit_details: map()
         }
 
-  @type transaction_date_details :: %{
+  @type general_ledger_posting_date_details :: %{
           year: integer(),
           month: integer(),
           day: integer()
         }
 
-  @type aj_t_accounts :: %{
-          left: list(aj_t_accounts_item()),
-          right: list(aj_t_accounts_item())
+  @type accounting_journal_t_accounts :: %{
+          left: list(accounting_journal_t_accounts_item()),
+          right: list(accounting_journal_t_accounts_item())
         }
 
-  @type aj_t_accounts_item :: %{
+  @type accounting_journal_t_accounts_item :: %{
           account: account_name(),
           amount: Decimal.t()
         }
@@ -249,7 +247,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
           posted: false
       }}
   """
-  @spec create_journal_entry(aj_pid(), create_journal_entry_params()) ::
+  @spec create_journal_entry(accounting_journal_server_pid(), create_journal_entry_params()) ::
           {:ok, JournalEntry.t()} | {:error, :invalid_journal_entry}
   def create_journal_entry(server \\ __MODULE__, create_journal_entry_params) do
     create_journal_record(server, create_journal_entry_params)
@@ -458,7 +456,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
         ]
       }}
   """
-  @spec import_journal_entries(aj_pid(), String.t()) ::
+  @spec import_journal_entries(accounting_journal_server_pid(), String.t()) ::
           {:ok, %{ok: list(JournalEntry.t()), error: list(map())}}
           | {:error, %{ok: list(JournalEntry.t()), error: list(map())}}
           | {:error, %{message: :invalid_csv, errors: list(map())}}
@@ -533,7 +531,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
         posted: false
       }]}
   """
-  @spec all_journal_entries(aj_pid()) :: {:ok, list(JournalEntry.t())}
+  @spec all_journal_entries(accounting_journal_server_pid()) :: {:ok, list(JournalEntry.t())}
   def all_journal_entries(server \\ __MODULE__) do
     GenServer.call(server, :all_journal_entries)
   end
@@ -583,23 +581,24 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       iex> AccountingJournal.find_journal_entry_by_journal_entry_number("ref_num_2")
       {:error, :not_found}
   """
-  @spec find_journal_entry_by_journal_entry_number(aj_pid(), String.t()) ::
+  @spec find_journal_entry_by_journal_entry_number(accounting_journal_server_pid(), String.t()) ::
           {:ok, JournalEntry.t()} | {:error, :not_found}
   def find_journal_entry_by_journal_entry_number(server \\ __MODULE__, journal_entry_number) do
     GenServer.call(server, {:find_journal_entry_by_journal_entry_number, journal_entry_number})
   end
 
   @doc """
-  Returns a list of journal entries by transaction date.
+  Returns a list of journal entries by general ledger posting date.
 
   Returns `{:ok, list(JournalEntry.t())}` if the journal entries are returned successfully. Otherwise, returns `{:error, :invalid_date}`.
 
   ## Examples
 
-      iex> AccountingJournal.find_journal_entries_by_transaction_date(~U[2021-10-10 10:10:10.000000Z])
+      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date(~U[2021-10-10 10:10:10.000000Z])
       {:ok, [%JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
         journal_entry_number: "ref_num_1",
         description: "description",
         line_items: [
@@ -629,10 +628,11 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
         posted: false
       }]}
 
-      iex> AccountingJournal.find_journal_entries_by_transaction_date(%{year: 2021, month: 10})
+      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date(%{year: 2021, month: 10})
       {:ok, [%JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
         journal_entry_number: "ref_num_1",
         description: "description",
         line_items: [
@@ -662,16 +662,16 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
         posted: false
       }]}
 
-      iex> AccountingJournal.find_journal_entries_by_transaction_date(~U[2021-10-10 10:10:10.000000Z])
+      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date(~U[2021-10-10 10:10:10.000000Z])
       {:error, :invalid_date}
   """
-  @spec find_journal_entries_by_transaction_date(
-          aj_pid(),
-          DateTime.t() | transaction_date_details()
+  @spec find_journal_entries_by_general_ledger_posting_date(
+          accounting_journal_server_pid(),
+          DateTime.t() | general_ledger_posting_date_details()
         ) ::
           {:ok, list(JournalEntry.t())} | {:error, :invalid_date}
-  def find_journal_entries_by_transaction_date(server \\ __MODULE__, datetime) do
-    GenServer.call(server, {:find_journal_entries_by_transaction_date, datetime})
+  def find_journal_entries_by_general_ledger_posting_date(server \\ __MODULE__, datetime) do
+    GenServer.call(server, {:find_journal_entries_by_general_ledger_posting_date, datetime})
   end
 
   @doc """
@@ -716,23 +716,24 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       iex> AccountingJournal.find_journal_entries_by_id("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
       {:error, :invalid_id}
   """
-  @spec find_journal_entries_by_id(aj_pid(), String.t()) ::
+  @spec find_journal_entries_by_id(accounting_journal_server_pid(), String.t()) ::
           {:ok, JournalEntry.t()} | {:error, :invalid_id}
   def find_journal_entries_by_id(server \\ __MODULE__, id) do
     GenServer.call(server, {:find_journal_entries_by_id, id})
   end
 
   @doc """
-  Returns a list of journal entries by transaction date range.
+  Returns a list of journal entries by general ledger posting date range.
 
   Returns `{:ok, list(JournalEntry.t())}` if the journal entries are returned successfully. Otherwise, returns `{:error, :invalid_date}`.
 
   ## Examples
 
-      iex> AccountingJournal.find_journal_entries_by_transaction_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
+      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
       {:ok, [%JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
         journal_entry_number: "ref_num_1",
         description: "description",
         line_items: [
@@ -762,10 +763,11 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
         posted: false
       }]}
 
-      iex> AccountingJournal.find_journal_entries_by_transaction_date_range(%{year: 2021, month: 10, day: 10}, %{year: 2021, month: 10, day: 10})
+      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date_range(%{year: 2021, month: 10, day: 10}, %{year: 2021, month: 10, day: 10})
       {:ok, [%JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
         journal_entry_number: "ref_num_1",
         description: "description",
         line_items: [
@@ -795,22 +797,22 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
         posted: false
       }]}
 
-      iex> AccountingJournal.find_journal_entries_by_transaction_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
+      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
       {:error, :invalid_date}
   """
-  @spec find_journal_entries_by_transaction_date_range(
-          aj_pid(),
-          DateTime.t() | transaction_date_details(),
-          DateTime.t() | transaction_date_details()
+  @spec find_journal_entries_by_general_ledger_posting_date_range(
+          accounting_journal_server_pid(),
+          DateTime.t() | general_ledger_posting_date_details(),
+          DateTime.t() | general_ledger_posting_date_details()
         ) :: {:ok, list(JournalEntry.t())} | {:error, :invalid_date}
-  def find_journal_entries_by_transaction_date_range(
+  def find_journal_entries_by_general_ledger_posting_date_range(
         server \\ __MODULE__,
         from_datetime,
         to_datetime
       ) do
     GenServer.call(
       server,
-      {:find_journal_entries_by_transaction_date_range, from_datetime, to_datetime}
+      {:find_journal_entries_by_general_ledger_posting_date_range, from_datetime, to_datetime}
     )
   end
 
@@ -825,6 +827,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       {:ok, %JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
         journal_entry_number: "ref_num_1",
         description: "description",
         line_items: [
@@ -886,6 +889,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       {:ok, %JournalEntry{
         id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         transaction_date: ~U[2021-10-10 10:10:10.000000Z],
+        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
         journal_entry_number: "ref_num_1",
         description: "updated description",
         line_items: [
@@ -918,7 +922,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       iex> AccountingJournal.update_journal_entry(%JournalEntry{}, %{description: "updated description",posted: true})
       {:error, :invalid_journal_entry}
   """
-  @spec update_journal_entry(aj_pid(), JournalEntry.t(), map()) ::
+  @spec update_journal_entry(accounting_journal_server_pid(), JournalEntry.t(), map()) ::
           {:ok, JournalEntry.t()} | {:error, :invalid_journal_entry}
   def update_journal_entry(server \\ __MODULE__, journal_entry, attrs) do
     GenServer.call(server, {:update_journal_entry, journal_entry, attrs})
@@ -934,7 +938,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       iex> AccountingJournal.reset_journal_entries()
       {:ok, []}
   """
-  @spec reset_journal_entries(aj_pid()) :: {:ok, list(JournalEntry.t())}
+  @spec reset_journal_entries(accounting_journal_server_pid()) :: {:ok, list(JournalEntry.t())}
   def reset_journal_entries(server \\ __MODULE__) do
     GenServer.call(server, :reset_journal_entries)
   end
@@ -960,14 +964,14 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
              params.journal_entry_details,
              params.audit_details
            ) do
-      transaction_date_details = Map.take(journal_entry.transaction_date, [:year, :month, :day])
+      date_details = Map.take(journal_entry.general_ledger_posting_date, [:year, :month, :day])
 
       updated_journal_entries =
-        if journal_entries[transaction_date_details] == nil do
-          Map.put(journal_entries, transaction_date_details, [journal_entry])
+        if journal_entries[date_details] == nil do
+          Map.put(journal_entries, date_details, [journal_entry])
         else
-          updated_je_list = [journal_entry | journal_entries[transaction_date_details]]
-          Map.put(journal_entries, transaction_date_details, updated_je_list)
+          updated_je_list = [journal_entry | journal_entries[date_details]]
+          Map.put(journal_entries, date_details, updated_je_list)
         end
 
       {:reply, {:ok, journal_entry}, updated_journal_entries}
@@ -1002,15 +1006,13 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   @impl true
   def handle_call(
-        {:find_journal_entries_by_transaction_date, datetime},
+        {:find_journal_entries_by_general_ledger_posting_date, datetime},
         _from,
         journal_entries
       ) do
-    case get_transaction_date_details(datetime) do
-      {:ok, transaction_date_details} ->
-        all_journal_entries =
-          find_by_transaction_date_details(journal_entries, transaction_date_details)
-
+    case get_date_details(datetime) do
+      {:ok, date_details} ->
+        all_journal_entries = find_journal_entries_by_posting_date(journal_entries, date_details)
         {:reply, {:ok, all_journal_entries}, journal_entries}
 
       {:error, message} ->
@@ -1028,14 +1030,16 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   @impl true
   def handle_call(
-        {:find_journal_entries_by_transaction_date_range, from_datetime, to_datetime},
+        {:find_journal_entries_by_general_ledger_posting_date_range, from_datetime, to_datetime},
         _from,
         journal_entries
       ) do
-    with {:ok, from_transaction_date_details} <- get_transaction_date_details(from_datetime),
-         {:ok, to_transaction_date_details} <- get_transaction_date_details(to_datetime) do
+    with {:ok, from_date_details} <-
+           get_date_details(from_datetime),
+         {:ok, to_date_details} <-
+           get_date_details(to_datetime) do
       je_list =
-        find_by_range(journal_entries, from_transaction_date_details, to_transaction_date_details)
+        find_journal_entries_by_date_range(journal_entries, from_date_details, to_date_details)
 
       {:reply, {:ok, je_list}, journal_entries}
     else
@@ -1069,32 +1073,32 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
     AccountingJournalBackup.update(journal_entries)
   end
 
-  defp get_transaction_date_details(datetime)
+  defp get_date_details(datetime)
        when is_struct(datetime, DateTime) or is_map(datetime),
        do: {:ok, Map.take(datetime, [:year, :month, :day])}
 
-  defp get_transaction_date_details(_), do: {:error, :invalid_date}
+  defp get_date_details(_), do: {:error, :invalid_date}
 
-  defp find_by_transaction_date_details(journal_entries, transaction_date_details) do
-    tdd_keys = Map.keys(transaction_date_details)
+  defp find_journal_entries_by_posting_date(journal_entries, date_details) do
+    tdd_keys = Map.keys(date_details)
 
     journal_entries
     |> Task.async_stream(fn {k, je} ->
-      if Map.take(k, tdd_keys) == transaction_date_details, do: je, else: nil
+      if Map.take(k, tdd_keys) == date_details, do: je, else: nil
     end)
     |> Enum.reduce([], fn {:ok, je_list}, acc ->
       if is_list(je_list), do: je_list ++ acc, else: acc
     end)
   end
 
-  defp find_by_range(journal_entries, from_transaction_date_details, to_transaction_date_details) do
-    from_tdd_keys = Map.keys(from_transaction_date_details)
-    to_tdd_keys = Map.keys(to_transaction_date_details)
+  defp find_journal_entries_by_date_range(journal_entries, from_date_details, to_date_details) do
+    from_tdd_keys = Map.keys(from_date_details)
+    to_tdd_keys = Map.keys(to_date_details)
 
     journal_entries
     |> Task.async_stream(fn {k, je_list} ->
-      if Map.take(k, from_tdd_keys) >= from_transaction_date_details and
-           Map.take(k, to_tdd_keys) <= to_transaction_date_details,
+      if Map.take(k, from_tdd_keys) >= from_date_details and
+           Map.take(k, to_tdd_keys) <= to_date_details,
          do: je_list,
          else: nil
     end)
@@ -1138,46 +1142,52 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   defp find_by_id(_journal_entries, _id), do: {:error, :invalid_id}
 
   defp process_journal_entry_update(journal_entries, updated_journal_entry) do
-    transaction_date_details =
-      Map.take(updated_journal_entry.transaction_date, [:year, :month, :day])
+    date_details =
+      Map.take(updated_journal_entry.general_ledger_posting_date, [:year, :month, :day])
 
-    if journal_entries[transaction_date_details] == nil do
+    if journal_entries[date_details] == nil do
       with {:ok, old_journal_entry} <- find_by_id(journal_entries, updated_journal_entry.id),
-           {:ok, old_transaction_date_details} <-
-             get_transaction_date_details(old_journal_entry.transaction_date) do
+           {:ok, old_date_details} <-
+             get_date_details(old_journal_entry.general_ledger_posting_date) do
         updated_je_list =
           remove_journal_entry_by_id(
             journal_entries,
-            old_transaction_date_details,
+            old_date_details,
             old_journal_entry.id
           )
 
         journal_entries
-        |> Map.put(transaction_date_details, [updated_journal_entry])
-        |> Map.put(old_transaction_date_details, updated_je_list)
+        |> Map.put(date_details, [updated_journal_entry])
+        |> Map.put(old_date_details, updated_je_list)
       end
     else
       updated_je_list =
         update_journal_entry_by_id(
           journal_entries,
-          transaction_date_details,
+          date_details,
           updated_journal_entry
         )
 
-      Map.put(journal_entries, transaction_date_details, updated_je_list)
+      Map.put(journal_entries, date_details, updated_je_list)
     end
   end
 
-  defp remove_journal_entry_by_id(journal_entries, transaction_date_details, journal_entry_id) do
-    Enum.filter(journal_entries[transaction_date_details], fn je -> je.id != journal_entry_id end)
+  defp remove_journal_entry_by_id(
+         journal_entries,
+         date_details,
+         journal_entry_id
+       ) do
+    Enum.filter(journal_entries[date_details], fn je ->
+      je.id != journal_entry_id
+    end)
   end
 
   defp update_journal_entry_by_id(
          journal_entries,
-         transaction_date_details,
+         date_details,
          updated_journal_entry
        ) do
-    Enum.map(journal_entries[transaction_date_details], fn je ->
+    Enum.map(journal_entries[date_details], fn je ->
       if je.id == updated_journal_entry.id, do: updated_journal_entry, else: je
     end)
   end
