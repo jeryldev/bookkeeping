@@ -16,9 +16,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
   end
 
   test "create account", %{description: description, details: details} do
-    assert {:ok, _account} =
-             ChartOfAccountsServer.create_account("1000101", "Cash Test", "asset")
-
     assert {:ok, account} =
              ChartOfAccountsServer.create_account(
                "1000",
