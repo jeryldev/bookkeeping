@@ -12,7 +12,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   alias Bookkeeping.Core.JournalEntry
   alias NimbleCSV.RFC4180, as: CSV
 
-  # test notes
+  ### Test Notes ###
   # alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: COA
   # alias Bookkeeping.Boundary.AccountingJournal.Server, as: AJ
   # COA.import_accounts "../../assets/sample_chart_of_accounts.csv"
