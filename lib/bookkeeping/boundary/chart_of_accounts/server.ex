@@ -44,9 +44,9 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       ...>   ...
       ...> }
   """
-  @type chart_of_accounts_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
-
   @type chart_of_account_state :: %{Account.account_code() => Account.t()}
+
+  @type chart_of_accounts_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
 
   @account_types [
     "asset",
@@ -87,8 +87,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
     - code: The unique code of the account.
     - name: The unique name of the account.
     - account_type: The type of the account. The account type must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
-    - description (optional): The description of the account.
-    - audit_details (optional): The audit details of the account.
+    - description: The description of the account.
+    - audit_details: The audit details of the account.
 
   Returns `{:ok, account}` if the account is valid, otherwise `{:error, :invalid_account}`.
 
@@ -119,14 +119,12 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
           }
         ]
       }}
-  """
-  @spec create_account(chart_of_accounts_server_pid(), String.t(), String.t(), String.t()) ::
-          {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
-  def create_account(server \\ __MODULE__, code, name, account_type),
-    do: create_account_record(server, code, name, account_type)
 
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.create_account(server, "invalid", "invalid", nil, false, %{})
+      {:error, :invalid_account}
+  """
   @spec create_account(
-          chart_of_accounts_server_pid,
+          chart_of_accounts_server_pid(),
           String.t(),
           String.t(),
           String.t(),
@@ -134,11 +132,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
           map()
         ) ::
           {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
-  def create_account(server \\ __MODULE__, code, name, account_type, description, audit_details),
-    do: create_account_record(server, code, name, account_type, description, audit_details)
+  def create_account(server \\ __MODULE__, code, name, account_type, description, audit_details) do
+    create_account_record(server, code, name, account_type, description, audit_details)
+  end
 
   @doc """
   Imports default accounts from a CSV file.
+  The headers of the CSV file must be `Account Code`, `Account Name`, `Account Type`, `Description`, and `Audit Details`.
 
   Arguments:
     - path: The path of the CSV file. The path to the default accounts is "../assets/sample_chart_of_accounts.csv".
@@ -460,8 +460,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
          code,
          name,
          account_type,
-         description \\ "",
-         audit_details \\ %{}
+         description,
+         audit_details
        ) do
     valid_fields? = is_binary(code) and is_binary(name) and account_type in @account_types
 

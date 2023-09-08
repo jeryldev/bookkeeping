@@ -105,6 +105,7 @@ defmodule Bookkeeping.Core.AccountType do
 
   @doc """
   Creates a new account type struct.
+  The account type must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
 
   Returns `{:ok, %AccountType{}}` if the account type is valid. Otherwise, returns `{:error, :invalid_account_type}`.
 

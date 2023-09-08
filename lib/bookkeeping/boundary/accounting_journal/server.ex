@@ -79,9 +79,9 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>  ...
       ...> }
   """
-  @type accounting_journal_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
-
   @type journal_entries_state :: %{general_ledger_posting_date_details => list(JournalEntry.t())}
+
+  @type accounting_journal_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
 
   @type create_journal_entry_params :: %{
           transaction_date: DateTime.t(),
@@ -255,6 +255,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   @doc """
   Imports journal entries from a CSV file.
+  The header of the CSV file must be `Journal Entry Number`, `Transaction Date`, `Account Name`, `Debit`, `Credit`, `Posted`, `Description`, `Journal Entry Details`, `Audit Details`, `General Ledger Posting Date`, and `Transaction Reference Number`
 
   Arguments:
     - path: The path of the CSV file.
@@ -668,8 +669,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   @spec find_journal_entries_by_general_ledger_posting_date(
           accounting_journal_server_pid(),
           DateTime.t() | general_ledger_posting_date_details()
-        ) ::
-          {:ok, list(JournalEntry.t())} | {:error, :invalid_date}
+        ) :: {:ok, list(JournalEntry.t())} | {:error, :invalid_date}
   def find_journal_entries_by_general_ledger_posting_date(server \\ __MODULE__, datetime) do
     GenServer.call(server, {:find_journal_entries_by_general_ledger_posting_date, datetime})
   end
