@@ -16,8 +16,20 @@ defmodule Bookkeeping.Core.LineItemTest do
 
     assert {:ok, bulk_create_result} =
              LineItem.bulk_create(%{
-               left: [%{account: expense_account, amount: Decimal.new(100)}],
-               right: [%{account: asset_account, amount: Decimal.new(100)}]
+               left: [
+                 %{
+                   account: expense_account,
+                   amount: Decimal.new(100),
+                   line_item_description: "rent expense"
+                 }
+               ],
+               right: [
+                 %{
+                   account: asset_account,
+                   amount: Decimal.new(100),
+                   line_item_description: "cash paid for rent"
+                 }
+               ]
              })
 
     refute bulk_create_result == []
@@ -76,6 +88,7 @@ defmodule Bookkeeping.Core.LineItemTest do
     assert line_item.account == asset_account
     assert line_item.amount == Decimal.new(100)
     assert line_item.entry_type == :debit
+    assert line_item.line_item_description == ""
   end
 
   test "disallow line item with invalid fields" do
