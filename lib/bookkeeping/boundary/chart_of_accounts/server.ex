@@ -22,7 +22,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       ...>     id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
       ...>     code: "1000",
       ...>     name: "Cash",
-      ...>     description: "",
+      ...>     account_description: "",
       ...>     account_type: %AccountType{
       ...>       name: "Asset",
       ...>       normal_balance: :debit,
@@ -309,11 +309,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   @impl true
   def handle_call(
-        {:create_account, code, name, account_type, description, audit_details},
+        {:create_account, code, name, account_type, account_description, audit_details},
         _from,
         accounts
       ) do
-    case Account.create(code, name, account_type, description, audit_details) do
+    case Account.create(code, name, account_type, account_description, audit_details) do
       {:ok, account} ->
         updated_accounts = Map.put(accounts, code, account)
         {:reply, {:ok, account}, updated_accounts}
@@ -447,7 +447,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
                  params.account_code,
                  params.account_name,
                  params.account_type,
-                 params.description,
+                 params.account_description,
                  params.audit_details
                ) do
             {:ok, account} ->
@@ -480,12 +480,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         account_code = Map.get(csv_item, "Account Code")
         account_name = Map.get(csv_item, "Account Name")
         account_type = Map.get(csv_item, "Account Type")
-        description = Map.get(csv_item, "Description", "")
+        account_description = Map.get(csv_item, "Account Description", "")
         audit_details = Map.get(csv_item, "Audit Details", "{}")
 
         valid_csv_items? =
           is_binary(account_code) and account_code != "" and is_binary(account_name) and
-            account_name != "" and is_binary(description) and account_type in @account_types
+            account_name != "" and is_binary(account_description) and
+            account_type in @account_types
 
         with true <- valid_csv_items?,
              {:ok, audit_details} <- Jason.decode(audit_details) do
@@ -493,7 +494,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
             account_code: account_code,
             account_name: account_name,
             account_type: account_type,
-            description: description,
+            account_description: account_description,
             audit_details: audit_details
           }
 

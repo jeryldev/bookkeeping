@@ -1,7 +1,9 @@
 defmodule Bookkeeping do
   @moduledoc """
   Bookkeeping is a library that provides a set of functions for managing the chart of accounts and accounting journal.
+
   To get started, follow the instructions below:
+
   1. In the Bookkeeping project directory, run `mix deps.get` to install dependencies.
   2. Run `iex -S mix` to start the Elixir interactive shell.
   3. Run `Bookkeeping.import_accounts("../../assets/sample_chart_of_accounts.csv")` to import sample chart of accounts.

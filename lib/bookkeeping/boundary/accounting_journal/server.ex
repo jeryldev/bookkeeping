@@ -9,7 +9,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   alias Bookkeeping.Boundary.AccountingJournal.Backup, as: AccountingJournalBackup
   alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
-  alias Bookkeeping.Core.JournalEntry
+  alias Bookkeeping.Core.{JournalEntry, LineItem}
   alias NimbleCSV.RFC4180, as: CSV
 
   @typedoc """
@@ -24,7 +24,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>      id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
       ...>      transaction_date: ~U[2021-10-10 10:10:10.000000Z],
       ...>      journal_entry_number: "reference number",
-      ...>      description: "description",
+      ...>      journal_entry_description: "description",
       ...>      journal_entry_details: %{},
       ...>      line_items: [
       ...>        %LineItem{
@@ -83,7 +83,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
           t_accounts: accounting_journal_t_accounts(),
           journal_entry_number: String.t(),
           transaction_reference_number: String.t(),
-          description: String.t(),
+          journal_entry_description: String.t(),
           journal_entry_details: map(),
           audit_details: map()
         }
@@ -95,16 +95,9 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
         }
 
   @type accounting_journal_t_accounts :: %{
-          left: list(accounting_journal_t_accounts_item()),
-          right: list(accounting_journal_t_accounts_item())
+          left: list(LineItem.t()),
+          right: list(LineItem.t())
         }
-
-  @type accounting_journal_t_accounts_item :: %{
-          account: account_name(),
-          amount: Decimal.t()
-        }
-
-  @type account_name :: String.t()
 
   @doc """
   Starts the Accounting Journal GenServer.
@@ -132,7 +125,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       - right: The list of maps with account and amount field and represents the entry type of credit.
     - journal_entry_number: The unique reference number of the journal entry. This is an auto-generated unique sequential identifier that is distinct from the transaction reference number (i.e. JE001000, JE001002, etc).
     - transaction_reference_number (optional): The reference number of the transaction. This is usually the reference number of the source document (i.e. invoice number, check number, etc.)
-    - description (optional): The description of the journal entry. This is usually the description of the source document (i.e. invoice description, check description, etc.)
+    - journal_entry_description (optional): The description of the journal entry. This is usually the description of the source document (i.e. invoice description, check description, etc.)
     - journal_entry_details (optional): The details of the journal entry. The details are usually the details of the source document (i.e. invoice details, check details, etc.)
     - audit_details (optional): The details of the audit log.
 
@@ -159,7 +152,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>   },
       ...>   journal_entry_number: "JE001001",
       ...>   transaction_reference_number: "INV001001",
-      ...>   description: "description",
+      ...>   journal_entry_description: "description",
       ...>   journal_entry_details: %{},
       ...>   audit_details: %{}
       ...> })
@@ -173,7 +166,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   @doc """
   Imports journal entries from a CSV file.
-  The header of the CSV file must be `Journal Entry Number`, `Transaction Date`, `Account Name`, `Debit`, `Credit`, `Posted`, `Description`, `Journal Entry Details`, `Audit Details`, `General Ledger Posting Date`, and `Transaction Reference Number`
+  The header of the CSV file must be `Journal Entry Number`, `Transaction Date`, `Account Name`, `Debit`, `Credit`, `Line Item Description`, `Posted`, `Journal Entry Description`, `Journal Entry Details`, `Audit Details`, `General Ledger Posting Date`, and `Transaction Reference Number`
 
   Arguments:
     - path: The path of the CSV file.
@@ -323,10 +316,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       iex> AccountingJournal.find_journal_entry_by_journal_entry_number("ref_num_1")
       {:ok, %JournalEntry{...}}
 
-      iex> AccountingJournal.update_journal_entry(%JournalEntry{...}, %{description: "updated description",posted: true})
-      {:ok, %JournalEntry{description: "updated description", posted: true, ...}}
+      iex> AccountingJournal.update_journal_entry(%JournalEntry{...}, %{journal_entry_description: "updated description",posted: true})
+      {:ok, %JournalEntry{journal_entry_description: "updated description", posted: true, ...}}
 
-      iex> AccountingJournal.update_journal_entry(%JournalEntry{}, %{description: "updated description",posted: true})
+      iex> AccountingJournal.update_journal_entry(%JournalEntry{}, %{journal_entry_description: "updated description",posted: true})
       {:error, :invalid_journal_entry}
   """
   @spec update_journal_entry(accounting_journal_server_pid(), JournalEntry.t(), map()) ::
@@ -369,7 +362,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
              params.t_accounts,
              params.journal_entry_number,
              params.transaction_reference_number,
-             params.description,
+             params.journal_entry_description,
              params.journal_entry_details,
              params.audit_details
            ) do
@@ -610,9 +603,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   end
 
   defp update_t_accounts(t_accounts) do
-    left = update_account_amount_pair(t_accounts.left)
-    right = update_account_amount_pair(t_accounts.right)
-    %{left: left, right: right}
+    %{
+      left: update_account_amount_pair(t_accounts.left),
+      right: update_account_amount_pair(t_accounts.right)
+    }
   end
 
   defp update_account_amount_pair(account_amount_pairs) do
@@ -662,19 +656,31 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       journal_entry_number = Map.get(csv_item, "Journal Entry Number", "")
       transaction_reference_number = Map.get(csv_item, "Transaction Reference Number", "")
       csv_posted = Map.get(csv_item, "Posted", "no")
-      description = Map.get(csv_item, "Description", "")
+      journal_entry_description = Map.get(csv_item, "Journal Entry Description", "")
       journal_entry_details = Map.get(csv_item, "Journal Entry Details", "{}")
       audit_details = Map.get(csv_item, "Audit Details", "{}")
-
-      valid_csv_items? =
-        is_binary(journal_entry_number) and journal_entry_number != "" and
-          is_binary(transaction_reference_number) and is_binary(description) and
-          is_binary(journal_entry_details) and is_binary(audit_details) and is_binary(csv_posted)
+      line_item_description = Map.get(csv_item, "Line Item Description", "")
 
       posted_field = csv_posted |> String.trim() |> String.downcase()
       posted = if posted_field == "yes", do: true, else: false
 
-      with true <- valid_csv_items?,
+      updated_journal_entry_description =
+        generate_updated_journal_description(
+          acc.ok,
+          journal_entry_number,
+          journal_entry_description
+        )
+
+      with true <-
+             validate_csv_items(
+               journal_entry_number,
+               transaction_reference_number,
+               journal_entry_description,
+               journal_entry_details,
+               audit_details,
+               csv_posted,
+               line_item_description
+             ),
            {:ok, transaction_date} <- parse_date(csv_item, "Transaction Date"),
            {:ok, general_ledger_posting_date} <-
              parse_date(csv_item, "General Ledger Posting Date"),
@@ -685,14 +691,21 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
           posted: posted,
           journal_entry_number: journal_entry_number,
           transaction_reference_number: transaction_reference_number,
-          description: description,
+          journal_entry_description: updated_journal_entry_description,
+          line_item_description: line_item_description,
           transaction_date: transaction_date,
           general_ledger_posting_date: general_ledger_posting_date,
           journal_entry_details: journal_entry_details,
           audit_details: audit_details
         }
 
-        oks = update_ok_params(acc.ok, csv_item, initial_params, journal_entry_number)
+        oks =
+          update_ok_params(
+            acc.ok,
+            csv_item,
+            initial_params,
+            journal_entry_number
+          )
 
         Map.put(acc, :ok, oks)
       else
@@ -709,92 +722,105 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
     end)
   end
 
-  defp update_ok_params(ok_params, csv_item, initial_params, journal_entry_number) do
-    case Enum.find(ok_params, fn param -> param.journal_entry_number == journal_entry_number end) do
-      nil ->
-        update_je_params(
-          ok_params,
-          csv_item,
-          initial_params
-        )
+  defp validate_csv_items(
+         journal_entry_number,
+         transaction_reference_number,
+         journal_entry_description,
+         journal_entry_details,
+         audit_details,
+         csv_posted,
+         line_item_description
+       ) do
+    is_binary(journal_entry_number) and journal_entry_number != "" and
+      is_binary(transaction_reference_number) and is_binary(journal_entry_description) and
+      is_binary(journal_entry_details) and is_binary(audit_details) and is_binary(csv_posted) and
+      is_binary(line_item_description)
+  end
 
-      found_param ->
-        update_je_params(
-          ok_params,
-          csv_item,
-          found_param,
-          initial_params,
-          journal_entry_number
-        )
+  defp generate_updated_journal_description(
+         acc_ok_params,
+         journal_entry_number,
+         journal_entry_description
+       ) do
+    existing_journal_entry_description =
+      acc_ok_params
+      |> Enum.find(%{}, fn param -> param.journal_entry_number == journal_entry_number end)
+      |> Map.get(:journal_entry_description, "")
+
+    cond do
+      existing_journal_entry_description == "" ->
+        journal_entry_description
+
+      existing_journal_entry_description != "" and journal_entry_description == "" ->
+        existing_journal_entry_description
+
+      existing_journal_entry_description != "" and journal_entry_description != "" ->
+        existing_journal_entry_description <> " " <> journal_entry_description
     end
   end
 
-  defp update_je_params(
+  defp update_ok_params(
          ok_params,
          csv_item,
-         initial_params
-       ) do
-    account = Map.get(csv_item, "Account Name", "")
-    debit = Map.get(csv_item, "Debit", "")
-    credit = Map.get(csv_item, "Credit", "")
-    debit_amount = if debit == "", do: "0", else: Decimal.new(debit)
-    credit_amount = if credit == "", do: "0", else: Decimal.new(credit)
-
-    t_accounts =
-      if debit != "" do
-        t_accounts_item = %{account: account, amount: Decimal.new(debit_amount)}
-
-        %{
-          left: [t_accounts_item],
-          right: []
-        }
-      else
-        t_accounts_item = %{account: account, amount: Decimal.new(credit_amount)}
-
-        %{
-          left: [],
-          right: [t_accounts_item]
-        }
-      end
-
-    params = Map.put(initial_params, :t_accounts, t_accounts)
-
-    ok_params ++ [params]
-  end
-
-  defp update_je_params(
-         ok_params,
-         csv_item,
-         current_params,
          initial_params,
          journal_entry_number
        ) do
     account = Map.get(csv_item, "Account Name", "")
+    line_item_description = Map.get(csv_item, "Line Item Description", "")
     debit = Map.get(csv_item, "Debit", "")
     credit = Map.get(csv_item, "Credit", "")
 
-    t_accounts =
-      if debit != "" do
-        t_accounts_item = %{account: account, amount: Decimal.new(debit)}
+    case Enum.find(ok_params, fn param -> param.journal_entry_number == journal_entry_number end) do
+      nil ->
+        updated_t_accounts =
+          set_t_accounts(debit, credit, account, line_item_description, initial_params)
 
-        %{
-          left: [t_accounts_item] ++ current_params.t_accounts.left,
-          right: current_params.t_accounts.right
-        }
-      else
-        t_accounts_item = %{account: account, amount: Decimal.new(credit)}
+        params = Map.put(initial_params, :t_accounts, updated_t_accounts)
 
-        %{
-          left: current_params.t_accounts.left,
-          right: [t_accounts_item] ++ current_params.t_accounts.right
-        }
-      end
+        ok_params ++ [params]
 
-    Enum.map(ok_params, fn param ->
-      if param.journal_entry_number == journal_entry_number,
-        do: Map.put(initial_params, :t_accounts, t_accounts),
-        else: param
-    end)
+      found_param ->
+        updated_t_accounts =
+          set_t_accounts(debit, credit, account, line_item_description, found_param)
+
+        Enum.map(ok_params, fn
+          %{journal_entry_number: je_number} when je_number == journal_entry_number ->
+            Map.put(initial_params, :t_accounts, updated_t_accounts)
+
+          param ->
+            param
+        end)
+    end
+  end
+
+  defp set_t_accounts(debit, "" = _credit, account, line_item_description, params) do
+    debit_amount = if debit == "", do: "0", else: Decimal.new(debit)
+
+    t_accounts_debit_item = %{
+      account: account,
+      amount: Decimal.new(debit_amount),
+      line_item_description: line_item_description
+    }
+
+    %{
+      left: [t_accounts_debit_item] ++ params.t_accounts.left,
+      right: params.t_accounts.right
+    }
+  end
+
+  defp set_t_accounts("" = _debit, credit, account, line_item_description, params) do
+    credit_amount = if credit == "", do: "0", else: Decimal.new(credit)
+
+    t_accounts_credit_item = %{
+      account: account,
+      amount: Decimal.new(credit_amount),
+      line_item_description: line_item_description
+    }
+
+    %{
+      left: params.t_accounts.left,
+      right: [t_accounts_credit_item] ++ params.t_accounts.right
+    }
   end
 
   defp parse_date(csv_item, date_column_header) do

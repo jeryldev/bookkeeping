@@ -10,7 +10,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     general_ledger_posting_date = DateTime.utc_now()
     journal_entry_number = "JE100100"
     transaction_reference_number = "INV100100"
-    description = "journal entry description"
+    journal_entry_description = "journal entry description"
     audit_details = %{email: "example@example.com"}
 
     {:ok, cash_account} =
@@ -37,8 +37,20 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     {:ok, inactive_revenue_account} = Account.update(other_revenue_account, %{active: false})
 
     t_accounts = %{
-      left: [%{account: cash_account, amount: Decimal.new(100)}],
-      right: [%{account: revenue_account, amount: Decimal.new(100)}]
+      left: [
+        %{
+          account: cash_account,
+          amount: Decimal.new(100),
+          line_item_description: "cash from service revenue"
+        }
+      ],
+      right: [
+        %{
+          account: revenue_account,
+          amount: Decimal.new(100),
+          line_item_description: "service revenue"
+        }
+      ]
     }
 
     journal_entry_details = %{approved_by: "John Doe", approved_at: DateTime.utc_now()}
@@ -49,7 +61,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
       t_accounts: t_accounts,
       journal_entry_number: journal_entry_number,
       transaction_reference_number: transaction_reference_number,
-      description: description,
+      journal_entry_description: journal_entry_description,
       journal_entry_details: journal_entry_details,
       audit_details: audit_details
     }
@@ -63,7 +75,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
      cash_account: cash_account,
      revenue_account: revenue_account,
      inactive_revenue_account: inactive_revenue_account,
-     description: description,
+     journal_entry_description: journal_entry_description,
      journal_entry_details: journal_entry_details,
      audit_details: audit_details,
      create_je_params: create_je_params}
@@ -88,7 +100,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournalServer.create_journal_entry(params)
 
     assert journal_entry_1.journal_entry_number == "ref_num_1"
-    assert journal_entry_1.description == "journal entry description"
+    assert journal_entry_1.journal_entry_description == "journal entry description"
     assert journal_entry_1.line_items |> length() == 2
     assert journal_entry_1.audit_logs
     assert journal_entry_1.posted == false
@@ -164,7 +176,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     params =
       create_je_params
-      |> Map.put(:description, nil)
+      |> Map.put(:journal_entry_description, nil)
       |> Map.put(:journal_entry_number, "invalid_je_1")
 
     assert {:error, :invalid_journal_entry} =
@@ -391,6 +403,26 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                "../../../../test/bookkeeping/assets/valid_journal_entries.csv"
              )
 
+    journal_entry_descriptions =
+      Enum.map(created_journals, fn journal_entry -> journal_entry.journal_entry_description end)
+
+    assert Enum.member?(
+             journal_entry_descriptions,
+             "JE_1001_INV JE_1001_AP JE_1001_LTD JE_1001_STD JE_1001_C"
+           )
+
+    assert Enum.member?(journal_entry_descriptions, "JE_1007_INV")
+
+    line_item_descriptions =
+      created_journals
+      |> Enum.map(fn journal_entry -> journal_entry.line_items end)
+      |> List.flatten()
+      |> Enum.map(fn line_item -> line_item.line_item_description end)
+
+    assert Enum.member?(line_item_descriptions, "Bought a new property")
+    assert Enum.member?(line_item_descriptions, "Bought additional inventory from AAA Company")
+    assert Enum.member?(line_item_descriptions, "Remaining Payable amount")
+
     assert created_journals |> length() == 2
 
     # importing a journal entry with duplicate reference numbers and invalid accounts
@@ -460,7 +492,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, updated_journal_entry} =
              AccountingJournalServer.update_journal_entry(journal_entry, %{
                general_ledger_posting_date: updated_general_ledger_posting_date,
-               description: "second updated description",
+               journal_entry_description: "second updated description",
                posted: false,
                t_accounts: %{
                  left: [%{account: revenue_account, amount: Decimal.new(200)}],
@@ -474,14 +506,14 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              journal_entry.general_ledger_posting_date
 
     assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
-    assert updated_journal_entry.description == "second updated description"
+    assert updated_journal_entry.journal_entry_description == "second updated description"
     assert updated_journal_entry.posted == false
     assert updated_journal_entry.line_items |> length() == 2
     assert updated_journal_entry.audit_logs
 
     assert {:ok, third_journal_entry_update} =
              AccountingJournalServer.update_journal_entry(updated_journal_entry, %{
-               description: "third updated description",
+               journal_entry_description: "third updated description",
                posted: true,
                t_accounts: %{
                  left: [%{account: revenue_account, amount: Decimal.new(300)}],
@@ -495,14 +527,14 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              journal_entry.general_ledger_posting_date
 
     assert third_journal_entry_update.journal_entry_number == journal_entry.journal_entry_number
-    assert third_journal_entry_update.description == "third updated description"
+    assert third_journal_entry_update.journal_entry_description == "third updated description"
     assert third_journal_entry_update.posted == true
     assert third_journal_entry_update.line_items |> length() == 2
     assert third_journal_entry_update.audit_logs
 
     assert {:error, :already_posted_journal_entry} =
              AccountingJournalServer.update_journal_entry(third_journal_entry_update, %{
-               description: "fourth updated description",
+               journal_entry_description: "fourth updated description",
                posted: false,
                t_accounts: %{
                  left: [%{account: revenue_account, amount: Decimal.new(400)}],

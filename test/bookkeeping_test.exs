@@ -117,7 +117,7 @@ defmodule BookkeepingTest do
     general_ledger_posting_date = DateTime.utc_now()
     journal_entry_number = "JE100100_Bookkeeping_Test"
     transaction_reference_number = "INV100100"
-    description = "journal entry description"
+    journal_entry_description = "journal entry description"
     audit_details = %{email: "example@example.com"}
 
     assert {:ok, cash_account} =
@@ -151,7 +151,7 @@ defmodule BookkeepingTest do
       t_accounts: t_accounts,
       journal_entry_number: journal_entry_number,
       transaction_reference_number: transaction_reference_number,
-      description: description,
+      journal_entry_description: journal_entry_description,
       journal_entry_details: journal_entry_details,
       audit_details: audit_details
     }
@@ -352,25 +352,28 @@ defmodule BookkeepingTest do
     assert {:ok, journal_entry} =
              Bookkeeping.update_journal_entry(
                journal_entry,
-               %{description: "updated journal entry description"}
+               %{journal_entry_description: "updated journal entry description"}
              )
 
     assert {:ok, first_journal_entry_update} =
              Bookkeeping.update_journal_entry(
                journal_entry,
-               %{description: "first journal entry description update", posted: true}
+               %{
+                 journal_entry_description: "first journal entry description update",
+                 posted: true
+               }
              )
 
     assert {:error, :already_posted_journal_entry} =
              Bookkeeping.update_journal_entry(
                first_journal_entry_update,
-               %{description: "second journal entry description update"}
+               %{journal_entry_description: "second journal entry description update"}
              )
 
     assert {:error, :invalid_journal_entry} =
              Bookkeeping.update_journal_entry(
                %JournalEntry{},
-               %{description: "updated journal entry description", posted: true}
+               %{journal_entry_description: "updated journal entry description", posted: true}
              )
   end
 

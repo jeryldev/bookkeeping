@@ -27,7 +27,7 @@ defmodule Bookkeeping.Core.AccountTest do
     assert new_account.name == "cash"
     assert new_account.account_type.name == "Asset"
     assert new_account.account_type.normal_balance == :debit
-    assert new_account.description == "cash and cash equivalents"
+    assert new_account.account_description == "cash and cash equivalents"
     assert new_account.active
   end
 

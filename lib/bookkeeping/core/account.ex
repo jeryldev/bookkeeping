@@ -10,7 +10,7 @@ defmodule Bookkeeping.Core.Account do
           id: UUID.t(),
           code: account_code(),
           name: String.t(),
-          description: String.t(),
+          account_description: String.t(),
           account_type: %AccountType{},
           audit_logs: list(AuditLog.t()),
           active: boolean()
@@ -21,7 +21,7 @@ defmodule Bookkeeping.Core.Account do
   defstruct id: UUID.uuid4(),
             code: "",
             name: "",
-            description: "",
+            account_description: "",
             account_type: nil,
             audit_logs: [],
             active: true
@@ -50,7 +50,7 @@ defmodule Bookkeeping.Core.Account do
     - code: The unique code of the account.
     - name: The unique name of the account.
     - binary_account_type: The type of the account. The account type must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
-    - description: The description of the account.
+    - account_description: The description of the account.
     - audit_details: The details of the audit log.
 
   Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`.
@@ -65,18 +65,17 @@ defmodule Bookkeeping.Core.Account do
   """
   @spec create(String.t(), String.t(), String.t(), String.t(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account}
-  def create(code, name, binary_account_type, description, audit_details)
+  def create(code, name, binary_account_type, account_description, audit_details)
       when is_binary(code) and is_binary(name) and is_binary(binary_account_type) and
-             is_binary(description) and code != "" and name != "" and
-             binary_account_type in @account_types and
-             is_binary(description) and is_map(audit_details) do
+             is_binary(account_description) and code != "" and name != "" and
+             binary_account_type in @account_types and is_map(audit_details) do
     with {:ok, account_type} <- AccountType.create(binary_account_type),
          {:ok, audit_log} <- AuditLog.create("account", "create", audit_details) do
       {:ok,
        %__MODULE__{
          code: code,
          name: name,
-         description: description,
+         account_description: account_description,
          account_type: account_type,
          audit_logs: [audit_log]
        }}
@@ -107,12 +106,12 @@ defmodule Bookkeeping.Core.Account do
   @spec update(%__MODULE__{}, map()) :: {:ok, Account.t()} | {:error, :invalid_account}
   def update(account, attrs) when is_map(attrs) do
     name = Map.get(attrs, :name, account.name)
-    description = Map.get(attrs, :description, account.description)
+    account_description = Map.get(attrs, :account_description, account.account_description)
     active = Map.get(attrs, :active, account.active)
     audit_details = Map.get(attrs, :audit_details, %{})
 
     valid_fields? =
-      is_binary(name) and name != "" and is_binary(description) and
+      is_binary(name) and name != "" and is_binary(account_description) and
         is_boolean(active) and is_map(audit_details)
 
     with true <- valid_fields?,
@@ -121,7 +120,7 @@ defmodule Bookkeeping.Core.Account do
 
       update_params = %{
         name: name,
-        description: description,
+        account_description: account_description,
         active: active,
         audit_logs: [audit_log | existing_audit_logs]
       }
@@ -155,7 +154,7 @@ defmodule Bookkeeping.Core.Account do
     with true <- is_struct(account, __MODULE__),
          true <- is_binary(account.code) and account.code != "",
          true <- is_binary(account.name) and account.name != "",
-         true <- is_binary(account.description),
+         true <- is_binary(account.account_description),
          true <- is_boolean(account.active),
          true <- is_list(account.audit_logs),
          true <- is_struct(account.account_type, AccountType) do
