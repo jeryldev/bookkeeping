@@ -8,8 +8,6 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Supervisor do
   alias Bookkeeping.Boundary.AccountingJournal.Backup, as: AccountingJournalBackup
   alias Bookkeeping.Boundary.AccountingJournal.Server, as: AccountingJournalServer
 
-  @spec start_link([{:name, atom | {:global, any} | {:via, atom, any}}]) ::
-          :ignore | {:error, any} | {:ok, pid}
   def start_link(options \\ []) do
     Supervisor.start_link(__MODULE__, :ok, options)
   end
