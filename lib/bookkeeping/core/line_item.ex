@@ -38,19 +38,10 @@ defmodule Bookkeeping.Core.LineItem do
   ## Examples
 
       iex> LineItem.bulk_create(%{left: [%{account: expense_account, amount: Decimal.new(100)}], right: [%{account: asset_account, amount: Decimal.new(100)}]})
-      {:ok,
-       [
-         %LineItem{
-           account: expense_account,
-           amount: Decimal.new(100),
-           entry_type: :debit
-         },
-         %LineItem{
-           account: asset_account,
-           amount: Decimal.new(100),
-           entry_type: :credit
-         }
-       ]}
+      {:ok, [%LineItem{...}, %LineItem{...}]}
+
+      iex> LineItem.bulk_create(%{left: [%{account: expense_account, amount: Decimal.new(100)}], right: []})
+      {:error, :unbalanced_line_items}
   """
   @spec bulk_create(t_accounts()) ::
           {:ok, list(__MODULE__.t())}
@@ -101,15 +92,7 @@ defmodule Bookkeeping.Core.LineItem do
     ## Examples
 
         iex> LineItem.create(account_amount_pair(), :debit)
-        {:ok,
-         %LineItem{
-           account: %Account{
-             code: nil,
-             name: nil,
-             account_type: asset_account,
-           amount: Decimal.new(100),
-           entry_type: :debit
-         }}
+        {:ok, %LineItem{...}}
   """
   @spec create(account_amount_pair(), EntryType.t()) ::
           {:ok, __MODULE__.t()}

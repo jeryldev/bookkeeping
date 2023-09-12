@@ -64,40 +64,7 @@ defmodule Bookkeeping.Core.JournalEntry do
                  left: [%{account: asset_account, amount: Decimal.new(100)}],
                  right: [%{account: revenue_account, amount: Decimal.new(100)}]
                }, "JE001001", "INV001001", "description", %{}, %{})
-      {:ok,
-      %JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "JE001001",
-        transaction_reference_number: "INV001001",
-        description: "description",
-        journal_entry_details: %{},
-        line_items: [
-          %LineItem{
-            account: asset_account,
-            amount: Decimal.new(100),
-            entry_type: :debit
-          },
-          %LineItem{
-            account: revenue_account,
-            amount: Decimal.new(100),
-            entry_type: :credit
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ],
-        posted: false
-      }}
+      {:ok, %JournalEntry{...}}
 
       iex> JournalEntry.create(DateTime.utc_now(), "reference number", "description", %{}, %{})
       {:error, :invalid_journal_entry}
@@ -162,48 +129,7 @@ defmodule Bookkeeping.Core.JournalEntry do
   ## Examples
 
       iex> JournalEntry.update(journal_entry, %{description: "updated description",posted: true})
-      {:ok,
-      %JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "JE001001",
-        transaction_reference_number: "INV001001",
-        description: "updated description",
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: :debit
-          },
-          %LineItem{
-            account: asset_account,
-            amount: Decimal.new(100),
-            entry_type: :credit
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          },
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "update",
-            details: %{},
-            created_at: nil,
-            updated_at: ~U[2021-10-10 10:10:10.000000Z
-            deleted_at: nil
-          }
-        ],
-        posted: true
-      }}
+      {:ok, %JournalEntry{...}}
 
       iex> JournalEntry.update(journal_entry, %{transaction_date: DateTime.utc_now()})
       {:error, :already_posted_journal_entry}

@@ -169,83 +169,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>   journal_entry_details: %{},
       ...>   audit_details: %{}
       ...> })
-      %{:ok, %Bookkeeping.Core.JournalEntry{
-          id: "7a034a93-52d8-4b79-b198-32ae3b19ee0f",
-          transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-          general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-          journal_entry_number: "JE001001",
-          transaction_reference_number: "INV001001",
-          description: "description",
-          journal_entry_details: %{},
-          line_items: [
-            %Bookkeeping.Core.LineItem{
-              account: %Bookkeeping.Core.Account{
-                code: "101",
-                name: "Cash",
-                description: "Cash",
-                account_type: %Bookkeeping.Core.AccountType{
-                  name: "asset",
-                  normal_balance: :debit,
-                  primary_account_category: :balance_sheet,
-                  contra: false
-                },
-                audit_logs: [
-                  %Bookkeeping.Core.AuditLog{
-                    id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-                    record_type: "account",
-                    action_type: "create",
-                    details: %{"approved_by" => "example@example.com"},
-                    created_at: ~U[2023-08-29 02:16:37.146886Z],
-                    updated_at: ~U[2023-08-29 02:16:37.146886Z],
-                    deleted_at: nil
-                  }
-                ],
-                active: true
-              },
-              amount: Decimal.new("100"),
-              entry_type: :debit
-            },
-            %Bookkeeping.Core.LineItem{
-              account: %Bookkeeping.Core.Account{
-                code: "401",
-                name: "Sales Revenue",
-                description: "Sales Revenue",
-                account_type: %Bookkeeping.Core.AccountType{
-                  name: "Revenue",
-                  normal_balance: :credit,
-                  primary_account_category: :profit_and_loss,
-                  contra: false
-                },
-                audit_logs: [
-                  %Bookkeeping.Core.AuditLog{
-                    id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-                    record_type: "account",
-                    action_type: "create",
-                    details: %{"approved_by" => "example@example.com"},
-                    created_at: ~U[2023-08-29 02:16:37.146911Z],
-                    updated_at: ~U[2023-08-29 02:16:37.146911Z],
-                    deleted_at: nil
-                  }
-                ],
-                active: true
-              },
-              amount: Decimal.new("100"),
-              entry_type: :credit
-            }
-          ],
-          audit_logs: [
-            %Bookkeeping.Core.AuditLog{
-              id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-              record_type: "journal_entry",
-              action_type: "create",
-              details: %{"created_by" => "example@example.com"},
-              created_at: ~U[2023-08-29 02:16:41.202768Z],
-              updated_at: ~U[2023-08-29 02:16:41.202768Z],
-              deleted_at: nil
-            }
-          ],
-          posted: false
-      }}
+      %{:ok, %Bookkeeping.Core.JournalEntry{...}}
   """
   @spec create_journal_entry(accounting_journal_server_pid(), create_journal_entry_params()) ::
           {:ok, JournalEntry.t()} | {:error, :invalid_journal_entry}
@@ -268,193 +192,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       {:ok,
       %{
         error: [],
-        ok: [
-          %Bookkeeping.Core.JournalEntry{
-            id: "7a034a93-52d8-4b79-b198-32ae3b19ee0f",
-            transaction_date: ~U[2023-08-29 02:16:37.139760Z],
-            general_ledger_posting_date: ~U[2023-08-29 02:16:37.139760Z],
-            journal_entry_number: "JE001001",
-            transaction_reference_number: "INV001001",
-            description: "description",
-            journal_entry_details: %{},
-            line_items: [
-              %Bookkeeping.Core.LineItem{
-                account: %Bookkeeping.Core.Account{
-                  code: "201",
-                  name: "Accounts Payable",
-                  description: "Accounts Payable",
-                  account_type: %Bookkeeping.Core.AccountType{
-                    name: "Liability",
-                    normal_balance: :credit,
-                    primary_account_category: :balance_sheet,
-                    contra: false
-                  },
-                  audit_logs: [
-                    %Bookkeeping.Core.AuditLog{
-                      id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-                      record_type: "account",
-                      action_type: "create",
-                      details: %{"approved_by" => "example@example.com"},
-                      created_at: ~U[2023-08-29 02:16:37.146886Z],
-                      updated_at: ~U[2023-08-29 02:16:37.146886Z],
-                      deleted_at: nil
-                    }
-                  ],
-                  active: true
-                },
-                amount: Decimal.new("5000"),
-                entry_type: :credit
-              },
-              %Bookkeeping.Core.LineItem{
-                account: %Bookkeeping.Core.Account{
-                  code: "203",
-                  name: "Long-term Debt",
-                  description: "Long-term Debt",
-                  account_type: %Bookkeeping.Core.AccountType{
-                    name: "Liability",
-                    normal_balance: :credit,
-                    primary_account_category: :balance_sheet,
-                    contra: false
-                  },
-                  audit_logs: [
-                    %Bookkeeping.Core.AuditLog{
-                      id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-                      record_type: "account",
-                      action_type: "create",
-                      details: %{"approved_by" => "example@example.com"},
-                      created_at: ~U[2023-08-29 02:16:37.146911Z],
-                      updated_at: ~U[2023-08-29 02:16:37.146911Z],
-                      deleted_at: nil
-                    }
-                  ],
-                  active: true
-                },
-                amount: Decimal.new("10000"),
-                entry_type: :credit
-              },
-              %Bookkeeping.Core.LineItem{
-                account: %Bookkeeping.Core.Account{
-                  code: "202",
-                  name: "Short-term Debt",
-                  description: "Short-term Debt",
-                  account_type: %Bookkeeping.Core.AccountType{
-                    name: "Liability",
-                    normal_balance: :credit,
-                    primary_account_category: :balance_sheet,
-                    contra: false
-                  },
-                  audit_logs: [
-                    %Bookkeeping.Core.AuditLog{
-                      id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-                      record_type: "account",
-                      action_type: "create",
-                      details: %{"approved_by" => "example@example.com"},
-                      created_at: ~U[2023-08-29 02:16:37.146901Z],
-                      updated_at: ~U[2023-08-29 02:16:37.146901Z],
-                      deleted_at: nil
-                    }
-                  ],
-                  active: true
-                },
-                amount: Decimal.new("5000"),
-                entry_type: :credit
-              },
-              %Bookkeeping.Core.LineItem{
-                account: %Bookkeeping.Core.Account{
-                  code: "101",
-                  name: "Cash",
-                  description: "Cash",
-                  account_type: %Bookkeeping.Core.AccountType{
-                    name: "Asset",
-                    normal_balance: :debit,
-                    primary_account_category: :balance_sheet,
-                    contra: false
-                  },
-                  audit_logs: [
-                    %Bookkeeping.Core.AuditLog{
-                      id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-                      record_type: "account",
-                      action_type: "create",
-                      details: %{"approved_by" => "example@example.com"},
-                      created_at: ~U[2023-08-29 02:16:37.139760Z],
-                      updated_at: ~U[2023-08-29 02:16:37.139760Z],
-                      deleted_at: nil
-                    }
-                  ],
-                  active: true
-                },
-                amount: Decimal.new("20000"),
-                entry_type: :credit
-              },
-              %Bookkeeping.Core.LineItem{
-                account: %Bookkeeping.Core.Account{
-                  code: "104",
-                  name: "Property,  Plant, and Equipment",
-                  description: "Property,  Plant, and Equipment",
-                  account_type: %Bookkeeping.Core.AccountType{
-                    name: "Asset",
-                    normal_balance: :debit,
-                    primary_account_category: :balance_sheet,
-                    contra: false
-                  },
-                  audit_logs: [
-                    %Bookkeeping.Core.AuditLog{
-                      id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-                      record_type: "account",
-                      action_type: "create",
-                      details: %{"approved_by" => "example@example.com"},
-                      created_at: ~U[2023-08-29 02:16:37.146775Z],
-                      updated_at: ~U[2023-08-29 02:16:37.146775Z],
-                      deleted_at: nil
-                    }
-                  ],
-                  active: true
-                },
-                amount: Decimal.new("20000"),
-                entry_type: :debit
-              },
-              %Bookkeeping.Core.LineItem{
-                account: %Bookkeeping.Core.Account{
-                  code: "103",
-                  name: "Inventory",
-                  description: "Inventory",
-                  account_type: %Bookkeeping.Core.AccountType{
-                    name: "Asset",
-                    normal_balance: :debit,
-                    primary_account_category: :balance_sheet,
-                    contra: false
-                  },
-                  audit_logs: [
-                    %Bookkeeping.Core.AuditLog{
-                      id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-                      record_type: "account",
-                      action_type: "create",
-                      details: %{"approved_by" => "example@example.com"},
-                      created_at: ~U[2023-08-29 02:16:37.146700Z],
-                      updated_at: ~U[2023-08-29 02:16:37.146700Z],
-                      deleted_at: nil
-                    }
-                  ],
-                  active: true
-                },
-                amount: Decimal.new("20000"),
-                entry_type: :debit
-              }
-            ],
-            audit_logs: [
-              %Bookkeeping.Core.AuditLog{
-                id: "0dd4b10c-840a-467b-a4af-08102aaf6bad",
-                record_type: "journal_entry",
-                action_type: "create",
-                details: %{"created_by" => "example@example.com"},
-                created_at: ~U[2023-08-29 02:16:41.202768Z],
-                updated_at: ~U[2023-08-29 02:16:41.202768Z],
-                deleted_at: nil
-              }
-            ],
-            posted: false
-          }
-        ]
+        ok: [%Bookkeeping.Core.JournalEntry{...}, %Bookkeeping.Core.JournalEntry{...}, ...]
       }}
   """
   @spec import_journal_entries(accounting_journal_server_pid(), String.t()) ::
@@ -480,57 +218,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   ## Examples
 
       iex> AccountingJournal.all_journal_entries()
-      {:ok, [%JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "JE001001",
-        transaction_reference_number: "INV001001",
-        description: "description",
-        journal_entry_details: %{},
-        line_items: [
-          %LineItem{
-            account: %Account{
-              code: nil,
-              name: nil,
-              account_type: %AccountType{
-                name: nil,
-                normal_balance: %EntryType{type: :debit, name: "Debit"},
-                primary_account_category: %PrimaryAccountCategory{type: nil, primary: nil},
-                contra: nil
-              }
-            },
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
-          },
-          %LineItem{
-            account: %Account{
-              code: nil,
-              name: nil,
-              account_type: %AccountType{
-                name: nil,
-                normal_balance: %EntryType{type: :credit, name: "Credit"},
-                primary_account_category: %PrimaryAccountCategory{type: nil, primary: nil},
-                contra: nil
-              }
-            },
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ],
-        posted: false
-      }]}
+      {:ok, [%JournalEntry{...}, %JournalEntry{...}, ...]}
   """
   @spec all_journal_entries(accounting_journal_server_pid()) :: {:ok, list(JournalEntry.t())}
   def all_journal_entries(server \\ __MODULE__) do
@@ -545,39 +233,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   ## Examples
 
       iex> AccountingJournal.find_journal_entry_by_journal_entry_number("JE001001")
-      {:ok, %JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "JE001001",
-        transaction_reference_number: "INV001001",
-        description: "description",
-        journal_entry_details: %{},
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
-          },
-          %LineItem{
-            account: cash_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ],
-        posted: false
-      }}
+      {:ok, %JournalEntry{...}}
 
       iex> AccountingJournal.find_journal_entry_by_journal_entry_number("ref_num_2")
       {:error, :not_found}
@@ -596,72 +252,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   ## Examples
 
       iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date(~U[2021-10-10 10:10:10.000000Z])
-      {:ok, [%JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "ref_num_1",
-        description: "description",
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
-          },
-          %LineItem{
-            account: cash_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          },
-          ...
-        ],
-        posted: false
-      }]}
+      {:ok, [%JournalEntry{...}, %JournalEntry{...}, ...]}
 
       iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date(%{year: 2021, month: 10})
-      {:ok, [%JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "ref_num_1",
-        description: "description",
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
-          },
-          %LineItem{
-            account: cash_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          },
-          ...
-        ],
-        posted: false
-      }]}
+      {:ok, [%JournalEntry{...}, %JournalEntry{...}, ...]}
 
       iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date(~U[2021-10-10 10:10:10.000000Z])
       {:error, :invalid_date}
@@ -682,36 +276,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   ## Examples
 
       iex> AccountingJournal.find_journal_entries_by_id("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
-      {:ok, %JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "ref_num_1",
-        description: "description",
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
-          },
-          %LineItem{
-            account: cash_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ],
-        posted: false
-      }}
+      {:ok, %JournalEntry{...}}
 
       iex> AccountingJournal.find_journal_entries_by_id("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
       {:error, :invalid_id}
@@ -730,72 +295,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   ## Examples
 
       iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
-      {:ok, [%JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "ref_num_1",
-        description: "description",
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
-          },
-          %LineItem{
-            account: cash_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          },
-          ...
-        ],
-        posted: false
-      }]}
+      {:ok, [%JournalEntry{...}]}
 
       iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date_range(%{year: 2021, month: 10, day: 10}, %{year: 2021, month: 10, day: 10})
-      {:ok, [%JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "ref_num_1",
-        description: "description",
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
-          },
-          %LineItem{
-            account: cash_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          },
-          ...
-        ],
-        posted: false
-      }]}
+      {:ok, [%JournalEntry{...}]}
 
       iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
       {:error, :invalid_date}
@@ -824,100 +327,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   ## Examples
 
       iex> AccountingJournal.find_journal_entry_by_journal_entry_number("ref_num_1")
-      {:ok, %JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "ref_num_1",
-        description: "description",
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
-          },
-          %LineItem{
-            account: cash_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ],
-        posted: false
-      }}
+      {:ok, %JournalEntry{...}}
 
-      iex> AccountingJournal.update_journal_entry(%JournalEntry{
-      ...>   id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-      ...>   transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-      ...>   journal_entry_number: "ref_num_1",
-      ...>   description: "description",
-      ...>   line_items: [
-      ...>     %LineItem{
-      ...>       account: expense_account,
-      ...>       amount: Decimal.new(100),
-      ...>       entry_type: %EntryType{type: :debit, name: "Debit"}
-      ...>     },
-      ...>     %LineItem{
-      ...>       account: cash_account,
-      ...>       amount: Decimal.new(100),
-      ...>       entry_type: %EntryType{type: :credit, name: "Credit"}
-      ...>     }
-      ...>   ],
-      ...>   audit_logs: [
-      ...>     %AuditLog{
-      ...>       id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-      ...>       record_type: "journal_entry",
-      ...>       action_type: "create",
-      ...>       details: %{},
-      ...>       created_at: ~U[2021-10-10 10:10:10.000000Z],
-      ...>       updated_at: ~U[2021-10-10 10:10:10.000000Z],
-      ...>       deleted_at: nil
-      ...>     }
-      ...>   ],
-      ...>   posted: false
-      ...> }, %{description: "updated description",posted: true})
-      {:ok, %JournalEntry{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-        general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
-        journal_entry_number: "ref_num_1",
-        description: "updated description",
-        line_items: [
-          %LineItem{
-            account: expense_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :debit, name: "Debit"}
-          },
-          %LineItem{
-            account: cash_account,
-            amount: Decimal.new(100),
-            entry_type: %EntryType{type: :credit, name: "Credit"}
-          }
-        ],
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "journal_entry",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          },
-          ...
-        ],
-        posted: true
-      }}
+      iex> AccountingJournal.update_journal_entry(%JournalEntry{...}, %{description: "updated description",posted: true})
+      {:ok, %JournalEntry{description: "updated description", posted: true, ...}}
 
       iex> AccountingJournal.update_journal_entry(%JournalEntry{}, %{description: "updated description",posted: true})
       {:error, :invalid_journal_entry}
