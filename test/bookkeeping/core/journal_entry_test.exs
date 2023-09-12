@@ -8,14 +8,34 @@ defmodule Bookkeeping.Core.JournalEntryTest do
     journal_entry_number = "JE100100"
     transaction_reference_number = "INV100100"
     audit_details = %{created_by: "example@example.com"}
-    {:ok, asset_account} = Account.create("10000", "cash", "asset", "description", audit_details)
+
+    {:ok, asset_account} =
+      Account.create("10000", "cash", "asset", "journal_entry_description", audit_details)
 
     {:ok, revenue_account} =
-      Account.create("20000", "service revenue", "revenue", "description", audit_details)
+      Account.create(
+        "20000",
+        "service revenue",
+        "revenue",
+        "journal_entry_description",
+        audit_details
+      )
 
     t_accounts = %{
-      left: [%{account: asset_account, amount: Decimal.new(100)}],
-      right: [%{account: revenue_account, amount: Decimal.new(100)}]
+      left: [
+        %{
+          account: asset_account,
+          amount: Decimal.new(100),
+          line_item_description: "cash from service revenue"
+        }
+      ],
+      right: [
+        %{
+          account: revenue_account,
+          amount: Decimal.new(100),
+          line_item_description: "service revenue"
+        }
+      ]
     }
 
     journal_entry_details = %{approved_by: "example@example.com"}
@@ -215,7 +235,7 @@ defmodule Bookkeeping.Core.JournalEntryTest do
 
     assert {:ok, updated_journal_entry} =
              JournalEntry.update(journal_entry, %{
-               description: "second updated description",
+               journal_entry_description: "second updated description",
                journal_entry_details: %{approved_by: "other_example@example.com"},
                posted: false,
                t_accounts: %{
@@ -224,24 +244,33 @@ defmodule Bookkeeping.Core.JournalEntryTest do
                }
              })
 
-    assert updated_journal_entry.general_ledger_posting_date == journal_entry.general_ledger_posting_date
+    assert updated_journal_entry.general_ledger_posting_date ==
+             journal_entry.general_ledger_posting_date
+
     assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
-    refute updated_journal_entry.description == journal_entry.description
+
+    refute updated_journal_entry.journal_entry_description ==
+             journal_entry.journal_entry_description
 
     assert {:ok, updated_journal_entry} =
              JournalEntry.update(journal_entry, %{
-               description: "updated description",
+               journal_entry_description: "updated description",
                posted: true
              })
 
-    assert updated_journal_entry.general_ledger_posting_date == journal_entry.general_ledger_posting_date
+    assert updated_journal_entry.general_ledger_posting_date ==
+             journal_entry.general_ledger_posting_date
+
     assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
-    refute updated_journal_entry.description == journal_entry.description
+
+    refute updated_journal_entry.journal_entry_description ==
+             journal_entry.journal_entry_description
+
     refute updated_journal_entry.posted == journal_entry.posted
 
     assert {:error, :already_posted_journal_entry} =
              JournalEntry.update(updated_journal_entry, %{
-               description: "third description update",
+               journal_entry_description: "third description update",
                posted: true,
                t_accounts: %{
                  left: [%{account: asset_account, amount: Decimal.new(200)}],

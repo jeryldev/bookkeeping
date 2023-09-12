@@ -38,41 +38,14 @@ defmodule Bookkeeping.Core.AuditLog do
   ## Examples
 
       iex> AuditLog.create("account", "create", %{email: "example@example.com"})
-      {:ok,
-      %AuditLog{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        record_type: "account",
-        action_type: "create",
-        details: %{email: "example@example.com"},
-        created_at: ~U[2021-10-10 10:10:10.000000Z],
-        updated_at: ~U[2021-10-10 10:10:10.000000Z],
-        deleted_at: nil
-      }}
+      {:ok, %AuditLog{...}}
 
 
       iex> Audit.create("account", "update", %{email: "example@example.com"})
-      {:ok,
-      %AuditLog{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        record_type: "account",
-        action_type: "update",
-        details: %{email: "example@example.com"},
-        created_at: nil,
-        updated_at: ~U[2021-10-10 10:10:10.000000Z],
-        deleted_at: nil
-      }}
+      {:ok, %AuditLog{...}}
 
       iex> AuditLog.create("account", "delete", %{email: "example@example.com"})
-      {:ok,
-      %AuditLog{
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        record_type: "account",
-        action_type: "delete",
-        details: %{email: "example@example.com"},
-        created_at: nil,
-        updated_at: ~U[2021-10-10 10:10:10.000000Z],
-        deleted_at: ~U[2021-10-10 10:10:10.000000Z]
-      }}
+      {:ok, %AuditLog{...}}
 
       iex> AuditLog.create("account", "invalid", %{})
       {:error, :invalid_audit_log}

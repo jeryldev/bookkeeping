@@ -15,6 +15,8 @@ defmodule Bookkeeping.Core.AccountTest do
     assert new_account.name == "cash"
     assert new_account.account_type.name == "Asset"
     assert new_account.account_type.normal_balance == :debit
+
+    assert {:ok, _valid_account} = Account.validate_account(new_account)
   end
 
   test "create account with description and active fields", %{details: details} do
@@ -25,7 +27,7 @@ defmodule Bookkeeping.Core.AccountTest do
     assert new_account.name == "cash"
     assert new_account.account_type.name == "Asset"
     assert new_account.account_type.normal_balance == :debit
-    assert new_account.description == "cash and cash equivalents"
+    assert new_account.account_description == "cash and cash equivalents"
     assert new_account.active
   end
 
@@ -79,5 +81,9 @@ defmodule Bookkeeping.Core.AccountTest do
                code: "10_001",
                name: "cash and cash equivalents"
              })
+  end
+
+  test "validate account" do
+    assert {:error, :invalid_account} = Account.validate_account(%Account{})
   end
 end
