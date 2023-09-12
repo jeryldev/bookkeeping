@@ -7,6 +7,7 @@ defmodule Bookkeeping.Core.Account do
   alias Bookkeeping.Core.{AccountType, AuditLog}
 
   @type t :: %__MODULE__{
+          id: UUID.t(),
           code: account_code(),
           name: String.t(),
           description: String.t(),
@@ -17,7 +18,8 @@ defmodule Bookkeeping.Core.Account do
 
   @type account_code :: String.t()
 
-  defstruct code: "",
+  defstruct id: UUID.uuid4(),
+            code: "",
             name: "",
             description: "",
             account_type: nil,
@@ -56,30 +58,7 @@ defmodule Bookkeeping.Core.Account do
   ## Examples
 
       iex> Account.create("10_000", "cash", "asset", "", %{})
-      {:ok,
-      %Account{
-        code: "10_000",
-        name: "cash",
-        description: "",
-        account_type: %AccountType{
-          name: "Asset",
-          normal_balance: :debit,
-          primary_account_category: :balance_sheet,
-          contra: false
-        },
-        active: true,
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "account",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ]
-      }}
+      {:ok, %Account{...}}
 
       iex> Account.create("invalid", "invalid", "invalid", nil, false, %{})
       {:error, :invalid_account}
@@ -123,39 +102,7 @@ defmodule Bookkeeping.Core.Account do
       iex> {:ok, account} = Account.create("10_000", "cash", "asset")
 
       iex> Account.update(account, %{name: "cash and cash equivalents"})
-      {:ok,
-      %Account{
-        code: "10_000",
-        name: "cash and cash equivalents",
-        description: "",
-        account_type: %AccountType{
-          name: "Asset",
-          normal_balance: :debit,
-          primary_account_category: :balance_sheet,
-          contra: false
-        },
-        active: true,
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "account",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          },
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "account",
-            action_type: "update",
-            details: %{},
-            created_at: nil,
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ]
-      }}
+      {:ok, %Account{name: "cash and cash equivalents", ...}}
   """
   @spec update(%__MODULE__{}, map()) :: {:ok, Account.t()} | {:error, :invalid_account}
   def update(account, attrs) when is_map(attrs) do

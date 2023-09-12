@@ -19,6 +19,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
       iex> %{
       ...>   "1000" => %Account{
+      ...>     id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
       ...>     code: "1000",
       ...>     name: "Cash",
       ...>     description: "",
@@ -95,30 +96,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   ## Examples
 
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.create_account(server, "1000", "Cash", "asset", "", %{})
-      {:ok,
-      %Bookkeeping.Core.Account{
-        code: "1000",
-        name: "Cash",
-        description: "",
-        account_type: %AccountType{
-          name: "Asset",
-          normal_balance: :debit,
-          primary_account_category: :balance_sheet,
-          contra: false
-        },
-        active: true,
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "account",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ]
-      }}
+      {:ok, %Bookkeeping.Core.Account{...}}
 
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.create_account(server, "invalid", "invalid", nil, false, %{})
       {:error, :invalid_account}
@@ -165,11 +143,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         ok: [],
         error: [
           %{
-            account_code: "1000",
-            account_name: "Cash",
-            error: :account_already_exists
-          },
-          %{
             account_code: "1001",
             account_name: "Cash",
             error: :account_already_exists
@@ -179,11 +152,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
             account_name: "Cash",
             error: :invalid_account
           },
-          %{
-            account_code: "1003",
-            account_name: "Cash",
-            error: :invalid_account
-          }
+          ...
         ]
       }}
   """
@@ -214,30 +183,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   ## Examples
 
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.update_account(server, account, %{name: "Cash and cash equivalents"})
-      {:ok,
-      %Bookkeeping.Core.Account{
-        code: "1000",
-        name: "Cash and cash equivalents",
-        description: "",
-        account_type: %AccountType{
-          name: "Asset",
-          normal_balance: :debit,
-          primary_account_category: :balance_sheet,
-          contra: false
-        },
-        active: true,
-        audit_logs: [
-          %AuditLog{
-            id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            record_type: "account",
-            action_type: "create",
-            details: %{},
-            created_at: ~U[2021-10-10 10:10:10.000000Z],
-            updated_at: ~U[2021-10-10 10:10:10.000000Z],
-            deleted_at: nil
-          }
-        ]
-      }}
+      {:ok, %Bookkeeping.Core.Account{...}}
   """
   @spec update_account(chart_of_accounts_server_pid(), Account.t(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account}
@@ -255,7 +201,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   ## Examples
 
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.all_accounts(server)
-      {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
+      {:ok, [%Bookkeeping.Core.Account{...}, %Bookkeeping.Core.Account{...}, ...]}
   """
   @spec all_accounts(chart_of_accounts_server_pid()) :: {:ok, list(Account.t())}
   def all_accounts(server \\ __MODULE__) do
@@ -273,7 +219,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   ## Examples
 
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.find_account_by_code(server, "1000")
-      {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
+      {:ok, %Bookkeeping.Core.Account{...}}
   """
   @spec find_account_by_code(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, Account.t()} | {:error, :not_found}
@@ -294,7 +240,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   ## Examples
 
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.find_account_by_name(server, "Cash")
-      {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
+      {:ok, %Bookkeeping.Core.Account{...}}
   """
   @spec find_account_by_name(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, Account.t()} | {:error, :not_found}
@@ -315,7 +261,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   ## Examples
 
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.search_accounts(server, "1000")
-      {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
+      {:ok, [%Bookkeeping.Core.Account{...}, %Bookkeeping.Core.Account{...}, ...]}
   """
   @spec search_accounts(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, list(Account.t())} | {:error, :invalid_query}
@@ -333,7 +279,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   ## Examples
 
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.all_sorted_accounts(server, :code)
-      {:ok, [%Bookkeeping.Core.Account{account_type: %Bookkeeping.Core.AccountType{}, code: "1000", name: "Cash"}]}
+      {:ok, [%Bookkeeping.Core.Account{...}, %Bookkeeping.Core.Account{...}, ...]}
   """
   @spec all_sorted_accounts(chart_of_accounts_server_pid(), atom()) ::
           {:ok, list(Account.t())} | {:error, :invalid_field}
