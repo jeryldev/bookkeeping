@@ -131,4 +131,37 @@ defmodule Bookkeeping.Core.Account do
       _ -> {:error, :invalid_account}
     end
   end
+
+  @doc """
+  Validates an account struct.
+
+  Arguments:
+    - account: The account to be validated.
+
+  Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`.
+
+  ## Examples
+
+      iex> {:ok, account} = Account.create("10_000", "cash", "asset")
+
+      iex> Account.validate_account(account)
+      {:ok, %Account{...}}
+
+      iex> Account.validate_account(%Account{})
+      {:error, :invalid_account}
+  """
+  @spec validate_account(map()) :: {:ok, __MODULE__.t()} | {:error, :invalid_account}
+  def validate_account(account) do
+    with true <- is_struct(account, __MODULE__),
+         true <- is_binary(account.code) and account.code != "",
+         true <- is_binary(account.name) and account.name != "",
+         true <- is_binary(account.description),
+         true <- is_boolean(account.active),
+         true <- is_list(account.audit_logs),
+         true <- is_struct(account.account_type, AccountType) do
+      {:ok, account}
+    else
+      _error -> {:error, :invalid_account}
+    end
+  end
 end

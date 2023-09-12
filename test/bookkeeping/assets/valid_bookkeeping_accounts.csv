@@ -1,0 +1,10 @@
+Account Code,Account Name,Account Type,Description,Audit Details
+1001_bookkeeping_test,Accounts Receivable Bookkeeping Test,asset,Accounts Receivable,{}
+1002_bookkeeping_test,Cash Bookkeeping Test,asset,Cash,"{""approved_by"": ""example@example.com""}"
+101_bookkeeping_test,Cash Bookkeeping Test,asset,Cash,"{""approved_by"": ""example@example.com""}"
+103_bookkeeping_test,Inventory Bookkeeping Test,asset,Inventory,"{""approved_by"": ""example@example.com""}"
+104_bookkeeping_test,"Property, Plant, and Equipment Bookkeeping Test",asset,"Property,  Plant, and Equipment","{""approved_by"": ""example@example.com""}"
+201_bookkeeping_test,Accounts Payable Bookkeeping Test,liability,Accounts Payable,"{""approved_by"": ""example@example.com""}"
+202_bookkeeping_test,Short-term Debt Bookkeeping Test,liability,Short-term Debt,"{""approved_by"": ""example@example.com""}"
+203_bookkeeping_test,Long-term Debt Bookkeeping Test,liability,Long-term Debt,"{""approved_by"": ""example@example.com""}"
+402_bookkeeping_test,Service Revenue Bookkeeping Test,revenue,Service Revenue,"{""approved_by"": ""example@example.com""}"

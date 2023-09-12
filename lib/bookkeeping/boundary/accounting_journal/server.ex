@@ -12,12 +12,6 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   alias Bookkeeping.Core.JournalEntry
   alias NimbleCSV.RFC4180, as: CSV
 
-  ### Test Notes ###
-  # alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: COA
-  # alias Bookkeeping.Boundary.AccountingJournal.Server, as: AJ
-  # COA.import_accounts "../../assets/sample_chart_of_accounts.csv"
-  # AJ.import_journal_entries "../../assets/sample_journal_entries.csv"
-
   @typedoc """
   The state of the Accounting Journal GenServer.
   The state is a map in which the keys are maps of transaction date details (year, month, day) and the values are lists of journal entries.
@@ -161,7 +155,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>         account: "Sales Revenue",
       ...>         amount: Decimal.new(100)
       ...>       }
-      ...>     ]
+      ...>     ]F
       ...>   },
       ...>   journal_entry_number: "JE001001",
       ...>   transaction_reference_number: "INV001001",
@@ -336,7 +330,9 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       {:error, :invalid_journal_entry}
   """
   @spec update_journal_entry(accounting_journal_server_pid(), JournalEntry.t(), map()) ::
-          {:ok, JournalEntry.t()} | {:error, :invalid_journal_entry}
+          {:ok, JournalEntry.t()}
+          | {:error, :invalid_journal_entry}
+          | {:error, :already_posted_journal_entry}
   def update_journal_entry(server \\ __MODULE__, journal_entry, attrs) do
     GenServer.call(server, {:update_journal_entry, journal_entry, attrs})
   end
@@ -447,17 +443,14 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
         _from,
         journal_entries
       ) do
-    with {:ok, from_date_details} <-
-           get_date_details(from_datetime),
-         {:ok, to_date_details} <-
-           get_date_details(to_datetime) do
+    with {:ok, from_date_details} <- get_date_details(from_datetime),
+         {:ok, to_date_details} <- get_date_details(to_datetime) do
       je_list =
         find_journal_entries_by_date_range(journal_entries, from_date_details, to_date_details)
 
       {:reply, {:ok, je_list}, journal_entries}
     else
-      {:error, message} ->
-        {:reply, {:error, message}, journal_entries}
+      {:error, message} -> {:reply, {:error, message}, journal_entries}
     end
   end
 
@@ -486,9 +479,11 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
     AccountingJournalBackup.update(journal_entries)
   end
 
-  defp get_date_details(datetime)
-       when is_struct(datetime, DateTime) or is_map(datetime),
-       do: {:ok, Map.take(datetime, [:year, :month, :day])}
+  defp get_date_details(datetime) when is_struct(datetime, DateTime),
+    do: {:ok, Map.take(datetime, [:year, :month, :day])}
+
+  defp get_date_details(%{year: year, month: month, day: day}),
+    do: {:ok, %{year: year, month: month, day: day}}
 
   defp get_date_details(_), do: {:error, :invalid_date}
 
@@ -505,13 +500,15 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   end
 
   defp find_journal_entries_by_date_range(journal_entries, from_date_details, to_date_details) do
-    from_tdd_keys = Map.keys(from_date_details)
-    to_tdd_keys = Map.keys(to_date_details)
+    from_datetime = convert_date_details_to_datetime(from_date_details, "from")
+    to_datetime = convert_date_details_to_datetime(to_date_details, "to")
 
     journal_entries
     |> Task.async_stream(fn {k, je_list} ->
-      if Map.take(k, from_tdd_keys) >= from_date_details and
-           Map.take(k, to_tdd_keys) <= to_date_details,
+      k_datetime = convert_date_details_to_datetime(k, "from")
+
+      if DateTime.compare(to_datetime, k_datetime) == :gt and
+           DateTime.compare(k_datetime, from_datetime) in [:gt, :eq],
          do: je_list,
          else: nil
     end)
@@ -828,4 +825,23 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
     {:ok, csv_inputs}
   end
+
+  defp convert_date_details_to_datetime(date_details, date_type) do
+    year = Map.get(date_details, :year, 1000)
+    month = Map.get(date_details, :month, 1)
+    day = Map.get(date_details, :day, 1)
+    time = if date_type == "from", do: "00:00:00Z", else: "23:59:59Z"
+
+    if is_integer(year) and is_integer(month) and is_integer(day) do
+      month = day_or_month_to_string(month)
+      day = day_or_month_to_string(day)
+      {:ok, datetime, _} = DateTime.from_iso8601("#{year}-#{month}-#{day}T#{time}")
+      datetime
+    else
+      {:error, :invalid_date}
+    end
+  end
+
+  defp day_or_month_to_string(day_or_month) when day_or_month < 10, do: "0#{day_or_month}"
+  defp day_or_month_to_string(day_or_month), do: "#{day_or_month}"
 end

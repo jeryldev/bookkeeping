@@ -222,7 +222,9 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert Enum.member?(all_journal_entries, journal_entry_2)
   end
 
-  test "find journal entries by general ledger posting date", %{create_je_params: create_je_params} do
+  test "find journal entries by general ledger posting date", %{
+    create_je_params: create_je_params
+  } do
     params = Map.put(create_je_params, :journal_entry_number, "ref_num_10")
 
     assert {:ok, journal_entry_1} =
@@ -236,7 +238,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     assert {:ok, je_result_2} =
              journal_entry_1.general_ledger_posting_date
-             |> Map.take([:year, :month])
+             |> Map.take([:year, :month, :day])
              |> AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date()
 
     assert is_list(je_result_2)
@@ -282,7 +284,9 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournalServer.find_journal_entries_by_id(nil)
   end
 
-  test "find journal entries by general ledger posting date range", %{create_je_params: create_je_params} do
+  test "find journal entries by general ledger posting date range", %{
+    create_je_params: create_je_params
+  } do
     params = Map.put(create_je_params, :journal_entry_number, "ref_num_13")
 
     assert {:ok, journal_entry_1} =
@@ -296,12 +300,12 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     current_from_date_details =
       journal_entry_1.general_ledger_posting_date
       |> DateTime.add(-10, :day)
-      |> Map.take([:year, :month])
+      |> Map.take([:year, :month, :day])
 
     current_to_date_details =
       journal_entry_2.general_ledger_posting_date
       |> DateTime.add(10, :day)
-      |> Map.take([:year, :month])
+      |> Map.take([:year, :month, :day])
 
     assert {:ok, journal_entries} =
              AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(
@@ -325,8 +329,10 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                nil
              )
 
-    from_date_details = Map.take(journal_entry_1.general_ledger_posting_date, [:year, :month])
-    to_date_details = Map.take(journal_entry_2.general_ledger_posting_date, [:year, :month])
+    from_date_details =
+      Map.take(journal_entry_1.general_ledger_posting_date, [:year, :month, :day])
+
+    to_date_details = Map.take(journal_entry_2.general_ledger_posting_date, [:year, :month, :day])
 
     assert {:ok, journal_entries} =
              AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(
@@ -341,12 +347,12 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     past_from_date_details =
       journal_entry_1.general_ledger_posting_date
       |> DateTime.add(-100, :day)
-      |> Map.take([:year, :month])
+      |> Map.take([:year, :month, :day])
 
     past_to_date_details =
       journal_entry_2.general_ledger_posting_date
       |> DateTime.add(-50, :day)
-      |> Map.take([:year, :month])
+      |> Map.take([:year, :month, :day])
 
     assert {:ok, []} =
              AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(
@@ -357,12 +363,12 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     future_from_date_details =
       journal_entry_1.general_ledger_posting_date
       |> DateTime.add(100, :day)
-      |> Map.take([:year, :month])
+      |> Map.take([:year, :month, :day])
 
     future_to_date_details =
       journal_entry_2.general_ledger_posting_date
       |> DateTime.add(150, :day)
-      |> Map.take([:year, :month])
+      |> Map.take([:year, :month, :day])
 
     assert {:ok, []} =
              AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(

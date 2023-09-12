@@ -108,8 +108,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
           String.t(),
           String.t(),
           map()
-        ) ::
-          {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
+        ) :: {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
   def create_account(server \\ __MODULE__, code, name, account_type, description, audit_details) do
     create_account_record(server, code, name, account_type, description, audit_details)
   end
@@ -188,9 +187,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   @spec update_account(chart_of_accounts_server_pid(), Account.t(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account}
   def update_account(server \\ __MODULE__, account, attrs) do
-    if is_struct(account, Account),
-      do: GenServer.call(server, {:update_account, account, attrs}),
-      else: {:error, :invalid_account}
+    GenServer.call(server, {:update_account, account, attrs})
   end
 
   @doc """
@@ -281,7 +278,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       iex> Bookkeeping.Boundary.ChartOfAccounts.Server.all_sorted_accounts(server, :code)
       {:ok, [%Bookkeeping.Core.Account{...}, %Bookkeeping.Core.Account{...}, ...]}
   """
-  @spec all_sorted_accounts(chart_of_accounts_server_pid(), atom()) ::
+  @spec all_sorted_accounts(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, list(Account.t())} | {:error, :invalid_field}
   def all_sorted_accounts(server \\ __MODULE__, field) do
     if field in ["code", "name"],
@@ -328,16 +325,16 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   @impl true
   def handle_call({:update_account, account, attrs}, _from, accounts) do
-    case Account.update(account, attrs) do
-      {:ok, updated_account} ->
-        updated_accounts =
-          accounts
-          |> Map.delete(account.code)
-          |> Map.put(updated_account.code, updated_account)
+    with {:ok, account} <- Account.validate_account(account),
+         {:ok, updated_account} <- Account.update(account, attrs) do
+      updated_accounts =
+        accounts
+        |> Map.delete(account.code)
+        |> Map.put(updated_account.code, updated_account)
 
-        {:reply, {:ok, updated_account}, updated_accounts}
-
-      {:error, :invalid_account} ->
+      {:reply, {:ok, updated_account}, updated_accounts}
+    else
+      _ ->
         {:reply, {:error, :invalid_account}, accounts}
     end
   end

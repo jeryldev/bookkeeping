@@ -1,0 +1,9 @@
+Journal Entry Number,Transaction Date,Account Name,Debit,Credit,Posted,Description,Journal Entry Details,Audit Details,General Ledger Posting Date,Transaction Reference Number
+1001_Bookkeeping_Test,08-12-2023,"Property, Plant, and Equipment Bookkeeping Test",20000,,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1001_Bookkeeping_Test,08-12-2023,Inventory Bookkeeping Test,20000,,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1001_Bookkeeping_Test,08-12-2023,Accounts Payable Bookkeeping Test,,5000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1001_Bookkeeping_Test,08-12-2023,Long-term Debt Bookkeeping Test,,10000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1007_Bookkeeping_Test,08-12-2023,Inventory Bookkeeping Test,20000,,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1001_Bookkeeping_Test,08-12-2023,Short-term Debt Bookkeeping Test,,5000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1001_Bookkeeping_Test,08-12-2023,Cash Bookkeeping Test,,20000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
+1007_Bookkeeping_Test,08-12-2023,Cash Bookkeeping Test,,20000,no,,{},"{""created_by"": ""example@example.com""}",08-12-2023,
