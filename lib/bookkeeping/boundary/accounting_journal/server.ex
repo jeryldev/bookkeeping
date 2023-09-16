@@ -74,9 +74,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...> }
   """
   @type journal_entries_state :: %{general_ledger_posting_date_details => list(JournalEntry.t())}
-
   @type accounting_journal_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
-
   @type create_journal_entry_params :: %{
           transaction_date: DateTime.t(),
           general_ledger_posting_date: DateTime.t(),
@@ -87,13 +85,11 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
           journal_entry_details: map(),
           audit_details: map()
         }
-
   @type general_ledger_posting_date_details :: %{
           year: integer(),
           month: integer(),
           day: integer()
         }
-
   @type accounting_journal_t_accounts :: %{
           left: list(LineItem.t()),
           right: list(LineItem.t())

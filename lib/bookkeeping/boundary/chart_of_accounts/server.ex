@@ -46,7 +46,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       ...> }
   """
   @type chart_of_account_state :: %{Account.account_code() => Account.t()}
-
   @type chart_of_accounts_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
 
   @account_types [
