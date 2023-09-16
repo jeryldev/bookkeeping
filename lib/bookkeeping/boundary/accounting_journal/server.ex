@@ -200,7 +200,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   ## Examples
 
-      iex> AccountingJournal.all_journal_entries()
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.all_journal_entries()
       {:ok, [%JournalEntry{...}, %JournalEntry{...}, ...]}
   """
   @spec all_journal_entries(accounting_journal_server_pid()) :: {:ok, list(JournalEntry.t())}
@@ -215,10 +215,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   ## Examples
 
-      iex> AccountingJournal.find_journal_entry_by_journal_entry_number("JE001001")
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entry_by_journal_entry_number("JE001001")
       {:ok, %JournalEntry{...}}
 
-      iex> AccountingJournal.find_journal_entry_by_journal_entry_number("ref_num_2")
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entry_by_journal_entry_number("ref_num_2")
       {:error, :not_found}
   """
   @spec find_journal_entry_by_journal_entry_number(accounting_journal_server_pid(), String.t()) ::
@@ -234,13 +234,13 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   ## Examples
 
-      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date(~U[2021-10-10 10:10:10.000000Z])
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entries_by_general_ledger_posting_date(~U[2021-10-10 10:10:10.000000Z])
       {:ok, [%JournalEntry{...}, %JournalEntry{...}, ...]}
 
-      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date(%{year: 2021, month: 10})
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entries_by_general_ledger_posting_date(%{year: 2021, month: 10})
       {:ok, [%JournalEntry{...}, %JournalEntry{...}, ...]}
 
-      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date(~U[2021-10-10 10:10:10.000000Z])
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entries_by_general_ledger_posting_date(~U[2021-10-10 10:10:10.000000Z])
       {:error, :invalid_date}
   """
   @spec find_journal_entries_by_general_ledger_posting_date(
@@ -258,10 +258,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   ## Examples
 
-      iex> AccountingJournal.find_journal_entries_by_id("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entries_by_id("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
       {:ok, %JournalEntry{...}}
 
-      iex> AccountingJournal.find_journal_entries_by_id("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entries_by_id("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
       {:error, :invalid_id}
   """
   @spec find_journal_entries_by_id(accounting_journal_server_pid(), String.t()) ::
@@ -277,13 +277,13 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   ## Examples
 
-      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
       {:ok, [%JournalEntry{...}]}
 
-      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date_range(%{year: 2021, month: 10, day: 10}, %{year: 2021, month: 10, day: 10})
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entries_by_general_ledger_posting_date_range(%{year: 2021, month: 10, day: 10}, %{year: 2021, month: 10, day: 10})
       {:ok, [%JournalEntry{...}]}
 
-      iex> AccountingJournal.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
       {:error, :invalid_date}
   """
   @spec find_journal_entries_by_general_ledger_posting_date_range(
@@ -309,13 +309,13 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   ## Examples
 
-      iex> AccountingJournal.find_journal_entry_by_journal_entry_number("ref_num_1")
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.find_journal_entry_by_journal_entry_number("ref_num_1")
       {:ok, %JournalEntry{...}}
 
-      iex> AccountingJournal.update_journal_entry(%JournalEntry{...}, %{journal_entry_description: "updated description",posted: true})
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.update_journal_entry(%JournalEntry{...}, %{journal_entry_description: "updated description",posted: true})
       {:ok, %JournalEntry{journal_entry_description: "updated description", posted: true, ...}}
 
-      iex> AccountingJournal.update_journal_entry(%JournalEntry{}, %{journal_entry_description: "updated description",posted: true})
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.update_journal_entry(%JournalEntry{}, %{journal_entry_description: "updated description",posted: true})
       {:error, :invalid_journal_entry}
   """
   @spec update_journal_entry(accounting_journal_server_pid(), JournalEntry.t(), map()) ::
@@ -333,7 +333,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   ## Examples
 
-      iex> AccountingJournal.reset_journal_entries()
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.reset_journal_entries()
       {:ok, []}
   """
   @spec reset_journal_entries(accounting_journal_server_pid()) :: {:ok, list(JournalEntry.t())}
