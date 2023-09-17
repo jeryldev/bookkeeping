@@ -165,6 +165,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     assert account.code == "1001"
     assert account.name == "Accounts receivable"
     assert {:error, :not_found} = ChartOfAccountsServer.find_account_by_code("2001")
+    assert {:error, :invalid_code} = ChartOfAccountsServer.find_account_by_code(nil)
   end
 
   test "find account by name" do
@@ -181,6 +182,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     assert account.code == "10010000"
     assert account.name == "Accounts receivable4"
     assert {:error, :not_found} = ChartOfAccountsServer.find_account_by_name("Accounts payable4")
+    assert {:error, :invalid_name} = ChartOfAccountsServer.find_account_by_name(nil)
   end
 
   test "search accounts by code or name" do
@@ -202,6 +204,9 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     refute Enum.member?(accounts, account_1)
     assert Enum.member?(accounts, account_2)
     refute Enum.member?(accounts, account_3)
+
+    assert {:error, :invalid_query} = ChartOfAccountsServer.search_accounts(nil)
+    assert {:error, :invalid_query} = ChartOfAccountsServer.search_accounts(%{})
   end
 
   test "get all sorted accounts by code or name" do
