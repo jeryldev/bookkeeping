@@ -219,11 +219,12 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   """
   @spec find_account_by_code(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, Account.t()} | {:error, :not_found}
-  def find_account_by_code(server \\ __MODULE__, code) do
-    if is_binary(code),
-      do: GenServer.call(server, {:find_account_by_code, code}),
-      else: {:error, :invalid_code}
-  end
+  def find_account_by_code(server \\ __MODULE__, code)
+
+  def find_account_by_code(server, code) when is_binary(code),
+    do: GenServer.call(server, {:find_account_by_code, code})
+
+  def find_account_by_code(_server, _code), do: {:error, :invalid_code}
 
   @doc """
   Finds an account by name.
@@ -240,11 +241,12 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   """
   @spec find_account_by_name(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, Account.t()} | {:error, :not_found}
-  def find_account_by_name(server \\ __MODULE__, name) do
-    if is_binary(name),
-      do: GenServer.call(server, {:find_account_by_name, name}),
-      else: {:error, :invalid_name}
-  end
+  def find_account_by_name(server \\ __MODULE__, name)
+
+  def find_account_by_name(server, name) when is_binary(name),
+    do: GenServer.call(server, {:find_account_by_name, name})
+
+  def find_account_by_name(_server, _name), do: {:error, :invalid_name}
 
   @doc """
   Search accounts by code or name.
@@ -261,11 +263,12 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   """
   @spec search_accounts(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, list(Account.t())} | {:error, :invalid_query}
-  def search_accounts(server \\ __MODULE__, query) do
-    if is_binary(query),
-      do: GenServer.call(server, {:search_accounts, query}),
-      else: {:error, :invalid_query}
-  end
+  def search_accounts(server \\ __MODULE__, query)
+
+  def search_accounts(server, query) when is_binary(query),
+    do: GenServer.call(server, {:search_accounts, query})
+
+  def search_accounts(_server, _query), do: {:error, :invalid_query}
 
   @doc """
   Get all accounts sorted by code or name.
@@ -279,11 +282,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   """
   @spec all_sorted_accounts(chart_of_accounts_server_pid(), String.t()) ::
           {:ok, list(Account.t())} | {:error, :invalid_field}
-  def all_sorted_accounts(server \\ __MODULE__, field) do
-    if field in ["code", "name"],
-      do: GenServer.call(server, {:sort_accounts, field}),
-      else: {:error, :invalid_field}
-  end
+  def all_sorted_accounts(server \\ __MODULE__, field)
+  def all_sorted_accounts(server, "code"), do: GenServer.call(server, {:sort_accounts, :code})
+  def all_sorted_accounts(server, "name"), do: GenServer.call(server, {:sort_accounts, :name})
+  def all_sorted_accounts(_server, _field), do: {:error, :invalid_field}
 
   @doc """
   Resets the accounts.
@@ -381,8 +383,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   @impl true
   def handle_call({:sort_accounts, field}, _from, accounts) do
-    field_map = %{"code" => :code, "name" => :name}
-    sorted_accounts = Enum.sort_by(Map.values(accounts), &Map.get(&1, field_map[field]))
+    sorted_accounts = Enum.sort_by(Map.values(accounts), &Map.get(&1, field))
     {:reply, {:ok, sorted_accounts}, accounts}
   end
 
