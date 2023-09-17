@@ -14,6 +14,9 @@ defmodule Bookkeeping.Core.AuditLogTest do
     assert create_log.details == details
     assert create_log.created_at == create_log.updated_at
     assert create_log.deleted_at == nil
+    assert is_integer(create_log.created_at)
+    assert is_integer(create_log.updated_at)
+    assert is_nil(create_log.deleted_at)
   end
 
   test "create an update audit log", %{details: details} do
@@ -22,8 +25,11 @@ defmodule Bookkeeping.Core.AuditLogTest do
     assert update_log.action_type == "update"
     assert update_log.details == details
     assert update_log.created_at == nil
-    refute update_log.updated_at == nil
+    assert update_log.updated_at != nil
     assert update_log.deleted_at == nil
+    assert is_integer(update_log.updated_at)
+    assert is_nil(update_log.created_at)
+    assert is_nil(update_log.deleted_at)
   end
 
   test "create a delete audit log", %{details: details} do
@@ -32,8 +38,11 @@ defmodule Bookkeeping.Core.AuditLogTest do
     assert delete_log.action_type == "delete"
     assert delete_log.details == details
     assert delete_log.created_at == nil
-    refute delete_log.updated_at == nil
-    refute delete_log.deleted_at == nil
+    assert delete_log.updated_at != nil
+    assert delete_log.deleted_at != nil
+    assert is_integer(delete_log.updated_at)
+    assert is_integer(delete_log.deleted_at)
+    assert is_nil(delete_log.created_at)
   end
 
   test "create an invalid audit log" do

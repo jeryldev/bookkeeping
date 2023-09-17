@@ -10,9 +10,9 @@ defmodule Bookkeeping.Core.AuditLog do
           record_type: String.t(),
           action_type: String.t(),
           details: map(),
-          created_at: nil | DateTime.t(),
-          updated_at: nil | DateTime.t(),
-          deleted_at: nil | DateTime.t()
+          created_at: nil | integer(),
+          updated_at: nil | integer(),
+          deleted_at: nil | integer()
         }
 
   defstruct id: UUID.uuid4(),
@@ -55,9 +55,9 @@ defmodule Bookkeeping.Core.AuditLog do
   def create(record_type, action_type, audit_details)
       when is_binary(record_type) and record_type != "" and is_binary(action_type) and
              action_type in @action_types and is_map(audit_details) do
-    datetime = DateTime.utc_now()
-    created_at = if action_type == "create", do: datetime, else: nil
-    deleted_at = if action_type == "delete", do: datetime, else: nil
+    unix_datetime = DateTime.to_unix(DateTime.utc_now())
+    created_at = if action_type == "create", do: unix_datetime, else: nil
+    deleted_at = if action_type == "delete", do: unix_datetime, else: nil
 
     {:ok,
      %__MODULE__{
@@ -65,7 +65,7 @@ defmodule Bookkeeping.Core.AuditLog do
        action_type: action_type,
        details: audit_details,
        created_at: created_at,
-       updated_at: datetime,
+       updated_at: unix_datetime,
        deleted_at: deleted_at
      }}
   end
