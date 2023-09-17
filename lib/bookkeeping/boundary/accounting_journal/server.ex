@@ -62,8 +62,8 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>          record_type: "journal_entry",
       ...>          action_type: "create",
       ...>          details: %{},
-      ...>          created_at: ~U[2021-10-10 10:10:10.000000Z],
-      ...>          updated_at: ~U[2021-10-10 10:10:10.000000Z],
+      ...>          created_at: 1633860610,
+      ...>          updated_at: 1633860610,
       ...>          deleted_at: nil
       ...>        }
       ...>      ],
