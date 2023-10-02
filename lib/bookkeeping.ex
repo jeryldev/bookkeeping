@@ -183,6 +183,19 @@ defmodule Bookkeeping do
   @spec reset_accounts() :: {:ok, list(Account.t())}
   defdelegate reset_accounts, to: ChartOfAccounts
 
+  @doc """
+  Returns the state of the chart of accounts.
+
+  Returns `{:ok, state}`.
+
+  ## Examples
+
+      iex> Bookkeeping.get_chart_of_accounts_state()
+      {:ok, %{...}}
+  """
+  @spec get_chart_of_accounts_state() :: {:ok, ChartOfAccounts.chart_of_account_state()}
+  defdelegate get_chart_of_accounts_state, to: ChartOfAccounts
+
   ##########################################################
   # Accounting Journal Functions                           #
   ##########################################################
@@ -360,4 +373,17 @@ defmodule Bookkeeping do
   """
   @spec reset_journal_entries() :: {:ok, list(JournalEntry.t())}
   defdelegate reset_journal_entries, to: AccountingJournal
+
+  @doc """
+  Returns the state of the accounting journal.
+
+  Returns `{:ok, state}`.
+
+  ## Examples
+
+      iex> Bookkeeping.get_accounting_journal_state()
+      {:ok, %{...}}
+  """
+  @spec get_accounting_journal_state() :: {:ok, AccountingJournal.accounting_journal_state()}
+  defdelegate get_accounting_journal_state, to: AccountingJournal
 end

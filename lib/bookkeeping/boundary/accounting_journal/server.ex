@@ -73,7 +73,9 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>  ...
       ...> }
   """
-  @type journal_entries_state :: %{general_ledger_posting_date_details => list(JournalEntry.t())}
+  @type accounting_journal_state :: %{
+          general_ledger_posting_date_details => list(JournalEntry.t())
+        }
   @type accounting_journal_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
   @type create_journal_entry_params :: %{
           transaction_date: DateTime.t(),
@@ -341,8 +343,24 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
     GenServer.call(server, :reset_journal_entries)
   end
 
+  @doc """
+  Returns the state of the Accounting Journal GenServer.
+
+  Returns `{:ok, accounting_journal_state()}` if the state is returned successfully.
+
+  ## Examples
+
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.get_accounting_journal_state()
+      {:ok, %{...}}
+  """
+  @spec get_accounting_journal_state(accounting_journal_server_pid()) ::
+          {:ok, accounting_journal_state()}
+  def get_accounting_journal_state(server \\ __MODULE__) do
+    GenServer.call(server, :get_accounting_journal_state)
+  end
+
   @impl true
-  @spec init(journal_entries_state()) :: {:ok, journal_entries_state()}
+  @spec init(accounting_journal_state()) :: {:ok, accounting_journal_state()}
   def init(_journal_entries) do
     AccountingJournalBackup.get()
   end
@@ -383,64 +401,86 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   end
 
   @impl true
-  def handle_call(:all_journal_entries, _from, journal_entries) do
-    all_entries =
-      Enum.reduce(journal_entries, [], fn {_k, je_list}, acc -> je_list ++ acc end)
+  def handle_call(:all_journal_entries, from, journal_entries) do
+    Task.async(fn ->
+      all_entries =
+        Enum.reduce(journal_entries, [], fn {_k, je_list}, acc -> je_list ++ acc end)
 
-    {:reply, {:ok, all_entries}, journal_entries}
+      GenServer.reply(from, {:ok, all_entries})
+    end)
+
+    {:noreply, journal_entries}
   end
 
   @impl true
   def handle_call(
         {:find_journal_entry_by_journal_entry_number, journal_entry_number},
-        _from,
+        from,
         journal_entries
       ) do
-    case find_by_journal_entry_number(journal_entries, journal_entry_number) do
-      {:ok, journal_entry} -> {:reply, {:ok, journal_entry}, journal_entries}
-      {:error, message} -> {:reply, {:error, message}, journal_entries}
-    end
+    Task.async(fn ->
+      case find_by_journal_entry_number(journal_entries, journal_entry_number) do
+        {:ok, journal_entry} -> GenServer.reply(from, {:ok, journal_entry})
+        {:error, message} -> GenServer.reply(from, {:error, message})
+      end
+    end)
+
+    {:noreply, journal_entries}
   end
 
   @impl true
   def handle_call(
         {:find_journal_entries_by_general_ledger_posting_date, datetime},
-        _from,
+        from,
         journal_entries
       ) do
-    case get_date_details(datetime) do
-      {:ok, date_details} ->
-        all_journal_entries = find_journal_entries_by_posting_date(journal_entries, date_details)
-        {:reply, {:ok, all_journal_entries}, journal_entries}
+    Task.async(fn ->
+      case get_date_details(datetime) do
+        {:ok, date_details} ->
+          all_journal_entries =
+            find_journal_entries_by_posting_date(journal_entries, date_details)
 
-      {:error, message} ->
-        {:reply, {:error, message}, journal_entries}
-    end
+          GenServer.reply(from, {:ok, all_journal_entries})
+
+        {:error, message} ->
+          GenServer.reply(from, {:error, message})
+      end
+    end)
+
+    {:noreply, journal_entries}
   end
 
   @impl true
-  def handle_call({:find_journal_entries_by_id, id}, _from, journal_entries) do
-    case find_by_id(journal_entries, id) do
-      {:ok, journal_entry} -> {:reply, {:ok, journal_entry}, journal_entries}
-      {:error, message} -> {:reply, {:error, message}, journal_entries}
-    end
+  def handle_call({:find_journal_entries_by_id, id}, from, journal_entries) do
+    Task.async(fn ->
+      case find_by_id(journal_entries, id) do
+        {:ok, journal_entry} -> GenServer.reply(from, {:ok, journal_entry})
+        {:error, message} -> GenServer.reply(from, {:error, message})
+      end
+    end)
+
+    {:noreply, journal_entries}
   end
 
   @impl true
   def handle_call(
         {:find_journal_entries_by_general_ledger_posting_date_range, from_datetime, to_datetime},
-        _from,
+        from,
         journal_entries
       ) do
-    with {:ok, from_date_details} <- get_date_details(from_datetime),
-         {:ok, to_date_details} <- get_date_details(to_datetime) do
-      je_list =
-        find_journal_entries_by_date_range(journal_entries, from_date_details, to_date_details)
+    Task.async(fn ->
+      with {:ok, from_date_details} <- get_date_details(from_datetime),
+           {:ok, to_date_details} <- get_date_details(to_datetime) do
+        je_list =
+          find_journal_entries_by_date_range(journal_entries, from_date_details, to_date_details)
 
-      {:reply, {:ok, je_list}, journal_entries}
-    else
-      {:error, message} -> {:reply, {:error, message}, journal_entries}
-    end
+        GenServer.reply(from, {:ok, je_list})
+      else
+        {:error, message} -> GenServer.reply(from, {:error, message})
+      end
+    end)
+
+    {:noreply, journal_entries}
   end
 
   @impl true
@@ -461,6 +501,17 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
   def handle_call(:reset_journal_entries, _from, _journal_entries) do
     AccountingJournalBackup.update(%{})
     {:reply, {:ok, []}, %{}}
+  end
+
+  @impl true
+  def handle_call(:get_accounting_journal_state, from, journal_entries) do
+    Task.async(fn -> GenServer.reply(from, {:ok, journal_entries}) end)
+    {:noreply, journal_entries}
+  end
+
+  @impl true
+  def handle_info(_msg, state) do
+    {:noreply, state}
   end
 
   @impl true
