@@ -276,6 +276,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     refute Enum.member?(accounts, account_3)
   end
 
+  test "get chart of accounts state" do
+    assert {:ok, state} = ChartOfAccountsServer.get_chart_of_accounts_state()
+    assert is_map(state) == true
+  end
+
   test "test chart of accounts with working backup" do
     assert {:ok, account_1} =
              ChartOfAccountsServer.create_account(

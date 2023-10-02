@@ -299,6 +299,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   test "find journal entries by general ledger posting date range", %{
     create_je_params: create_je_params
   } do
+    assert {:ok, []} = AccountingJournalServer.reset_journal_entries()
     params = Map.put(create_je_params, :journal_entry_number, "ref_num_13")
 
     assert {:ok, journal_entry_1} =
@@ -579,6 +580,11 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entries} = AccountingJournalServer.all_journal_entries()
     refute Enum.member?(journal_entries, journal_entry_1)
     refute Enum.member?(journal_entries, journal_entry_2)
+  end
+
+  test "get accounting journal state" do
+    assert {:ok, state} = AccountingJournalServer.get_accounting_journal_state()
+    assert is_map(state) == true
   end
 
   test "test accounting journal with working backup", %{create_je_params: create_je_params} do

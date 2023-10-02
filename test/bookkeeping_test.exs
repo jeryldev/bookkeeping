@@ -112,6 +112,11 @@ defmodule BookkeepingTest do
     assert {:ok, _accounts} = Bookkeeping.reset_accounts()
   end
 
+  test "get chart of accounts state" do
+    assert {:ok, state} = Bookkeeping.get_chart_of_accounts_state()
+    assert is_map(state)
+  end
+
   test "create journal entry" do
     transaction_date = DateTime.utc_now()
     general_ledger_posting_date = DateTime.utc_now()
@@ -379,5 +384,10 @@ defmodule BookkeepingTest do
 
   test "reset journal entries" do
     assert {:ok, _journal_entries} = Bookkeeping.reset_journal_entries()
+  end
+
+  test "get accounting journal state" do
+    assert {:ok, state} = Bookkeeping.get_accounting_journal_state()
+    assert is_map(state)
   end
 end

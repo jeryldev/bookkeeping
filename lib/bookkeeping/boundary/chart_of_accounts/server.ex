@@ -302,6 +302,22 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
     GenServer.call(server, :reset_accounts)
   end
 
+  @doc """
+  Returns the state of the Chart Of Accounts GenServer.
+
+  Returns `{:ok, state}`.
+
+  ## Examples
+
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.get_chart_of_accounts_state(server)
+      {:ok, %{...}}
+  """
+  @spec get_chart_of_accounts_state(chart_of_accounts_server_pid()) ::
+          {:ok, chart_of_account_state()}
+  def get_chart_of_accounts_state(server \\ __MODULE__) do
+    GenServer.call(server, :get_chart_of_accounts_state)
+  end
+
   @impl true
   @spec init(chart_of_account_state()) :: {:ok, chart_of_account_state()}
   def init(_chart_of_accounts) do
@@ -341,56 +357,87 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   end
 
   @impl true
-  def handle_call(:all_accounts, _from, accounts) do
-    {:reply, {:ok, Map.values(accounts)}, accounts}
+  def handle_call(:all_accounts, from, accounts) do
+    Task.async(fn -> GenServer.reply(from, {:ok, Map.values(accounts)}) end)
+    {:noreply, accounts}
   end
 
   @impl true
-  def handle_call({:find_account_by_code, code}, _from, accounts) do
-    case Map.get(accounts, code) do
-      nil -> {:reply, {:error, :not_found}, accounts}
-      account -> {:reply, {:ok, account}, accounts}
-    end
+  def handle_call({:find_account_by_code, code}, from, accounts) do
+    Task.async(fn ->
+      case Map.get(accounts, code) do
+        nil -> GenServer.reply(from, {:error, :not_found})
+        account -> GenServer.reply(from, {:ok, account})
+      end
+    end)
+
+    {:noreply, accounts}
   end
 
   @impl true
-  def handle_call({:find_account_by_name, name}, _from, accounts) do
-    case Enum.find(accounts, fn {_code, account} ->
-           String.downcase(account.name) == String.downcase(name)
-         end) do
-      nil -> {:reply, {:error, :not_found}, accounts}
-      {_code, account} -> {:reply, {:ok, account}, accounts}
-    end
+  def handle_call({:find_account_by_name, name}, from, accounts) do
+    Task.async(fn ->
+      result =
+        Enum.find(accounts, fn {_code, account} ->
+          String.downcase(account.name) == String.downcase(name)
+        end)
+
+      case result do
+        nil -> GenServer.reply(from, {:error, :not_found})
+        {_code, account} -> GenServer.reply(from, {:ok, account})
+      end
+    end)
+
+    {:noreply, accounts}
   end
 
   @impl true
-  def handle_call({:search_accounts, binary_query}, _from, accounts) do
-    found_accounts =
-      accounts
-      |> Task.async_stream(fn {code, account} ->
-        query = String.downcase(binary_query)
-        name = String.downcase(account.name)
-        found? = String.contains?(code, query) or String.contains?(name, query)
-        {found?, account}
-      end)
-      |> Enum.reduce([], fn
-        {:ok, {true, account}}, acc -> acc ++ [account]
-        _, acc -> acc
-      end)
+  def handle_call({:search_accounts, binary_query}, from, accounts) do
+    Task.async(fn ->
+      found_accounts =
+        accounts
+        |> Task.async_stream(fn {code, account} ->
+          query = String.downcase(binary_query)
+          name = String.downcase(account.name)
+          found? = String.contains?(code, query) or String.contains?(name, query)
+          {found?, account}
+        end)
+        |> Enum.reduce([], fn
+          {:ok, {true, account}}, acc -> acc ++ [account]
+          _, acc -> acc
+        end)
 
-    {:reply, {:ok, found_accounts}, accounts}
+      GenServer.reply(from, {:ok, found_accounts})
+    end)
+
+    {:noreply, accounts}
   end
 
   @impl true
-  def handle_call({:sort_accounts, field}, _from, accounts) do
-    sorted_accounts = Enum.sort_by(Map.values(accounts), &Map.get(&1, field))
-    {:reply, {:ok, sorted_accounts}, accounts}
+  def handle_call({:sort_accounts, field}, from, accounts) do
+    Task.async(fn ->
+      sorted_accounts = Enum.sort_by(Map.values(accounts), &Map.get(&1, field))
+      GenServer.reply(from, {:ok, sorted_accounts})
+    end)
+
+    {:noreply, accounts}
   end
 
   @impl true
   def handle_call(:reset_accounts, _from, _chart_of_accounts) do
     ChartOfAccountsBackup.update(%{})
     {:reply, {:ok, []}, %{}}
+  end
+
+  @impl true
+  def handle_call(:get_chart_of_accounts_state, from, accounts) do
+    Task.async(fn -> GenServer.reply(from, {:ok, accounts}) end)
+    {:noreply, accounts}
+  end
+
+  @impl true
+  def handle_info(_msg, state) do
+    {:noreply, state}
   end
 
   @impl true
