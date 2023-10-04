@@ -29,11 +29,11 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_accounts.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
              )
 
     assert {:error, :invalid_file} =
-             Bookkeeping.import_accounts("test/bookkeeping/assets/valid_bookkeeping_accounts.csv")
+             Bookkeeping.import_accounts("test/bookkeeping/data/valid_bookkeeping_accounts.csv")
   end
 
   test "update account" do
@@ -173,7 +173,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_accounts.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
              )
 
     assert {:ok, []} = Bookkeeping.reset_journal_entries()
@@ -181,12 +181,12 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_journal_entries.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
              )
 
     assert {:error, :invalid_file} =
              Bookkeeping.import_journal_entries(
-               "test/bookkeeping/assets/valid_bookkeeping_journal_entries.csv"
+               "test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
              )
   end
 
@@ -200,7 +200,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_accounts.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
              )
 
     assert {:ok, []} = Bookkeeping.reset_journal_entries()
@@ -208,7 +208,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_journal_entries.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
              )
 
     assert {:ok, _journal_entry} =
@@ -226,7 +226,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_accounts.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
              )
 
     assert {:ok, []} = Bookkeeping.reset_journal_entries()
@@ -234,7 +234,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: ok, error: _error}} =
              Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_journal_entries.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
              )
 
     first_journal_entry_id = ok |> List.first() |> Map.get(:id)
@@ -250,7 +250,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_accounts.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
              )
 
     assert {:ok, []} = Bookkeeping.reset_journal_entries()
@@ -258,7 +258,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_journal_entries.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
              )
 
     assert {:ok, []} =
@@ -282,7 +282,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_accounts.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
              )
 
     assert {:ok, []} = Bookkeeping.reset_journal_entries()
@@ -290,7 +290,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_journal_entries.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
              )
 
     assert {:ok, []} =
@@ -340,7 +340,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_accounts.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
              )
 
     assert {:ok, []} = Bookkeeping.reset_journal_entries()
@@ -348,7 +348,7 @@ defmodule BookkeepingTest do
 
     assert {:ok, %{ok: _ok, error: _error}} =
              Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/assets/valid_bookkeeping_journal_entries.csv"
+               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
              )
 
     assert {:ok, journal_entry} =

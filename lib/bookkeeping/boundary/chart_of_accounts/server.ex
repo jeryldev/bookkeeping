@@ -117,13 +117,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   The headers of the CSV file must be `Account Code`, `Account Name`, `Account Type`, `Description`, and `Audit Details`.
 
   Arguments:
-    - path: The path of the CSV file. The path to the default accounts is "../assets/sample_chart_of_accounts.csv".
+    - path: The path of the CSV file. The path to the default accounts is "../data/sample_chart_of_accounts.csv".
 
   Returns `{:ok, %{ok: list(map()), error: list(map())}}` if the accounts are imported successfully. If all items are encountered an error, return `{:error, %{ok: list(map()), error: list(map())}}`.
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.import_accounts(server, "../assets/sample_chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.import_accounts(server, "../data/sample_chart_of_accounts.csv")
       {:ok,
       %{
         ok: [
@@ -135,7 +135,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         error: []
       }}
 
-      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.import_accounts(server, "../assets/invalid_chart_of_accounts.csv")
+      iex> Bookkeeping.Boundary.ChartOfAccounts.Server.import_accounts(server, "../data/invalid_chart_of_accounts.csv")
       {:error,
       %{
         ok: [],
@@ -333,10 +333,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
     case Account.create(code, name, account_type, account_description, audit_details) do
       {:ok, account} ->
         updated_accounts = Map.put(accounts, code, account)
-        {:reply, {:ok, account}, updated_accounts}
+        {:reply, {:ok, account}, updated_accounts, :hibernate}
 
       {:error, message} ->
-        {:reply, {:error, message}, accounts}
+        {:reply, {:error, message}, accounts, :hibernate}
     end
   end
 
@@ -349,10 +349,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
         |> Map.delete(account.code)
         |> Map.put(updated_account.code, updated_account)
 
-      {:reply, {:ok, updated_account}, updated_accounts}
+      {:reply, {:ok, updated_account}, updated_accounts, :hibernate}
     else
       _ ->
-        {:reply, {:error, :invalid_account}, accounts}
+        {:reply, {:error, :invalid_account}, accounts, :hibernate}
     end
   end
 
@@ -371,7 +371,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       end
     end)
 
-    {:noreply, accounts}
+    {:noreply, accounts, :hibernate}
   end
 
   @impl true
@@ -388,7 +388,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       end
     end)
 
-    {:noreply, accounts}
+    {:noreply, accounts, :hibernate}
   end
 
   @impl true

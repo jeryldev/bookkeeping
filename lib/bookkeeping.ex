@@ -6,8 +6,8 @@ defmodule Bookkeeping do
 
   1. In the Bookkeeping project directory, run `mix deps.get` to install dependencies.
   2. Run `iex -S mix` to start the Elixir interactive shell.
-  3. Run `Bookkeeping.import_accounts("../../assets/sample_chart_of_accounts.csv")` to import sample chart of accounts.
-  4. Run `Bookkeeping.import_journal_entries("../../assets/sample_journal_entries.csv")` to import sample journal entries.
+  3. Run `Bookkeeping.import_accounts("../../data/sample_chart_of_accounts.csv")` to import sample chart of accounts.
+  4. Run `Bookkeeping.import_journal_entries("../../data/sample_journal_entries.csv")` to import sample journal entries.
   """
 
   alias Bookkeeping.Boundary.AccountingJournal.Server, as: AccountingJournal
@@ -48,20 +48,20 @@ defmodule Bookkeeping do
   The headers of the CSV file must be `Account Code`, `Account Name`, `Account Type`, `Description`, and `Audit Details`.
 
   Arguments:
-    - path: The path of the CSV file. The path to the default accounts is "../assets/sample_chart_of_accounts.csv".
+    - path: The path of the CSV file. The path to the default accounts is "../data/sample_chart_of_accounts.csv".
 
   Returns `{:ok, %{ok: list(map()), error: list(map())}}` if the accounts are imported successfully. If all items are encountered an error, return `{:error, %{ok: list(map()), error: list(map())}}`.
 
   ## Examples
 
-      iex> Bookkeeping.import_accounts(server, "../assets/sample_chart_of_accounts.csv")
+      iex> Bookkeeping.import_accounts(server, "../data/sample_chart_of_accounts.csv")
       {:ok,
       %{
         ok: [%{account_code: "1000", account_name: "Cash"}, ...],
         error: []
       }}
 
-      iex> Bookkeeping.import_accounts(server, "../assets/invalid_chart_of_accounts.csv")
+      iex> Bookkeeping.import_accounts(server, "../data/invalid_chart_of_accounts.csv")
       {:error,
       %{
         ok: [],
@@ -259,7 +259,7 @@ defmodule Bookkeeping do
 
   ## Examples
 
-      iex> Bookkeeping.import_journal_entries(server, "../../assets/sample_journal_entries.csv")
+      iex> Bookkeeping.import_journal_entries(server, "../../data/sample_journal_entries.csv")
       {:ok,
       %{
         error: [],
