@@ -63,49 +63,49 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     # importing a valid file
     assert {:ok, %{ok: _oks, error: _errors}} =
              ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/assets/valid_chart_of_accounts.csv"
+               "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
              )
 
     # importing an invalid or missing file
     assert {:error, :invalid_file} =
              ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/assets/invalid_file.csv"
+               "../../../../test/bookkeeping/data/invalid_file.csv"
              )
 
     # importing accounts with empty fields
     assert {:error, %{message: :invalid_csv, errors: _errors}} =
              ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/assets/invalid_chart_of_accounts.csv"
+               "../../../../test/bookkeeping/data/invalid_chart_of_accounts.csv"
              )
 
     # importing an empty file
     assert {:error, :invalid_file} =
              ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/assets/empty_chart_of_accounts.csv"
+               "../../../../test/bookkeeping/data/empty_chart_of_accounts.csv"
              )
 
     # importing accounts with invalid account type
     assert {:error, %{message: :invalid_csv, errors: _errors}} =
              ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/assets/decode_error_chart_of_accounts.csv"
+               "../../../../test/bookkeeping/data/decode_error_chart_of_accounts.csv"
              )
 
     # importing duplicate accounts in a single file
     assert {:ok, %{ok: _oks, error: _errors}} =
              ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/assets/duplicate_chart_of_accounts.csv"
+               "../../../../test/bookkeeping/data/duplicate_chart_of_accounts.csv"
              )
 
     # importing the file twice
     assert {:error, %{ok: _oks, error: _errors}} =
              ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/assets/duplicate_chart_of_accounts.csv"
+               "../../../../test/bookkeeping/data/duplicate_chart_of_accounts.csv"
              )
 
     # importing a partially valid file
     assert {:ok, %{error: errors, ok: oks}} =
              ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/assets/partially_valid_chart_of_accounts.csv"
+               "../../../../test/bookkeeping/data/partially_valid_chart_of_accounts.csv"
              )
 
     assert errors == [
