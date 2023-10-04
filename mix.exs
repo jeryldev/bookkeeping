@@ -21,7 +21,7 @@ defmodule Bookkeeping.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :runtime_tools, :observer, :wx, :os_mon],
+      extra_applications: extra_applications(Mix.env()),
       mod: {Bookkeeping.Application, []}
     ]
   end
@@ -39,4 +39,9 @@ defmodule Bookkeeping.MixProject do
       {:jason, "~> 1.4"}
     ]
   end
+
+  defp extra_applications(env) when env in [:dev, :test],
+    do: [:logger, :runtime_tools, :observer, :wx, :os_mon]
+
+  defp extra_applications(_env), do: [:logger]
 end
