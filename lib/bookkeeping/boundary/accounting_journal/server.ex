@@ -173,7 +173,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   ## Examples
 
-      iex> Bookkeeping.Boundary.AccountingJournal.Server.import_journal_entries(server, "../../assets/sample_journal_entries.csv")
+      iex> Bookkeeping.Boundary.AccountingJournal.Server.import_journal_entries(server, "../../data/sample_journal_entries.csv")
       {:ok,
       %{
         error: [],
@@ -390,13 +390,27 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
           Map.put(journal_entries, date_details, updated_je_list)
         end
 
-      {:reply, {:ok, journal_entry}, updated_journal_entries}
+      {:reply, {:ok, journal_entry}, updated_journal_entries, :hibernate}
     else
       {:ok, _journal_entry} ->
-        {:reply, {:error, :duplicate_journal_entry_number}, journal_entries}
+        {:reply, {:error, :duplicate_journal_entry_number}, journal_entries, :hibernate}
 
       {:error, message} ->
-        {:reply, {:error, message}, journal_entries}
+        {:reply, {:error, message}, journal_entries, :hibernate}
+    end
+  end
+
+  @impl true
+  def handle_call({:update_journal_entry, journal_entry, attrs}, _from, journal_entries) do
+    case JournalEntry.update(journal_entry, attrs) do
+      {:ok, updated_journal_entry} ->
+        updated_journal_entries =
+          process_journal_entry_update(journal_entries, updated_journal_entry)
+
+        {:reply, {:ok, updated_journal_entry}, updated_journal_entries, :hibernate}
+
+      {:error, message} ->
+        {:reply, {:error, message}, journal_entries, :hibernate}
     end
   end
 
@@ -481,20 +495,6 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
     end)
 
     {:noreply, journal_entries}
-  end
-
-  @impl true
-  def handle_call({:update_journal_entry, journal_entry, attrs}, _from, journal_entries) do
-    case JournalEntry.update(journal_entry, attrs) do
-      {:ok, updated_journal_entry} ->
-        updated_journal_entries =
-          process_journal_entry_update(journal_entries, updated_journal_entry)
-
-        {:reply, {:ok, updated_journal_entry}, updated_journal_entries}
-
-      {:error, message} ->
-        {:reply, {:error, message}, journal_entries}
-    end
   end
 
   @impl true
