@@ -3,6 +3,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Backup do
   Bookkeeping.Boundary.AccountingJournal.Backup is responsible for storing the chart of accounts in a backup file.
   """
   use Agent
+
   alias Bookkeeping.Boundary.AccountingJournal.Server, as: AccountingJournalServer
 
   @doc """
@@ -13,7 +14,8 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Backup do
       iex> {:ok, pid} = Bookkeeping.Boundary.AccountingJournal.Backup.start_link()
       {:ok, #PID<0.0.0>}
   """
-  @spec start_link(AccountingJournalServer.accounting_journal_state()) :: {:error, any} | {:ok, pid}
+  @spec start_link(AccountingJournalServer.accounting_journal_state()) ::
+          {:error, any} | {:ok, pid}
   def start_link(initial_value \\ %{}) do
     Agent.start_link(fn -> initial_value end, name: __MODULE__)
   end

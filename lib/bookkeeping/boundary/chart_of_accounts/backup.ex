@@ -3,6 +3,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Backup do
   Bookkeeping.Boundary.ChartOfAccounts.Backup is responsible for storing the chart of accounts in a backup file.
   """
   use Agent
+
   alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
 
   @doc """
@@ -13,7 +14,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Backup do
       iex> {:ok, pid} = Bookkeeping.Boundary.ChartOfAccounts.Backup.start_link()
       {:ok, #PID<0.0.0>}
   """
-  @spec start_link(ChartOfAccountsServer.chart_of_account_state()) :: {:error, any} | {:ok, pid}
+  @spec start_link(ChartOfAccountsServer.chart_of_account_state()) ::
+          {:error, any} | {:ok, pid}
   def start_link(initial_value \\ %{}) do
     Agent.start_link(fn -> initial_value end, name: __MODULE__)
   end
