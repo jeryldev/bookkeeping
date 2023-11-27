@@ -5,12 +5,12 @@ defmodule Bookkeeping.Core.AccountType do
   Account types help to organize the information in a systematic and logical way, and to show the relationship between the assets, liabilities, equity, revenue, expenses, and other elements of the accounting equation.
   Account types also help to prepare the financial statements, such as the balance sheet, income statement, and cash flow statement.
   """
-  alias Bookkeeping.Core.{PrimaryAccountCategory, Types}
+  alias Bookkeeping.Core.Types
 
   @type t :: %__MODULE__{
           name: String.t(),
           normal_balance: Types.entry(),
-          primary_account_category: PrimaryAccountCategory.t(),
+          primary_account_category: Types.statement_category(),
           contra: boolean()
         }
 
@@ -144,12 +144,12 @@ defmodule Bookkeeping.Core.AccountType do
        when binary_account_type in @credit_accounts,
        do: {:ok, :credit}
 
-  @spec set_primary_account_category(String.t()) :: {:ok, PrimaryAccountCategory.t()}
+  @spec set_primary_account_category(String.t()) :: {:ok, Types.statement_category()}
   defp set_primary_account_category(binary_account_type)
        when binary_account_type in @balance_sheet_accounts,
-       do: PrimaryAccountCategory.create(:balance_sheet)
+       do: {:ok, :balance_sheet}
 
   defp set_primary_account_category(binary_account_type)
        when binary_account_type in @profit_and_loss_accounts,
-       do: PrimaryAccountCategory.create(:profit_and_loss)
+       do: {:ok, :profit_and_loss}
 end
