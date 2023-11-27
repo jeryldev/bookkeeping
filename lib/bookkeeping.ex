@@ -24,7 +24,7 @@ defmodule Bookkeeping do
   Arguments:
     - code: The unique code of the account.
     - name: The unique name of the account.
-    - account_type: The type of the account. The account type must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
+    - account_classification: The type of the account. The account classification must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
     - description: The description of the account.
     - audit_details: The audit details of the account.
 
@@ -40,7 +40,7 @@ defmodule Bookkeeping do
   """
   @spec create_account(String.t(), String.t(), String.t(), String.t(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
-  defdelegate create_account(code, name, account_type, description, audit_details),
+  defdelegate create_account(code, name, account_classification, description, audit_details),
     to: ChartOfAccounts
 
   @doc """

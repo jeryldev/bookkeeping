@@ -104,7 +104,7 @@ defmodule BookkeepingTest do
   test "all sorted accounts" do
     assert {:ok, _accounts} = Bookkeeping.all_sorted_accounts("code")
     assert {:ok, _accounts} = Bookkeeping.all_sorted_accounts("name")
-    assert {:error, :invalid_field} = Bookkeeping.all_sorted_accounts("account_type")
+    assert {:error, :invalid_field} = Bookkeeping.all_sorted_accounts("account_classification")
     assert {:error, :invalid_field} = Bookkeeping.all_sorted_accounts(nil)
   end
 

@@ -1,69 +1,69 @@
-defmodule Bookkeeping.Core.AccountTypeBenchmark do
+defmodule Bookkeeping.Core.AccountClassificationBenchmark do
   Benchee.run(%{
-    "create asset account type function" => fn ->
-      Bookkeeping.Core.AccountType.create("asset")
+    "create asset account classification function" => fn ->
+      Bookkeeping.Core.AccountClassification.create("asset")
     end,
-    "declare asset account type" => fn ->
-      %Bookkeeping.Core.AccountType{
+    "declare asset account classification" => fn ->
+      %Bookkeeping.Core.AccountClassification{
         name: "asset",
         normal_balance: :debit,
-        primary_account_category: :balance_sheet,
+        statement_category: :balance_sheet,
         contra: false
       }
     end
   })
 
   Benchee.run(%{
-    "create liability account type function" => fn ->
-      Bookkeeping.Core.AccountType.create("liability")
+    "create liability account classification function" => fn ->
+      Bookkeeping.Core.AccountClassification.create("liability")
     end,
-    "declare liability account type" => fn ->
-      %Bookkeeping.Core.AccountType{
+    "declare liability account classification" => fn ->
+      %Bookkeeping.Core.AccountClassification{
         name: "liability",
         normal_balance: :credit,
-        primary_account_category: :balance_sheet,
+        statement_category: :balance_sheet,
         contra: false
       }
     end
   })
 
   Benchee.run(%{
-    "create equity account type function" => fn ->
-      Bookkeeping.Core.AccountType.create("equity")
+    "create equity account classification function" => fn ->
+      Bookkeeping.Core.AccountClassification.create("equity")
     end,
-    "declare equity account type" => fn ->
-      %Bookkeeping.Core.AccountType{
+    "declare equity account classification" => fn ->
+      %Bookkeeping.Core.AccountClassification{
         name: "equity",
         normal_balance: :credit,
-        primary_account_category: :balance_sheet,
+        statement_category: :balance_sheet,
         contra: false
       }
     end
   })
 
   Benchee.run(%{
-    "create revenue account type function" => fn ->
-      Bookkeeping.Core.AccountType.create("revenue")
+    "create revenue account classification function" => fn ->
+      Bookkeeping.Core.AccountClassification.create("revenue")
     end,
-    "declare revenue account type" => fn ->
-      %Bookkeeping.Core.AccountType{
+    "declare revenue account classification" => fn ->
+      %Bookkeeping.Core.AccountClassification{
         name: "revenue",
         normal_balance: :credit,
-        primary_account_category: :profit_and_loss,
+        statement_category: :profit_and_loss,
         contra: false
       }
     end
   })
 
   Benchee.run(%{
-    "create expense account type function" => fn ->
-      Bookkeeping.Core.AccountType.create("expense")
+    "create expense account classification function" => fn ->
+      Bookkeeping.Core.AccountClassification.create("expense")
     end,
-    "declare expense account type" => fn ->
-      %Bookkeeping.Core.AccountType{
+    "declare expense account classification" => fn ->
+      %Bookkeeping.Core.AccountClassification{
         name: "expense",
         normal_balance: :debit,
-        primary_account_category: :profit_and_loss,
+        statement_category: :profit_and_loss,
         contra: false
       }
     end

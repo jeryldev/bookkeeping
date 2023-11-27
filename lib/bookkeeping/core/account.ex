@@ -4,14 +4,14 @@ defmodule Bookkeeping.Core.Account do
   An account is a record of all relevant business transactions in terms of money or a record
   in the general ledger that is used to sort and store transactions.
   """
-  alias Bookkeeping.Core.{AccountType, AuditLog}
+  alias Bookkeeping.Core.{AccountClassification, AuditLog}
 
   @type t :: %__MODULE__{
           id: UUID.t(),
           code: account_code(),
           name: String.t(),
           account_description: String.t(),
-          account_type: %AccountType{},
+          account_classification: %AccountClassification{},
           audit_logs: list(AuditLog.t()),
           active: boolean()
         }
@@ -22,11 +22,11 @@ defmodule Bookkeeping.Core.Account do
             code: "",
             name: "",
             account_description: "",
-            account_type: nil,
+            account_classification: nil,
             audit_logs: [],
             active: true
 
-  @account_types [
+  @account_classifications [
     "asset",
     "liability",
     "equity",
@@ -49,7 +49,7 @@ defmodule Bookkeeping.Core.Account do
   Arguments:
     - code: The unique code of the account.
     - name: The unique name of the account.
-    - binary_account_type: The type of the account. The account type must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
+    - binary_account_classification: The type of the account. The account classification must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
     - account_description: The description of the account.
     - audit_details: The details of the audit log.
 
@@ -65,18 +65,19 @@ defmodule Bookkeeping.Core.Account do
   """
   @spec create(String.t(), String.t(), String.t(), String.t(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account}
-  def create(code, name, binary_account_type, account_description, audit_details)
-      when is_binary(code) and is_binary(name) and is_binary(binary_account_type) and
+  def create(code, name, binary_account_classification, account_description, audit_details)
+      when is_binary(code) and is_binary(name) and is_binary(binary_account_classification) and
              is_binary(account_description) and code != "" and name != "" and
-             binary_account_type in @account_types and is_map(audit_details) do
-    with {:ok, account_type} <- AccountType.create(binary_account_type),
+             binary_account_classification in @account_classifications and is_map(audit_details) do
+    with {:ok, account_classification} <-
+           AccountClassification.create(binary_account_classification),
          {:ok, audit_log} <- AuditLog.create("account", "create", audit_details) do
       {:ok,
        %__MODULE__{
          code: code,
          name: name,
          account_description: account_description,
-         account_type: account_type,
+         account_classification: account_classification,
          audit_logs: [audit_log]
        }}
     else
@@ -157,7 +158,7 @@ defmodule Bookkeeping.Core.Account do
          true <- is_binary(account.account_description),
          true <- is_boolean(account.active),
          true <- is_list(account.audit_logs),
-         true <- is_struct(account.account_type, AccountType) do
+         true <- is_struct(account.account_classification, AccountClassification) do
       {:ok, account}
     else
       _error -> {:error, :invalid_account}

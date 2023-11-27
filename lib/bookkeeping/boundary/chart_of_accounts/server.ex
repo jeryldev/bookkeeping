@@ -23,10 +23,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       ...>     code: "1000",
       ...>     name: "Cash",
       ...>     account_description: "",
-      ...>     account_type: %AccountType{
+      ...>     account_classification: %AccountClassification{
       ...>       name: "Asset",
       ...>       normal_balance: :debit,
-      ...>       primary_account_category: :balance_sheet,
+      ...>       statement_category: :balance_sheet,
       ...>       contra: false
       ...>     },
       ...>     active: true,
@@ -48,7 +48,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   @type chart_of_account_state :: %{Account.account_code() => Account.t()}
   @type chart_of_accounts_server_pid :: atom | pid | {atom, any} | {:via, atom, any}
 
-  @account_types [
+  @account_classifications [
     "asset",
     "liability",
     "equity",
@@ -86,7 +86,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
   Arguments:
     - code: The unique code of the account.
     - name: The unique name of the account.
-    - account_type: The type of the account. The account type must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
+    - account_classification: The type of the account. The account classification must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
     - description: The description of the account.
     - audit_details: The audit details of the account.
 
@@ -108,8 +108,15 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
           String.t(),
           map()
         ) :: {:ok, Account.t()} | {:error, :invalid_account} | {:error, :account_already_exists}
-  def create_account(server \\ __MODULE__, code, name, account_type, description, audit_details) do
-    create_account_record(server, code, name, account_type, description, audit_details)
+  def create_account(
+        server \\ __MODULE__,
+        code,
+        name,
+        account_classification,
+        description,
+        audit_details
+      ) do
+    create_account_record(server, code, name, account_classification, description, audit_details)
   end
 
   @doc """
@@ -326,11 +333,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   @impl true
   def handle_call(
-        {:create_account, code, name, account_type, account_description, audit_details},
+        {:create_account, code, name, account_classification, account_description, audit_details},
         _from,
         accounts
       ) do
-    case Account.create(code, name, account_type, account_description, audit_details) do
+    case Account.create(code, name, account_classification, account_description, audit_details) do
       {:ok, account} ->
         updated_accounts = Map.put(accounts, code, account)
         {:reply, {:ok, account}, updated_accounts, :hibernate}
@@ -449,18 +456,19 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
          server,
          code,
          name,
-         account_type,
+         account_classification,
          description,
          audit_details
        ) do
-    valid_fields? = is_binary(code) and is_binary(name) and account_type in @account_types
+    valid_fields? =
+      is_binary(code) and is_binary(name) and account_classification in @account_classifications
 
     with true <- valid_fields?,
          {:error, :not_found} <- GenServer.call(server, {:find_account_by_code, code}),
          {:error, :not_found} <- GenServer.call(server, {:find_account_by_name, name}) do
       GenServer.call(
         server,
-        {:create_account, code, name, account_type, description, audit_details}
+        {:create_account, code, name, account_classification, description, audit_details}
       )
     else
       {:ok, _account} -> {:error, :account_already_exists}
@@ -493,7 +501,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
                  server,
                  params.account_code,
                  params.account_name,
-                 params.account_type,
+                 params.account_classification,
                  params.account_description,
                  params.audit_details
                ) do
@@ -526,21 +534,21 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       fn csv_item, acc ->
         account_code = Map.get(csv_item, "Account Code")
         account_name = Map.get(csv_item, "Account Name")
-        account_type = Map.get(csv_item, "Account Type")
+        account_classification = Map.get(csv_item, "Account Type")
         account_description = Map.get(csv_item, "Account Description", "")
         audit_details = Map.get(csv_item, "Audit Details", "{}")
 
         valid_csv_items? =
           is_binary(account_code) and account_code != "" and is_binary(account_name) and
             account_name != "" and is_binary(account_description) and
-            account_type in @account_types
+            account_classification in @account_classifications
 
         with true <- valid_csv_items?,
              {:ok, audit_details} <- Jason.decode(audit_details) do
           valid_params = %{
             account_code: account_code,
             account_name: account_name,
-            account_type: account_type,
+            account_classification: account_classification,
             account_description: account_description,
             audit_details: audit_details
           }

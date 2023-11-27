@@ -7,14 +7,16 @@ defmodule Bookkeeping.Core.AccountTest do
     {:ok, details: details}
   end
 
-  test "allow integer code, binary name and account type account field", %{details: details} do
+  test "allow integer code, binary name and account classification account field", %{
+    details: details
+  } do
     assert {:ok, new_account} =
              Account.create("10_000", "cash", "asset", "description", details)
 
     assert new_account.code == "10_000"
     assert new_account.name == "cash"
-    assert new_account.account_type.name == "Asset"
-    assert new_account.account_type.normal_balance == :debit
+    assert new_account.account_classification.name == "Asset"
+    assert new_account.account_classification.normal_balance == :debit
 
     assert {:ok, _valid_account} = Account.validate_account(new_account)
   end
@@ -25,8 +27,8 @@ defmodule Bookkeeping.Core.AccountTest do
 
     assert new_account.code == "10_010"
     assert new_account.name == "cash"
-    assert new_account.account_type.name == "Asset"
-    assert new_account.account_type.normal_balance == :debit
+    assert new_account.account_classification.name == "Asset"
+    assert new_account.account_classification.normal_balance == :debit
     assert new_account.account_description == "cash and cash equivalents"
     assert new_account.active
   end
@@ -43,8 +45,8 @@ defmodule Bookkeeping.Core.AccountTest do
     assert ^new_account = {:error, :invalid_account}
   end
 
-  test "disallow non-%AccountType{} account field", %{details: details} do
-    new_account = Account.create(10_000, "cash", "account_type", "description", details)
+  test "disallow non-%AccountClassification{} account field", %{details: details} do
+    new_account = Account.create(10_000, "cash", "account_classification", "description", details)
 
     assert ^new_account = {:error, :invalid_account}
   end
@@ -62,19 +64,19 @@ defmodule Bookkeeping.Core.AccountTest do
     assert {:ok, account_2} = Account.update(account, %{name: "cash and cash equivalents"})
     assert account.code == account_2.code
     refute account.name == account_2.name
-    assert account.account_type == account_2.account_type
+    assert account.account_classification == account_2.account_classification
     assert {:error, :invalid_account} = Account.update(account, %{name: ""})
 
     assert {:ok, account_3} =
              Account.update(account, %{
                code: "10_001",
                name: "trade payables",
-               binary_account_type: "liability"
+               binary_account_classification: "liability"
              })
 
     assert account.code == account_3.code
     refute account.name == account_3.name
-    assert account.account_type == account_3.account_type
+    assert account.account_classification == account_3.account_classification
 
     assert {:ok, _account_4} =
              Account.update(account, %{

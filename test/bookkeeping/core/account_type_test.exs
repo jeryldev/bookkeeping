@@ -1,162 +1,162 @@
-defmodule Bookkeeping.Core.AccountTypeTest do
+defmodule Bookkeeping.Core.AccountClassificationTest do
   use ExUnit.Case, async: true
-  alias Bookkeeping.Core.AccountType
+  alias Bookkeeping.Core.AccountClassification
 
-  test "create asset account type" do
-    assert AccountType.create("asset") ==
+  test "create asset account classification" do
+    assert AccountClassification.create("asset") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Asset",
                 normal_balance: :debit,
-                primary_account_category: :balance_sheet,
+                statement_category: :balance_sheet,
                 contra: false
               }}
   end
 
-  test "create liability account type" do
-    assert AccountType.create("liability") ==
+  test "create liability account classification" do
+    assert AccountClassification.create("liability") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Liability",
                 normal_balance: :credit,
-                primary_account_category: :balance_sheet,
+                statement_category: :balance_sheet,
                 contra: false
               }}
   end
 
-  test "create equity account type" do
-    assert AccountType.create("equity") ==
+  test "create equity account classification" do
+    assert AccountClassification.create("equity") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Equity",
                 normal_balance: :credit,
-                primary_account_category: :balance_sheet,
+                statement_category: :balance_sheet,
                 contra: false
               }}
   end
 
-  test "create revenue account type" do
-    assert AccountType.create("revenue") ==
+  test "create revenue account classification" do
+    assert AccountClassification.create("revenue") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Revenue",
                 normal_balance: :credit,
-                primary_account_category: :profit_and_loss,
+                statement_category: :profit_and_loss,
                 contra: false
               }}
   end
 
-  test "create expense account type" do
-    assert AccountType.create("expense") ==
+  test "create expense account classification" do
+    assert AccountClassification.create("expense") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Expense",
                 normal_balance: :debit,
-                primary_account_category: :profit_and_loss,
+                statement_category: :profit_and_loss,
                 contra: false
               }}
   end
 
-  test "create gain account type" do
-    assert AccountType.create("gain") ==
+  test "create gain account classification" do
+    assert AccountClassification.create("gain") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Gain",
                 normal_balance: :credit,
-                primary_account_category: :profit_and_loss,
+                statement_category: :profit_and_loss,
                 contra: false
               }}
   end
 
-  test "create loss account type" do
-    assert AccountType.create("loss") ==
+  test "create loss account classification" do
+    assert AccountClassification.create("loss") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Loss",
                 normal_balance: :debit,
-                primary_account_category: :profit_and_loss,
+                statement_category: :profit_and_loss,
                 contra: false
               }}
   end
 
-  test "create contra asset account type" do
-    assert AccountType.create("contra_asset") ==
+  test "create contra asset account classification" do
+    assert AccountClassification.create("contra_asset") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Contra Asset",
                 normal_balance: :credit,
-                primary_account_category: :balance_sheet,
+                statement_category: :balance_sheet,
                 contra: true
               }}
   end
 
-  test "create contra liability account type" do
-    assert AccountType.create("contra_liability") ==
+  test "create contra liability account classification" do
+    assert AccountClassification.create("contra_liability") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Contra Liability",
                 normal_balance: :debit,
-                primary_account_category: :balance_sheet,
+                statement_category: :balance_sheet,
                 contra: true
               }}
   end
 
-  test "create contra equity account type" do
-    assert AccountType.create("contra_equity") ==
+  test "create contra equity account classification" do
+    assert AccountClassification.create("contra_equity") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Contra Equity",
                 normal_balance: :debit,
-                primary_account_category: :balance_sheet,
+                statement_category: :balance_sheet,
                 contra: true
               }}
   end
 
-  test "create contra revenue account type" do
-    assert AccountType.create("contra_revenue") ==
+  test "create contra revenue account classification" do
+    assert AccountClassification.create("contra_revenue") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Contra Revenue",
                 normal_balance: :debit,
-                primary_account_category: :profit_and_loss,
+                statement_category: :profit_and_loss,
                 contra: true
               }}
   end
 
-  test "create contra expense account type" do
-    assert AccountType.create("contra_expense") ==
+  test "create contra expense account classification" do
+    assert AccountClassification.create("contra_expense") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Contra Expense",
                 normal_balance: :credit,
-                primary_account_category: :profit_and_loss,
+                statement_category: :profit_and_loss,
                 contra: true
               }}
   end
 
-  test "create contra gain account type" do
-    assert AccountType.create("contra_gain") ==
+  test "create contra gain account classification" do
+    assert AccountClassification.create("contra_gain") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Contra Gain",
                 normal_balance: :debit,
-                primary_account_category: :profit_and_loss,
+                statement_category: :profit_and_loss,
                 contra: true
               }}
   end
 
-  test "create contra loss account type" do
-    assert AccountType.create("contra_loss") ==
+  test "create contra loss account classification" do
+    assert AccountClassification.create("contra_loss") ==
              {:ok,
-              %AccountType{
+              %AccountClassification{
                 name: "Contra Loss",
                 normal_balance: :credit,
-                primary_account_category: :profit_and_loss,
+                statement_category: :profit_and_loss,
                 contra: true
               }}
   end
 
-  test "disallow invalid account type" do
-    assert AccountType.create("invalid") == {:error, :invalid_account_type}
+  test "disallow invalid account classification" do
+    assert AccountClassification.create("invalid") == {:error, :invalid_account_classification}
   end
 end

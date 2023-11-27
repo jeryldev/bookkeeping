@@ -1,6 +1,6 @@
-defmodule Bookkeeping.Core.AccountType do
+defmodule Bookkeeping.Core.AccountClassification do
   @moduledoc """
-  Bookkeeping.Core.AccountType is a struct that represents the type of an account.
+  Bookkeeping.Core.AccountClassification is a struct that represents the type of an account.
   In accounting, we use accounting types to classify and record the different transactions that affect the financial position of a business.
   Account types help to organize the information in a systematic and logical way, and to show the relationship between the assets, liabilities, equity, revenue, expenses, and other elements of the accounting equation.
   Account types also help to prepare the financial statements, such as the balance sheet, income statement, and cash flow statement.
@@ -10,13 +10,13 @@ defmodule Bookkeeping.Core.AccountType do
   @type t :: %__MODULE__{
           name: String.t(),
           normal_balance: Types.entry(),
-          primary_account_category: Types.statement_category(),
+          statement_category: Types.statement_category(),
           contra: boolean()
         }
 
   defstruct name: "",
             normal_balance: nil,
-            primary_account_category: nil,
+            statement_category: nil,
             contra: false
 
   @debit_accounts [
@@ -69,7 +69,7 @@ defmodule Bookkeeping.Core.AccountType do
     "contra_loss"
   ]
 
-  @account_types [
+  @account_classifications [
     "asset",
     "liability",
     "equity",
@@ -86,7 +86,7 @@ defmodule Bookkeeping.Core.AccountType do
     "contra_loss"
   ]
 
-  @account_type_names %{
+  @account_classification_names %{
     "asset" => "Asset",
     "liability" => "Liability",
     "equity" => "Equity",
@@ -104,52 +104,53 @@ defmodule Bookkeeping.Core.AccountType do
   }
 
   @doc """
-  Creates a new account type struct.
-  The account type must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
+  Creates a new account classification struct.
+  The account classification must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
 
-  Returns `{:ok, %AccountType{}}` if the account type is valid. Otherwise, returns `{:error, :invalid_account_type}`.
+  Returns `{:ok, %AccountClassification{}}` if the account classification is valid. Otherwise, returns `{:error, :invalid_account_classification}`.
 
   ## Examples
 
-      iex> AccountType.create("asset")
-      {:ok, %AccountType{...}}
+      iex> AccountClassification.create("asset")
+      {:ok, %AccountClassification{...}}
 
-      iex> AccountType.create("invalid")
-      {:error, :invalid_account_type}
+      iex> AccountClassification.create("invalid")
+      {:error, :invalid_account_classification}
   """
-  @spec create(String.t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_account_type}
-  def create(binary_account_type) when binary_account_type in @account_types do
-    {:ok, entry_type} = set_entry_type(binary_account_type)
-    {:ok, primary_account_category} = set_primary_account_category(binary_account_type)
-    account_type_name = @account_type_names[binary_account_type]
-    contra_account? = binary_account_type in @contra_accounts
+  @spec create(String.t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_account_classification}
+  def create(binary_account_classification)
+      when binary_account_classification in @account_classifications do
+    {:ok, entry_type} = set_entry_type(binary_account_classification)
+    {:ok, statement_category} = set_statement_category(binary_account_classification)
+    account_classification_name = @account_classification_names[binary_account_classification]
+    contra_account? = binary_account_classification in @contra_accounts
 
     {:ok,
      %__MODULE__{
-       name: account_type_name,
+       name: account_classification_name,
        normal_balance: entry_type,
-       primary_account_category: primary_account_category,
+       statement_category: statement_category,
        contra: contra_account?
      }}
   end
 
-  def create(_), do: {:error, :invalid_account_type}
+  def create(_), do: {:error, :invalid_account_classification}
 
   @spec set_entry_type(String.t()) :: {:ok, Types.entry()}
-  defp set_entry_type(binary_account_type)
-       when binary_account_type in @debit_accounts,
+  defp set_entry_type(binary_account_classification)
+       when binary_account_classification in @debit_accounts,
        do: {:ok, :debit}
 
-  defp set_entry_type(binary_account_type)
-       when binary_account_type in @credit_accounts,
+  defp set_entry_type(binary_account_classification)
+       when binary_account_classification in @credit_accounts,
        do: {:ok, :credit}
 
-  @spec set_primary_account_category(String.t()) :: {:ok, Types.statement_category()}
-  defp set_primary_account_category(binary_account_type)
-       when binary_account_type in @balance_sheet_accounts,
+  @spec set_statement_category(String.t()) :: {:ok, Types.statement_category()}
+  defp set_statement_category(binary_account_classification)
+       when binary_account_classification in @balance_sheet_accounts,
        do: {:ok, :balance_sheet}
 
-  defp set_primary_account_category(binary_account_type)
-       when binary_account_type in @profit_and_loss_accounts,
+  defp set_statement_category(binary_account_classification)
+       when binary_account_classification in @profit_and_loss_accounts,
        do: {:ok, :profit_and_loss}
 end

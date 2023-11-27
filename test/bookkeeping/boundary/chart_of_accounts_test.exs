@@ -84,7 +84,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
                "../../../../test/bookkeeping/data/empty_chart_of_accounts.csv"
              )
 
-    # importing accounts with invalid account type
+    # importing accounts with invalid account classification
     assert {:error, %{message: :invalid_csv, errors: _errors}} =
              ChartOfAccountsServer.import_accounts(
                "../../../../test/bookkeeping/data/decode_error_chart_of_accounts.csv"
@@ -134,7 +134,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
     assert updated_account.code == "1000update"
     assert updated_account.name == "Cash updated"
-    assert updated_account.account_type.name == "Asset"
+    assert updated_account.account_classification.name == "Asset"
     assert {:error, :invalid_account} = ChartOfAccountsServer.update_account(account, %{name: ""})
 
     assert {:error, :invalid_account} =
@@ -143,7 +143,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     assert {:ok, new_updated_account} = ChartOfAccountsServer.update_account(updated_account, %{})
     assert updated_account.code == new_updated_account.code
     assert updated_account.name == new_updated_account.name
-    assert updated_account.account_type == new_updated_account.account_type
+    assert updated_account.account_classification == new_updated_account.account_classification
   end
 
   test "all accounts" do
