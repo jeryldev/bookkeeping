@@ -26,7 +26,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
       ...>     account_classification: %AccountClassification{
       ...>       name: "Asset",
       ...>       normal_balance: :debit,
-      ...>       statement_category: :balance_sheet,
+      ...>       category: :position,
       ...>       contra: false
       ...>     },
       ...>     active: true,

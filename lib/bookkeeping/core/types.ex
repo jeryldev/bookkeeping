@@ -11,11 +11,11 @@ defmodule Bookkeeping.Core.Types do
   @type entry :: :debit | :credit
 
   @typedoc """
-  Statement Category is a type that indicates which of the two most important financial reports an account belongs to.
+  Category is a type that indicates which of the two most important financial reports an account belongs to.
   The two most important financial reports are the balance sheet and the profit and loss.
   They provide a comprehensive overview of the business's financial position and performance.
-  A balance sheet statement category represents the accounts that show the assets, liabilities, and equity of the business at a point in time.
-  A profit and loss statement category represents the accounts that show the revenues, expenses, and profits or losses of the business over a period of time.
+  A position category represents the accounts that show the assets, liabilities, and equity of the business at a point in time.
+  A performance category represents the accounts that show the revenues, expenses, and profits or losses of the business over a period of time.
   """
-  @type statement_category :: :balance_sheet | :profit_and_loss
+  @type category :: :position | :performance
 end

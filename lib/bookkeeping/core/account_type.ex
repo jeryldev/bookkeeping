@@ -10,13 +10,13 @@ defmodule Bookkeeping.Core.AccountClassification do
   @type t :: %__MODULE__{
           name: String.t(),
           normal_balance: Types.entry(),
-          statement_category: Types.statement_category(),
+          category: Types.category(),
           contra: boolean()
         }
 
   defstruct name: "",
             normal_balance: nil,
-            statement_category: nil,
+            category: nil,
             contra: false
 
   @debit_accounts [
@@ -121,7 +121,7 @@ defmodule Bookkeeping.Core.AccountClassification do
   def create(binary_account_classification)
       when binary_account_classification in @account_classifications do
     {:ok, entry_type} = set_entry_type(binary_account_classification)
-    {:ok, statement_category} = set_statement_category(binary_account_classification)
+    {:ok, category} = set_category(binary_account_classification)
     account_classification_name = @account_classification_names[binary_account_classification]
     contra_account? = binary_account_classification in @contra_accounts
 
@@ -129,7 +129,7 @@ defmodule Bookkeeping.Core.AccountClassification do
      %__MODULE__{
        name: account_classification_name,
        normal_balance: entry_type,
-       statement_category: statement_category,
+       category: category,
        contra: contra_account?
      }}
   end
@@ -145,12 +145,12 @@ defmodule Bookkeeping.Core.AccountClassification do
        when binary_account_classification in @credit_accounts,
        do: {:ok, :credit}
 
-  @spec set_statement_category(String.t()) :: {:ok, Types.statement_category()}
-  defp set_statement_category(binary_account_classification)
+  @spec set_category(String.t()) :: {:ok, Types.category()}
+  defp set_category(binary_account_classification)
        when binary_account_classification in @balance_sheet_accounts,
-       do: {:ok, :balance_sheet}
+       do: {:ok, :position}
 
-  defp set_statement_category(binary_account_classification)
+  defp set_category(binary_account_classification)
        when binary_account_classification in @profit_and_loss_accounts,
-       do: {:ok, :profit_and_loss}
+       do: {:ok, :performance}
 end

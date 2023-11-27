@@ -34,7 +34,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>            account_classification: %AccountClassification{
       ...>              name: "asset",
       ...>              normal_balance: :debit,
-      ...>              statement_category: :balance_sheet,
+      ...>              category: :position,
       ...>              contra: false
       ...>            }
       ...>          },
@@ -48,7 +48,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>            account_classification: %AccountClassification{
       ...>              name: "revenue",
       ...>              normal_balance: :credit,
-      ...>              statement_category: :profit_and_loss,
+      ...>              category: :performance,
       ...>              contra: false
       ...>            }
       ...>          },

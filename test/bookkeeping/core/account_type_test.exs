@@ -8,7 +8,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Asset",
                 normal_balance: :debit,
-                statement_category: :balance_sheet,
+                category: :position,
                 contra: false
               }}
   end
@@ -19,7 +19,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Liability",
                 normal_balance: :credit,
-                statement_category: :balance_sheet,
+                category: :position,
                 contra: false
               }}
   end
@@ -30,7 +30,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Equity",
                 normal_balance: :credit,
-                statement_category: :balance_sheet,
+                category: :position,
                 contra: false
               }}
   end
@@ -41,7 +41,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Revenue",
                 normal_balance: :credit,
-                statement_category: :profit_and_loss,
+                category: :performance,
                 contra: false
               }}
   end
@@ -52,7 +52,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Expense",
                 normal_balance: :debit,
-                statement_category: :profit_and_loss,
+                category: :performance,
                 contra: false
               }}
   end
@@ -63,7 +63,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Gain",
                 normal_balance: :credit,
-                statement_category: :profit_and_loss,
+                category: :performance,
                 contra: false
               }}
   end
@@ -74,7 +74,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Loss",
                 normal_balance: :debit,
-                statement_category: :profit_and_loss,
+                category: :performance,
                 contra: false
               }}
   end
@@ -85,7 +85,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Contra Asset",
                 normal_balance: :credit,
-                statement_category: :balance_sheet,
+                category: :position,
                 contra: true
               }}
   end
@@ -96,7 +96,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Contra Liability",
                 normal_balance: :debit,
-                statement_category: :balance_sheet,
+                category: :position,
                 contra: true
               }}
   end
@@ -107,7 +107,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Contra Equity",
                 normal_balance: :debit,
-                statement_category: :balance_sheet,
+                category: :position,
                 contra: true
               }}
   end
@@ -118,7 +118,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Contra Revenue",
                 normal_balance: :debit,
-                statement_category: :profit_and_loss,
+                category: :performance,
                 contra: true
               }}
   end
@@ -129,7 +129,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Contra Expense",
                 normal_balance: :credit,
-                statement_category: :profit_and_loss,
+                category: :performance,
                 contra: true
               }}
   end
@@ -140,7 +140,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Contra Gain",
                 normal_balance: :debit,
-                statement_category: :profit_and_loss,
+                category: :performance,
                 contra: true
               }}
   end
@@ -151,7 +151,7 @@ defmodule Bookkeeping.Core.AccountClassificationTest do
               %AccountClassification{
                 name: "Contra Loss",
                 normal_balance: :credit,
-                statement_category: :profit_and_loss,
+                category: :performance,
                 contra: true
               }}
   end
