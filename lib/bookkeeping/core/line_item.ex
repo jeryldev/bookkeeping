@@ -3,12 +3,12 @@ defmodule Bookkeeping.Core.LineItem do
   Bookkeeping.Core.LineItem is a struct that represents a line item in a journal entry.
   A line item is a record of a single account and the amount of money that is either debited or credited.
   """
-  alias Bookkeeping.Core.{Account, EntryType}
+  alias Bookkeeping.Core.{Account, Types}
 
   @type t :: %__MODULE__{
           account: Account.t(),
           amount: Decimal.t(),
-          entry_type: EntryType.t(),
+          entry_type: Types.entry(),
           line_item_description: String.t()
         }
 
@@ -98,7 +98,7 @@ defmodule Bookkeeping.Core.LineItem do
         iex> LineItem.create(account_amount_pair(), :debit)
         {:ok, %LineItem{...}}
   """
-  @spec create(account_amount_pair(), EntryType.t()) ::
+  @spec create(account_amount_pair(), Types.entry()) ::
           {:ok, __MODULE__.t()}
           | {:error, :invalid_line_items}
           | {:error, :unbalanced_line_items}
@@ -162,7 +162,8 @@ defmodule Bookkeeping.Core.LineItem do
 
   defp validate_amount(_), do: {:error, :invalid_amount}
 
-  defp validate_entry_type(atom_entry_type), do: EntryType.create(atom_entry_type)
+  defp validate_entry_type(:debit), do: {:ok, :debit}
+  defp validate_entry_type(:credit), do: {:ok, :credit}
 
   defp process_line_item(acc, line_item) do
     entry_type = line_item.entry_type

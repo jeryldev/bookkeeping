@@ -36,7 +36,8 @@ defmodule Bookkeeping.MixProject do
       {:uuid, "~> 1.1"},
       {:excoveralls, "~> 0.10", only: :test},
       {:nimble_csv, "~> 1.2"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:benchee, "~> 1.0", only: :dev}
     ]
   end
 

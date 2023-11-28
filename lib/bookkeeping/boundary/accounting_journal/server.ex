@@ -31,10 +31,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>          account: %Account{
       ...>            code: "10_000",
       ...>            name: "cash",
-      ...>            account_type: %AccountType{
+      ...>            classification: %AccountClassification{
       ...>              name: "asset",
       ...>              normal_balance: :debit,
-      ...>              primary_account_category: :balance_sheet,
+      ...>              category: :position,
       ...>              contra: false
       ...>            }
       ...>          },
@@ -45,10 +45,10 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>          account: %Account{
       ...>            code: "20_000",
       ...>            name: "sales",
-      ...>            account_type: %AccountType{
+      ...>            classification: %AccountClassification{
       ...>              name: "revenue",
       ...>              normal_balance: :credit,
-      ...>              primary_account_category: :profit_and_loss,
+      ...>              category: :performance,
       ...>              contra: false
       ...>            }
       ...>          },
