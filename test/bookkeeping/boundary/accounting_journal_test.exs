@@ -14,14 +14,14 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     audit_details = %{email: "example@example.com"}
 
     {:ok, cash_account} =
-      Account.create("10_000", "cash", "asset", "cash account description", %{})
+      Account.create("10_000", "cash", "asset", "cash description", %{})
 
     {:ok, revenue_account} =
       Account.create(
         "20_000",
         "sales revenue",
         "revenue",
-        "sales revenue account description",
+        "sales revenue description",
         %{}
       )
 
@@ -30,7 +30,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
         "20_010",
         "service revenue",
         "revenue",
-        "service revenue account description",
+        "service revenue description",
         %{}
       )
 

@@ -136,6 +136,8 @@ defmodule Bookkeeping.Core.AccountClassification do
 
   def create(_), do: {:error, :invalid_account_classification}
 
+  def classify(_), do: {:error, :invalid_account_classification}
+
   @spec set_entry_type(String.t()) :: {:ok, Types.entry()}
   defp set_entry_type(binary_account_classification)
        when binary_account_classification in @debit_accounts,

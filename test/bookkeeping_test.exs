@@ -139,7 +139,7 @@ defmodule BookkeepingTest do
         "20_000_000_bookkeeping_test",
         "20_000_000_Sales_revenue_bookkeeping_test",
         "revenue",
-        "sales revenue account description",
+        "sales revenue description",
         %{}
       )
 

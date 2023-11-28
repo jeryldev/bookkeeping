@@ -4,14 +4,14 @@ defmodule Bookkeeping.Core.Account do
   An account is a record of all relevant business transactions in terms of money or a record
   in the general ledger that is used to sort and store transactions.
   """
-  alias Bookkeeping.Core.{AccountClassification, AuditLog}
+  alias Bookkeeping.Core.AuditLog
 
   @type t :: %__MODULE__{
           id: UUID.t(),
           code: account_code(),
           name: String.t(),
-          account_description: String.t(),
-          account_classification: %AccountClassification{},
+          description: String.t(),
+          account_classification: Classification.t(),
           audit_logs: list(AuditLog.t()),
           active: boolean()
         }
@@ -21,27 +21,34 @@ defmodule Bookkeeping.Core.Account do
   defstruct id: UUID.uuid4(),
             code: "",
             name: "",
-            account_description: "",
+            description: "",
             account_classification: nil,
             audit_logs: [],
             active: true
 
-  @account_classifications [
-    "asset",
-    "liability",
-    "equity",
-    "revenue",
-    "expense",
-    "gain",
-    "loss",
-    "contra_asset",
-    "contra_liability",
-    "contra_equity",
-    "contra_revenue",
-    "contra_expense",
-    "contra_gain",
-    "contra_loss"
-  ]
+  defmodule Classification do
+    @moduledoc """
+    Bookkeeping.Core.Account.Classification is a struct that represents the type of an account.
+    In accounting, we use accounting types to classify and record the different transactions that affect the financial position of a business.
+    Account types help to organize the information in a systematic and logical way, and to show the relationship between the assets, liabilities, equity, revenue, expenses, and other elements of the accounting equation.
+    Account types also help to prepare the financial statements, such as the balance sheet, income statement, and cash flow statement.
+    """
+    alias Bookkeeping.Core.Types
+
+    @type t :: %__MODULE__{
+            name: String.t(),
+            normal_balance: Types.entry(),
+            category: Types.category(),
+            contra: boolean()
+          }
+
+    defstruct name: "",
+              normal_balance: nil,
+              category: nil,
+              contra: false
+  end
+
+  @account_classifications ~w(asset liability equity revenue expense gain loss contra_asset contra_liability contra_equity contra_revenue contra_expense contra_gain contra_loss)
 
   @doc """
   Creates a new account struct.
@@ -50,7 +57,7 @@ defmodule Bookkeeping.Core.Account do
     - code: The unique code of the account.
     - name: The unique name of the account.
     - binary_account_classification: The type of the account. The account classification must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
-    - account_description: The description of the account.
+    - description: The description of the account.
     - audit_details: The details of the audit log.
 
   Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`.
@@ -65,18 +72,17 @@ defmodule Bookkeeping.Core.Account do
   """
   @spec create(String.t(), String.t(), String.t(), String.t(), map()) ::
           {:ok, Account.t()} | {:error, :invalid_account}
-  def create(code, name, binary_account_classification, account_description, audit_details)
+  def create(code, name, binary_account_classification, description, audit_details)
       when is_binary(code) and is_binary(name) and is_binary(binary_account_classification) and
-             is_binary(account_description) and code != "" and name != "" and
+             is_binary(description) and code != "" and name != "" and
              binary_account_classification in @account_classifications and is_map(audit_details) do
-    with {:ok, account_classification} <-
-           AccountClassification.create(binary_account_classification),
+    with {:ok, account_classification} <- classify(binary_account_classification),
          {:ok, audit_log} <- AuditLog.create("account", "create", audit_details) do
       {:ok,
        %__MODULE__{
          code: code,
          name: name,
-         account_description: account_description,
+         description: description,
          account_classification: account_classification,
          audit_logs: [audit_log]
        }}
@@ -107,12 +113,12 @@ defmodule Bookkeeping.Core.Account do
   @spec update(%__MODULE__{}, map()) :: {:ok, Account.t()} | {:error, :invalid_account}
   def update(account, attrs) when is_map(attrs) do
     name = Map.get(attrs, :name, account.name)
-    account_description = Map.get(attrs, :account_description, account.account_description)
+    description = Map.get(attrs, :description, account.description)
     active = Map.get(attrs, :active, account.active)
     audit_details = Map.get(attrs, :audit_details, %{})
 
     valid_fields? =
-      is_binary(name) and name != "" and is_binary(account_description) and
+      is_binary(name) and name != "" and is_binary(description) and
         is_boolean(active) and is_map(audit_details)
 
     with true <- valid_fields?,
@@ -121,7 +127,7 @@ defmodule Bookkeeping.Core.Account do
 
       update_params = %{
         name: name,
-        account_description: account_description,
+        description: description,
         active: active,
         audit_logs: [audit_log | existing_audit_logs]
       }
@@ -155,13 +161,155 @@ defmodule Bookkeeping.Core.Account do
     with true <- is_struct(account, __MODULE__),
          true <- is_binary(account.code) and account.code != "",
          true <- is_binary(account.name) and account.name != "",
-         true <- is_binary(account.account_description),
+         true <- is_binary(account.description),
          true <- is_boolean(account.active),
          true <- is_list(account.audit_logs),
-         true <- is_struct(account.account_classification, AccountClassification) do
+         true <- is_struct(account.account_classification, Classification) do
       {:ok, account}
     else
       _error -> {:error, :invalid_account}
     end
   end
+
+  defp classify("asset") do
+    {:ok,
+     %Classification{
+       name: "Asset",
+       normal_balance: :debit,
+       category: :position,
+       contra: false
+     }}
+  end
+
+  defp classify("liability") do
+    {:ok,
+     %Classification{
+       name: "Liability",
+       normal_balance: :credit,
+       category: :position,
+       contra: false
+     }}
+  end
+
+  defp classify("equity") do
+    {:ok,
+     %Classification{
+       name: "Equity",
+       normal_balance: :credit,
+       category: :position,
+       contra: false
+     }}
+  end
+
+  defp classify("revenue") do
+    {:ok,
+     %Classification{
+       name: "Revenue",
+       normal_balance: :credit,
+       category: :performance,
+       contra: false
+     }}
+  end
+
+  defp classify("expense") do
+    {:ok,
+     %Classification{
+       name: "Expense",
+       normal_balance: :debit,
+       category: :performance,
+       contra: false
+     }}
+  end
+
+  defp classify("gain") do
+    {:ok,
+     %Classification{
+       name: "Gain",
+       normal_balance: :credit,
+       category: :performance,
+       contra: false
+     }}
+  end
+
+  defp classify("loss") do
+    {:ok,
+     %Classification{
+       name: "Loss",
+       normal_balance: :debit,
+       category: :performance,
+       contra: false
+     }}
+  end
+
+  defp classify("contra_asset") do
+    {:ok,
+     %Classification{
+       name: "Contra Asset",
+       normal_balance: :credit,
+       category: :position,
+       contra: true
+     }}
+  end
+
+  defp classify("contra_liability") do
+    {:ok,
+     %Classification{
+       name: "Contra Liability",
+       normal_balance: :debit,
+       category: :position,
+       contra: true
+     }}
+  end
+
+  defp classify("contra_equity") do
+    {:ok,
+     %Classification{
+       name: "Contra Equity",
+       normal_balance: :debit,
+       category: :position,
+       contra: true
+     }}
+  end
+
+  defp classify("contra_revenue") do
+    {:ok,
+     %Classification{
+       name: "Contra Revenue",
+       normal_balance: :debit,
+       category: :performance,
+       contra: true
+     }}
+  end
+
+  defp classify("contra_expense") do
+    {:ok,
+     %Classification{
+       name: "Contra Expense",
+       normal_balance: :credit,
+       category: :performance,
+       contra: true
+     }}
+  end
+
+  defp classify("contra_gain") do
+    {:ok,
+     %Classification{
+       name: "Contra Gain",
+       normal_balance: :debit,
+       category: :performance,
+       contra: true
+     }}
+  end
+
+  defp classify("contra_loss") do
+    {:ok,
+     %Classification{
+       name: "Contra Loss",
+       normal_balance: :credit,
+       category: :performance,
+       contra: true
+     }}
+  end
+
+  defp classify(_), do: {:error, :invalid_account_classification}
 end
