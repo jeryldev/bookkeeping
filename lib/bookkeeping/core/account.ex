@@ -7,7 +7,6 @@ defmodule Bookkeeping.Core.Account do
   alias Bookkeeping.Core.AuditLog
 
   @type t :: %__MODULE__{
-          id: UUID.t(),
           code: account_code(),
           name: String.t(),
           description: String.t(),
@@ -18,8 +17,9 @@ defmodule Bookkeeping.Core.Account do
 
   @type account_code :: String.t()
 
-  defstruct id: UUID.uuid4(),
-            code: "",
+  @account_classifications ~w(asset liability equity revenue expense gain loss contra_asset contra_liability contra_equity contra_revenue contra_expense contra_gain contra_loss)
+
+  defstruct code: "",
             name: "",
             description: "",
             classification: nil,
@@ -95,6 +95,70 @@ defmodule Bookkeeping.Core.Account do
       _ -> {:error, :invalid_account}
     end
   end
+
+  def create(params) do
+    params |> check_fields() |> transform_params() |> maybe_create_account()
+  end
+
+  defp check_fields(params) when is_map(params) do
+    fields = [:code, :name, :description, :classification, :audit_details, :active]
+    if Enum.all?(fields, &Map.has_key?(params, &1)), do: params, else: {:error, :invalid_params}
+  end
+
+  defp check_fields(_params), do: {:error, :invalid_params}
+
+  defp transform_params(params) when is_map(params),
+    do: Enum.reduce(params, %{params: %{}, errors: []}, &validate_field/2)
+
+  defp transform_params(_params), do: {:error, :invalid_params}
+
+  defp maybe_create_account(%{params: params, errors: []}), do: {:ok, struct(__MODULE__, params)}
+  defp maybe_create_account(%{errors: errors}), do: List.first(errors)
+  defp maybe_create_account(_params), do: {:error, :invalid_params}
+
+  defp validate_field({key, value}, acc) when key in [:code, :name, :description] do
+    if is_binary(value) and value != "" do
+      params = Map.get(acc, :params, %{})
+      updated_params = Map.put(params, key, value)
+      Map.put(acc, :params, updated_params)
+    else
+      Map.put(acc, :errors, [{:error, :invalid_field} | acc.errors])
+    end
+  end
+
+  defp validate_field({:classification, value}, acc) do
+    if is_binary(value) and value in @account_classifications do
+      params = Map.get(acc, :params, %{})
+      updated_params = Map.put(params, :classification, Map.get(accounts_classification(), value))
+      Map.put(acc, :params, updated_params)
+    else
+      Map.put(acc, :errors, [{:error, :invalid_field} | acc.errors])
+    end
+  end
+
+  defp validate_field({:audit_details, value}, acc) do
+    if is_map(value) do
+      params = Map.get(acc, :params, %{})
+      current_audit_logs = Map.get(params, :audit_logs, [])
+      {:ok, audit_log} = AuditLog.create("account", "create", value)
+      updated_params = Map.put(params, :audit_logs, [audit_log | current_audit_logs])
+      Map.put(acc, :params, updated_params)
+    else
+      Map.put(acc, :errors, [{:error, :invalid_field} | acc.errors])
+    end
+  end
+
+  defp validate_field({:active, value}, acc) do
+    if is_boolean(value) do
+      params = Map.get(acc, :params, %{})
+      updated_params = Map.put(params, :active, value)
+      Map.put(acc, :params, updated_params)
+    else
+      Map.put(acc, :errors, [{:error, :invalid_field} | acc.errors])
+    end
+  end
+
+  defp validate_field({_key, _value}, acc), do: acc
 
   @doc """
   Updates an account struct.
