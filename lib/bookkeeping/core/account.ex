@@ -193,41 +193,21 @@ defmodule Bookkeeping.Core.Account do
 
   ## Examples
 
-      iex> Account.validate_account(account)
+      iex> Account.validate(account)
       {:ok, %Account{...}}
 
-      iex> Account.validate_account(%Account{})
+      iex> Account.validate(%Account{})
       {:error, :invalid_account}
   """
-  @spec validate_account(t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_account}
-  def validate_account(account) do
-    with true <- is_struct(account, __MODULE__),
-         true <- is_binary(account.code) and account.code != "",
-         true <- is_binary(account.name) and account.name != "",
-         true <- is_binary(account.description),
-         true <- is_boolean(account.active),
-         true <- is_list(account.audit_logs),
-         true <- is_struct(account.classification, Classification) do
-      {:ok, account}
-    else
-      _error -> {:error, :invalid_account}
-    end
+  @spec validate(t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_account}
+  def validate(account) do
+    if is_struct(account, __MODULE__) and is_binary(account.code) and account.code != "" and
+         is_binary(account.name) and account.name != "" and is_binary(account.description) and
+         is_boolean(account.active) and is_list(account.audit_logs) and
+         is_struct(account.classification, Classification),
+       do: {:ok, account},
+       else: {:error, :invalid_account}
   end
-
-  def validate(account) when is_struct(account, __MODULE__), do: {:ok, account}
-
-  def validate(_account), do: {:error, :invalid_account}
-
-  def validate2(account) when is_map(account) do
-    account_map = Map.from_struct(account)
-
-    case transform_params(account_map) do
-      %{errors: []} -> {:ok, account}
-      %{errors: errors} -> List.first(errors)
-    end
-  end
-
-  def validate2(_account), do: {:error, :invalid_account}
 
   defp accounts_classification do
     %{

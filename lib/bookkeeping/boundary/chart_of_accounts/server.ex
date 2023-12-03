@@ -349,7 +349,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Server do
 
   @impl true
   def handle_call({:update_account, account, attrs}, _from, accounts) do
-    with {:ok, account} <- Account.validate_account(account),
+    with {:ok, account} <- Account.validate(account),
          {:ok, updated_account} <- Account.update(account, attrs) do
       updated_accounts =
         accounts

@@ -18,7 +18,7 @@ defmodule Bookkeeping.Core.AccountTest do
     assert new_account.classification.name == "Asset"
     assert new_account.classification.normal_balance == :debit
 
-    assert {:ok, _valid_account} = Account.validate_account(new_account)
+    assert {:ok, _valid_account} = Account.validate(new_account)
   end
 
   test "create account with description and active fields", %{details: details} do
@@ -86,6 +86,6 @@ defmodule Bookkeeping.Core.AccountTest do
   end
 
   test "validate account" do
-    assert {:error, :invalid_account} = Account.validate_account(%Account{})
+    assert {:error, :invalid_account} = Account.validate(%Account{})
   end
 end
