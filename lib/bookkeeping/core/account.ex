@@ -193,15 +193,13 @@ defmodule Bookkeeping.Core.Account do
 
   ## Examples
 
-      iex> {:ok, account} = Account.create("10_000", "cash", "asset")
-
       iex> Account.validate_account(account)
       {:ok, %Account{...}}
 
       iex> Account.validate_account(%Account{})
       {:error, :invalid_account}
   """
-  @spec validate_account(map()) :: {:ok, __MODULE__.t()} | {:error, :invalid_account}
+  @spec validate_account(t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_account}
   def validate_account(account) do
     with true <- is_struct(account, __MODULE__),
          true <- is_binary(account.code) and account.code != "",
@@ -215,6 +213,21 @@ defmodule Bookkeeping.Core.Account do
       _error -> {:error, :invalid_account}
     end
   end
+
+  def validate(account) when is_struct(account, __MODULE__), do: {:ok, account}
+
+  def validate(_account), do: {:error, :invalid_account}
+
+  def validate2(account) when is_map(account) do
+    account_map = Map.from_struct(account)
+
+    case transform_params(account_map) do
+      %{errors: []} -> {:ok, account}
+      %{errors: errors} -> List.first(errors)
+    end
+  end
+
+  def validate2(_account), do: {:error, :invalid_account}
 
   defp accounts_classification do
     %{

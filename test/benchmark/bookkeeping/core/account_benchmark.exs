@@ -26,4 +26,37 @@ defmodule Bookkeeping.Core.AccountBenchmark do
       })
     end
   })
+
+  Benchee.run(%{
+    "validate_account/1" => fn ->
+      Account.validate_account(%Account{
+        code: "1003",
+        name: "Cash 3",
+        classification: "asset",
+        description: "Cash and Cash Equivalents 3",
+        audit_logs: [],
+        active: true
+      })
+    end,
+    "validate/1" => fn ->
+      Account.validate(%Account{
+        code: "1004",
+        name: "Cash 4",
+        classification: "asset",
+        description: "Cash and Cash Equivalents 4",
+        audit_logs: [],
+        active: true
+      })
+    end,
+    "validate2/1" => fn ->
+      Account.validate2(%Account{
+        code: "1005",
+        name: "Cash 5",
+        classification: "asset",
+        description: "Cash and Cash Equivalents 5",
+        audit_logs: [],
+        active: true
+      })
+    end
+  })
 end
