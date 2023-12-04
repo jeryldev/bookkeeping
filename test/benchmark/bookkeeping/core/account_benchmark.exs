@@ -6,7 +6,7 @@ defmodule Bookkeeping.Core.AccountBenchmark do
       Account.create(%{
         code: "1000",
         name: "Cash 0",
-        type: "asset",
+        classification: "asset",
         description: "Cash and Cash Equivalents 0",
         audit_details: %{},
         active: true
