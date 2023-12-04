@@ -1,11 +1,9 @@
 defmodule Bookkeeping.Boundary.ChartOfAccountsBenchmark do
   alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
-  alias Bookkeeping.Boundary.ChartOfAccounts.Server2, as: ChartOfAccountsServer2
   alias Bookkeeping.Boundary.ChartOfAccounts2.Supervisor, as: ChartOfAccounts2Supervisor
   alias Bookkeeping.Boundary.ChartOfAccounts2.Worker
 
   ChartOfAccountsServer.start_link()
-  ChartOfAccountsServer2.start_link([])
   ChartOfAccounts2Supervisor.start_link()
 
   Benchee.run(%{
@@ -19,20 +17,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsBenchmark do
         "Cash and Cash Equivalents 0",
         %{}
       )
-    end,
-    "COA Server2 create/1" => fn ->
-      random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
-
-      params = %{
-        code: random_string,
-        name: random_string,
-        classification: "asset",
-        description: "Cash and Cash Equivalents 0",
-        audit_details: %{},
-        active: true
-      }
-
-      ChartOfAccountsServer2.create(params)
     end,
     "COA Worker create/1" => fn ->
       random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
@@ -62,11 +46,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsBenchmark do
 
       ChartOfAccountsServer.find_account_by_code(random_string)
     end,
-    "COA Server2 search_code/1" => fn ->
-      random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
-
-      ChartOfAccountsServer2.search_code(random_string)
-    end,
     "COA Worker search_code/1" => fn ->
       random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
 
@@ -79,11 +58,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsBenchmark do
       random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
 
       ChartOfAccountsServer.find_account_by_name(random_string)
-    end,
-    "COA Server2 search_name/1" => fn ->
-      random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
-
-      ChartOfAccountsServer2.search_name(random_string)
     end,
     "COA Worker search_name/1" => fn ->
       random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
