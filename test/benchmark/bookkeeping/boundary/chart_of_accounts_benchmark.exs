@@ -30,13 +30,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsBenchmark do
         active: true
       }
 
-      IO.inspect(random_string)
-
-      result = Worker.create(params)
-
-      IO.inspect(result)
-
-      result
+      Worker.create(params)
     end
   })
 
@@ -74,4 +68,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsBenchmark do
       Worker.import_file("../../data/sample_chart_of_accounts.csv")
     end
   })
+
+  # Benchee.run(%{
+  #   "COA Server update/2" => fn ->
+  #     ChartOfAccountsServer.import_accounts("../../data/sample_chart_of_accounts.csv")
+  #   end,
+  # })
 end
