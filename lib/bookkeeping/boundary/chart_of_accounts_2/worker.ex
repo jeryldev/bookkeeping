@@ -4,41 +4,44 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
   alias Bookkeeping.Core.Account
   alias NimbleCSV.RFC4180, as: CSV
 
-  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
+  @spec start_link(any()) :: {:ok, pid()} | {:error, any()} | {:error, :already_started}
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   @spec create(Account.create_params()) ::
-          {:error, :invalid_params}
-          | {:error, :invalid_field}
-          | {:error, :already_exists}
-          | {:ok, Account.t()}
+          {:ok, Account.t()} | {:error, :already_exists | :invalid_field | :invalid_params}
   def create(params) do
     GenServer.call(__MODULE__, {:create, params})
   end
 
   @spec import_file(String.t()) ::
-          {:error, :invalid_file}
-          | {:ok,
-             %{
-               oks: list(Account.t()),
-               errors:
-                 list(%{
-                   reason: :invalid_params | :invalid_field | :already_exists,
-                   params: Account.create_params()
-                 })
-             }}
+          {:ok,
+           %{
+             oks: list(Account.t()),
+             errors:
+               list(%{
+                 reason: :invalid_params | :invalid_field | :already_exists,
+                 params: Account.create_params()
+               })
+           }}
+          | {:error, :invalid_file}
   def import_file(file_path) do
     file_path |> check_csv() |> read_csv() |> bulk_generate_params() |> bulk_create()
   end
 
-  @spec search_code(Account.account_code()) :: {:error, :not_found} | {:ok, Account.t()}
+  @spec update(Account.t(), Account.update_params()) ::
+          {:ok, Account.t()} | {:error, :invalid_account | :invalid_field | :invalid_params}
+  def update(account, params) do
+    GenServer.call(__MODULE__, {:update, account, params})
+  end
+
+  @spec search_code(Account.account_code()) :: {:ok, Account.t()} | {:error, :not_found}
   def search_code(code) do
     GenServer.call(__MODULE__, {:search_code, code})
   end
 
-  @spec search_name(String.t()) :: {:error, :not_found} | {:ok, Account.t()}
+  @spec search_name(String.t()) :: {:ok, Account.t()} | {:error, :not_found}
   def search_name(name) do
     GenServer.call(__MODULE__, {:search_name, name})
   end
@@ -57,6 +60,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
     {:reply, result, table}
   end
 
+  def handle_call({:update, account, params}, _from, table) do
+    result = update(table, account, params)
+    {:reply, result, table}
+  end
+
   def handle_call({:search_code, code}, _from, table) do
     result = search_code(table, code)
     {:reply, result, table}
@@ -72,6 +80,17 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
          {:ok, account} <- Account.create(params) do
       :ets.insert(table, {account.code, account.name, account})
       {:ok, account}
+    end
+  end
+
+  defp update(table, account, params) do
+    case Account.update2(account, params) do
+      {:ok, account} ->
+        :ets.insert(table, {account.code, account.name, account})
+        {:ok, account}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

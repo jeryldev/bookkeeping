@@ -35,6 +35,16 @@ defmodule Bookkeeping.Core.Account do
           active: boolean()
         }
 
+  @typedoc """
+  update_params type is a map which represents the parameter used to update an account.
+  """
+  @type update_params :: %{
+          name: String.t(),
+          description: String.t(),
+          active: boolean(),
+          audit_details: map()
+        }
+
   @account_classifications ~w(asset liability equity revenue expense gain loss contra_asset contra_liability contra_equity contra_revenue contra_expense contra_gain contra_loss)
 
   defstruct code: "",
@@ -182,7 +192,7 @@ defmodule Bookkeeping.Core.Account do
     end
   end
 
-  @spec update2(any(), any()) ::
+  @spec update2(Account.t(), update_params()) ::
           {:ok, Account.t()} | {:error, :invalid_account | :invalid_field | :invalid_params}
   def update2(account, params) do
     params |> validate_update_params(account) |> maybe_update(account)

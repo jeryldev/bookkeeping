@@ -69,9 +69,45 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsBenchmark do
     end
   })
 
-  # Benchee.run(%{
-  #   "COA Server update/2" => fn ->
-  #     ChartOfAccountsServer.import_accounts("../../data/sample_chart_of_accounts.csv")
-  #   end,
-  # })
+  Benchee.run(%{
+    "COA Server update/2" => fn ->
+      random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
+
+      {:ok, account} =
+        ChartOfAccountsServer.create_account(
+          random_string,
+          random_string,
+          "asset",
+          "Cash and Cash Equivalents 0",
+          %{}
+        )
+
+      random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
+
+      ChartOfAccountsServer.update_account(
+        account,
+        %{name: random_string, description: random_string, audit_details: %{}, active: false}
+      )
+    end,
+    "COA Worker update/2" => fn ->
+      random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
+
+      {:ok, account} =
+        Worker.create(%{
+          code: random_string,
+          name: random_string,
+          classification: "asset",
+          description: "Cash and Cash Equivalents 0",
+          audit_details: %{},
+          active: true
+        })
+
+      random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
+
+      Worker.update(
+        account,
+        %{name: random_string, description: random_string, audit_details: %{}, active: false}
+      )
+    end
+  })
 end
