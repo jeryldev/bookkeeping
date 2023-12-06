@@ -74,53 +74,131 @@ defmodule Bookkeeping.Core.Account do
               normal_balance: nil,
               category: nil,
               contra: false
-  end
 
-  @doc """
-  Creates a new account struct.
+    def classify("asset") do
+      %Classification{
+        name: "Asset",
+        normal_balance: :debit,
+        category: :position,
+        contra: false
+      }
+    end
 
-  Arguments:
-    - code: The unique code of the account.
-    - name: The unique name of the account.
-    - classification: The classification of the account. The account classification must be one of the following: `"asset"`, `"liability"`, `"equity"`, `"revenue"`, `"expense"`, `"gain"`, `"loss"`, `"contra_asset"`, `"contra_liability"`, `"contra_equity"`, `"contra_revenue"`, `"contra_expense"`, `"contra_gain"`, `"contra_loss"`.
-    - description: The description of the account.
-    - audit_details: The details of the audit log.
+    def classify("liability") do
+      %Classification{
+        name: "Liability",
+        normal_balance: :credit,
+        category: :position,
+        contra: false
+      }
+    end
 
-  Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`.
+    def classify("equity") do
+      %Classification{
+        name: "Equity",
+        normal_balance: :credit,
+        category: :position,
+        contra: false
+      }
+    end
 
-  ## Examples
+    def classify("revenue") do
+      %Classification{
+        name: "Revenue",
+        normal_balance: :credit,
+        category: :performance,
+        contra: false
+      }
+    end
 
-      iex> Account.create("10_000", "cash", "asset", "", %{})
-      {:ok, %Account{...}}
+    def classify("expense") do
+      %Classification{
+        name: "Expense",
+        normal_balance: :debit,
+        category: :performance,
+        contra: false
+      }
+    end
 
-      iex> Account.create("invalid", "invalid", "invalid", nil, false, %{})
-      {:error, :invalid_account}
-  """
-  @spec create(String.t(), String.t(), String.t(), String.t(), map()) ::
-          {:ok, Account.t()} | {:error, :invalid_account}
-  def create(code, name, classification, description, audit_details) do
-    classification_mapping = accounts_classification()
-    classification_keys = Map.keys(classification_mapping)
+    def classify("gain") do
+      %Classification{
+        name: "Gain",
+        normal_balance: :credit,
+        category: :performance,
+        contra: false
+      }
+    end
 
-    valid_inputs? =
-      is_binary(code) and is_binary(name) and is_binary(classification) and
-        is_binary(description) and code != "" and name != "" and
-        classification in classification_keys and is_map(audit_details)
+    def classify("loss") do
+      %Classification{
+        name: "Loss",
+        normal_balance: :debit,
+        category: :performance,
+        contra: false
+      }
+    end
 
-    classification = Map.get(classification_mapping, classification)
+    def classify("contra_asset") do
+      %Classification{
+        name: "Contra Asset",
+        normal_balance: :credit,
+        category: :position,
+        contra: true
+      }
+    end
 
-    with true <- valid_inputs?,
-         {:ok, audit_log} <- AuditLog.create("account", "create", audit_details) do
-      {:ok,
-       %__MODULE__{
-         code: code,
-         name: name,
-         description: description,
-         classification: classification,
-         audit_logs: [audit_log]
-       }}
-    else
-      _ -> {:error, :invalid_account}
+    def classify("contra_liability") do
+      %Classification{
+        name: "Contra Liability",
+        normal_balance: :debit,
+        category: :position,
+        contra: true
+      }
+    end
+
+    def classify("contra_equity") do
+      %Classification{
+        name: "Contra Equity",
+        normal_balance: :debit,
+        category: :position,
+        contra: true
+      }
+    end
+
+    def classify("contra_revenue") do
+      %Classification{
+        name: "Contra Revenue",
+        normal_balance: :debit,
+        category: :performance,
+        contra: true
+      }
+    end
+
+    def classify("contra_expense") do
+      %Classification{
+        name: "Contra Expense",
+        normal_balance: :credit,
+        category: :performance,
+        contra: true
+      }
+    end
+
+    def classify("contra_gain") do
+      %Classification{
+        name: "Contra Gain",
+        normal_balance: :debit,
+        category: :performance,
+        contra: true
+      }
+    end
+
+    def classify("contra_loss") do
+      %Classification{
+        name: "Contra Loss",
+        normal_balance: :credit,
+        category: :performance,
+        contra: true
+      }
     end
   end
 
@@ -159,42 +237,23 @@ defmodule Bookkeeping.Core.Account do
 
   ## Examples
 
-      iex> {:ok, account} = Account.create("10_000", "cash", "asset")
+      iex> {:ok, account} = Account.create(params)
 
-      iex> Account.update(account, %{name: "cash and cash equivalents"})
-      {:ok, %Account{name: "cash and cash equivalents", ...}}
+      iex> Account.update(account, %{name: "cash and cash equivalents", description: "cash and cash equivalents", audit_details: %{}, active: false})
+      {:ok, %Account{...}}
+
+      iex> Account.update(%{}, %{name: "cash and cash equivalents"})
+      {:error, :invalid_account}
+
+      iex> Account.update(account, %{name: nil})
+      {:error, :invalid_field}
+
+      iex> Account.update(account, nil)
+      {:error, :invalid_params}
   """
-  @spec update(%__MODULE__{}, map()) :: {:ok, Account.t()} | {:error, :invalid_account}
-  def update(account, attrs) when is_map(attrs) do
-    name = Map.get(attrs, :name, account.name)
-    description = Map.get(attrs, :description, account.description)
-    active = Map.get(attrs, :active, account.active)
-    audit_details = Map.get(attrs, :audit_details, %{})
-
-    valid_fields? =
-      is_binary(name) and name != "" and is_binary(description) and
-        is_boolean(active) and is_map(audit_details)
-
-    with true <- valid_fields?,
-         {:ok, audit_log} <- AuditLog.create("account", "update", audit_details) do
-      existing_audit_logs = Map.get(account, :audit_logs, [])
-
-      update_params = %{
-        name: name,
-        description: description,
-        active: active,
-        audit_logs: [audit_log | existing_audit_logs]
-      }
-
-      {:ok, Map.merge(account, update_params)}
-    else
-      _ -> {:error, :invalid_account}
-    end
-  end
-
-  @spec update2(Account.t(), update_params()) ::
+  @spec update(Account.t(), update_params()) ::
           {:ok, Account.t()} | {:error, :invalid_account | :invalid_field | :invalid_params}
-  def update2(account, params) do
+  def update(account, params) do
     params |> validate_update_params(account) |> maybe_update(account)
   end
 
@@ -222,95 +281,6 @@ defmodule Bookkeeping.Core.Account do
          is_struct(account.classification, Classification),
        do: {:ok, account},
        else: {:error, :invalid_account}
-  end
-
-  def accounts_classification do
-    %{
-      "asset" => %Classification{
-        name: "Asset",
-        normal_balance: :debit,
-        category: :position,
-        contra: false
-      },
-      "liability" => %Classification{
-        name: "Liability",
-        normal_balance: :credit,
-        category: :position,
-        contra: false
-      },
-      "equity" => %Classification{
-        name: "Equity",
-        normal_balance: :credit,
-        category: :position,
-        contra: false
-      },
-      "revenue" => %Classification{
-        name: "Revenue",
-        normal_balance: :credit,
-        category: :performance,
-        contra: false
-      },
-      "expense" => %Classification{
-        name: "Expense",
-        normal_balance: :debit,
-        category: :performance,
-        contra: false
-      },
-      "gain" => %Classification{
-        name: "Gain",
-        normal_balance: :credit,
-        category: :performance,
-        contra: false
-      },
-      "loss" => %Classification{
-        name: "Loss",
-        normal_balance: :debit,
-        category: :performance,
-        contra: false
-      },
-      "contra_asset" => %Classification{
-        name: "Contra Asset",
-        normal_balance: :credit,
-        category: :position,
-        contra: true
-      },
-      "contra_liability" => %Classification{
-        name: "Contra Liability",
-        normal_balance: :debit,
-        category: :position,
-        contra: true
-      },
-      "contra_equity" => %Classification{
-        name: "Contra Equity",
-        normal_balance: :debit,
-        category: :position,
-        contra: true
-      },
-      "contra_revenue" => %Classification{
-        name: "Contra Revenue",
-        normal_balance: :debit,
-        category: :performance,
-        contra: true
-      },
-      "contra_expense" => %Classification{
-        name: "Contra Expense",
-        normal_balance: :credit,
-        category: :performance,
-        contra: true
-      },
-      "contra_gain" => %Classification{
-        name: "Contra Gain",
-        normal_balance: :debit,
-        category: :performance,
-        contra: true
-      },
-      "contra_loss" => %Classification{
-        name: "Contra Loss",
-        normal_balance: :credit,
-        category: :performance,
-        contra: true
-      }
-    }
   end
 
   defp validate_create_params(
@@ -342,7 +312,7 @@ defmodule Bookkeeping.Core.Account do
          active: active
        }) do
     {:ok, audit_log} = AuditLog.create("account", "create", audit_details)
-    classification = Map.get(accounts_classification(), classification)
+    classification = Classification.classify(classification)
 
     {:ok,
      %__MODULE__{
@@ -360,13 +330,13 @@ defmodule Bookkeeping.Core.Account do
   defp validate_update_params(params, _account) when not is_map(params),
     do: {:error, :invalid_params}
 
-  defp validate_update_params(_params, account) when not is_struct(account, __MODULE__),
-    do: {:error, :invalid_account}
-
   defp validate_update_params(%{audit_details: _audit_details} = params, account) do
-    Enum.reduce(params, %{}, fn {key, value}, acc ->
-      verify_update_field(key, value, acc, account)
-    end)
+    with {:ok, _} <- validate(account) do
+      Enum.reduce(params, %{}, fn
+        {_key, _value}, {:error, :invalid_field} -> {:error, :invalid_field}
+        {key, value}, acc -> verify_update_field(key, value, acc, account)
+      end)
+    end
   end
 
   defp validate_update_params(params, account) do
@@ -380,19 +350,19 @@ defmodule Bookkeeping.Core.Account do
               is_binary(value) and value != "",
        do: Map.put(acc, key, value)
 
-  defp verify_update_field(:active, value, acc, _account) when is_boolean(value),
-    do: Map.put(acc, :active, value)
+  defp verify_update_field(key, value, acc, _account)
+       when key == :active and is_boolean(value),
+       do: Map.put(acc, key, value)
 
-  defp verify_update_field(:audit_details, value, acc, account) when is_map(value) do
+  defp verify_update_field(key, value, acc, account)
+       when key == :audit_details and is_map(value) do
     {:ok, audit_log} = AuditLog.create("account", "update", value)
     Map.put(acc, :audit_logs, [audit_log | account.audit_logs])
   end
 
-  defp verify_update_field(key, _value, _acc, _account)
-       when key in [:name, :description, :active, :audit_details],
-       do: {:error, :invalid_field}
-
-  defp verify_update_field(_key, _value, acc, _account), do: acc
+  defp verify_update_field(_key, _value, _acc, _account) do
+    {:error, :invalid_field}
+  end
 
   defp maybe_update({:error, reason}, _account), do: {:error, reason}
   defp maybe_update(params, account), do: {:ok, Map.merge(account, params)}

@@ -12,12 +12,12 @@ defmodule Bookkeeping.Core.AccountBenchmark do
         active: true
       })
     end,
-    "create/5" => fn ->
-      Account.create("1001", "Cash 1", "asset", "Cash and Cash Equivalents 1", %{})
-    end,
+    # "create/5" => fn ->
+    #   Account.create("1001", "Cash 1", "asset", "Cash and Cash Equivalents 1", %{})
+    # end,
     "create/1 struct only" => fn ->
-      classification = Account.accounts_classification()["asset"]
       audit_log = AuditLog.create("account", "create", %{})
+      classification = Account.Classification.classify("asset")
 
       struct(%Account{}, %{
         code: "1000",
@@ -93,8 +93,8 @@ defmodule Bookkeeping.Core.AccountBenchmark do
         name: random_string,
         classification: "asset",
         description: "Cash and Cash Equivalents 2",
-        audit_details: %{},
-        active: true
+        audit_details: %{email: "test@test.com"},
+        active: false
       })
     end
   })

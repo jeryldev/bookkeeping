@@ -84,13 +84,9 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
   end
 
   defp update(table, account, params) do
-    case Account.update2(account, params) do
-      {:ok, account} ->
-        :ets.insert(table, {account.code, account.name, account})
-        {:ok, account}
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, account} <- Account.update(account, params) do
+      :ets.insert(table, {account.code, account.name, account})
+      {:ok, account}
     end
   end
 

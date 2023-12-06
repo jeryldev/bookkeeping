@@ -7,85 +7,262 @@ defmodule Bookkeeping.Core.AccountTest do
     {:ok, details: details}
   end
 
-  test "allow integer code, binary name and account classification account field", %{
-    details: details
-  } do
-    assert {:ok, new_account} =
-             Account.create("10_000", "cash", "asset", "description", details)
-
-    assert new_account.code == "10_000"
-    assert new_account.name == "cash"
-    assert new_account.classification.name == "Asset"
-    assert new_account.classification.normal_balance == :debit
-
-    assert {:ok, _valid_account} = Account.validate(new_account)
-  end
-
-  test "create account with description and active fields", %{details: details} do
-    assert {:ok, new_account} =
-             Account.create("10_010", "cash", "asset", "cash and cash equivalents", details)
-
-    assert new_account.code == "10_010"
-    assert new_account.name == "cash"
-    assert new_account.classification.name == "Asset"
-    assert new_account.classification.normal_balance == :debit
-    assert new_account.description == "cash and cash equivalents"
-    assert new_account.active
-  end
-
-  test "disallow non-binary code field", %{details: details} do
-    new_account = Account.create(10_000, "cash", "asset", "description", details)
-
-    assert ^new_account = {:error, :invalid_account}
-  end
-
-  test "disallow non-binary name field", %{details: details} do
-    new_account = Account.create(10_000, 10_000, "asset", "description", details)
-
-    assert ^new_account = {:error, :invalid_account}
-  end
-
-  test "disallow non-%AccountClassification{} account field", %{details: details} do
-    new_account = Account.create(10_000, "cash", "classification", "description", details)
-
-    assert ^new_account = {:error, :invalid_account}
-  end
-
-  test "disallow empty name", %{details: details} do
-    new_account = Account.create(10_000, "", "asset", "description", details)
-
-    assert ^new_account = {:error, :invalid_account}
-  end
-
-  test "update account", %{details: details} do
+  test "create/1 with valid params", %{details: details} do
     assert {:ok, account} =
-             Account.create("10_000", "cash", "asset", "description", details)
+             Account.create(%{
+               code: "10_000",
+               name: "cash",
+               classification: "asset",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
 
-    assert {:ok, account_2} = Account.update(account, %{name: "cash and cash equivalents"})
+    assert account.code == "10_000"
+    assert account.name == "cash"
+    assert account.classification.name == "Asset"
+    assert account.classification.normal_balance == :debit
+    assert account.description == "description"
+    assert account.active
+
+    assert {:ok, _liability} =
+             Account.create(%{
+               code: "20_000",
+               name: "liability",
+               classification: "liability",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _equity} =
+             Account.create(%{
+               code: "30_000",
+               name: "equity",
+               classification: "equity",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _revenue} =
+             Account.create(%{
+               code: "40_000",
+               name: "revenue",
+               classification: "revenue",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _expense} =
+             Account.create(%{
+               code: "50_000",
+               name: "expense",
+               classification: "expense",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _gain} =
+             Account.create(%{
+               code: "50_000",
+               name: "gain",
+               classification: "gain",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _loss} =
+             Account.create(%{
+               code: "50_000",
+               name: "loss",
+               classification: "loss",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _contra_asset} =
+             Account.create(%{
+               code: "60_000",
+               name: "contra_asset",
+               classification: "contra_asset",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _contra_liability} =
+             Account.create(%{
+               code: "70_000",
+               name: "contra_liability",
+               classification: "contra_liability",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _contra_equity} =
+             Account.create(%{
+               code: "80_000",
+               name: "contra_equity",
+               classification: "contra_equity",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _contra_revenue} =
+             Account.create(%{
+               code: "90_000",
+               name: "contra_revenue",
+               classification: "contra_revenue",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _contra_expense} =
+             Account.create(%{
+               code: "100_000",
+               name: "contra_expense",
+               classification: "contra_expense",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _contra_gain} =
+             Account.create(%{
+               code: "100_000",
+               name: "contra_gain",
+               classification: "contra_gain",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, _contra_loss} =
+             Account.create(%{
+               code: "100_000",
+               name: "contra_loss",
+               classification: "contra_loss",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+  end
+
+  test "create/1 with invalid params", %{details: details} do
+    assert {:error, :invalid_params} = Account.create(%{})
+    assert {:error, :invalid_params} = Account.create(nil)
+
+    assert {:error, :invalid_params} =
+             Account.create(%{
+               code: "10_000",
+               name: "cash",
+               classification: "asset",
+               description: "description"
+             })
+
+    assert {:error, :invalid_field} =
+             Account.create(%{
+               code: 10_000,
+               name: "cash",
+               classification: "asset",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:error, :invalid_field} =
+             Account.create(%{
+               code: "10_000",
+               name: "cash",
+               classification: "classification",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+  end
+
+  test "update/2 with valid params", %{details: details} do
+    assert {:ok, account} =
+             Account.create(%{
+               code: "10_000",
+               name: "cash",
+               classification: "asset",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, account_2} =
+             Account.update(account, %{
+               name: "cash and cash equivalents",
+               description: "description 2",
+               audit_details: %{email: "test@test.com"},
+               active: false
+             })
+
     assert account.code == account_2.code
     refute account.name == account_2.name
     assert account.classification == account_2.classification
-    assert {:error, :invalid_account} = Account.update(account, %{name: ""})
-
-    assert {:ok, account_3} =
-             Account.update(account, %{
-               code: "10_001",
-               name: "trade payables",
-               classification: "liability"
-             })
-
-    assert account.code == account_3.code
-    refute account.name == account_3.name
-    assert account.classification == account_3.classification
-
-    assert {:ok, _account_4} =
-             Account.update(account, %{
-               code: "10_001",
-               name: "cash and cash equivalents"
-             })
+    refute account.description == account_2.description
+    refute account.active == account_2.active
   end
 
-  test "validate account" do
+  test "update/2 with invalid params", %{details: details} do
+    assert {:error, :invalid_account} = Account.update(%Account{}, %{})
+    assert {:error, :invalid_params} = Account.update(%{}, nil)
+    assert {:error, :invalid_account} = Account.update(%{}, %{})
+
+    assert {:ok, account} =
+             Account.create(%{
+               code: "10_000",
+               name: "cash",
+               classification: "asset",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:error, :invalid_field} = Account.update(account, %{name: nil})
+
+    assert {:error, :invalid_field} =
+             Account.update(account, %{name: nil, active: false, test: "test"})
+
+    assert {:error, :invalid_params} = Account.update(account, nil)
+  end
+
+  test "validate/1 with valid params", %{details: details} do
+    assert {:ok, account} =
+             Account.create(%{
+               code: "10_000",
+               name: "cash",
+               classification: "asset",
+               description: "description",
+               audit_details: details,
+               active: true
+             })
+
+    assert {:ok, account} = Account.validate(account)
+  end
+
+  test "validate/1 with invalid params", %{details: details} do
+    assert {:error, :invalid_account} = Account.validate(%{})
+    assert {:error, :invalid_account} = Account.validate(nil)
     assert {:error, :invalid_account} = Account.validate(%Account{})
+
+    assert {:error, :invalid_account} =
+             Account.validate(%{
+               code: "10_000",
+               name: "cash",
+               classification: "asset",
+               description: "description"
+             })
   end
 end
