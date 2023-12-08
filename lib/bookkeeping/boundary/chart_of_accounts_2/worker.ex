@@ -6,7 +6,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
 
   @spec start_link(any()) :: {:ok, pid()} | {:error, any()} | {:error, :already_started}
   def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+    case GenServer.start_link(__MODULE__, :ok, name: __MODULE__) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
+    end
   end
 
   @spec create(Account.create_params()) ::
@@ -18,7 +21,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
   @spec import_file(String.t()) ::
           {:ok,
            %{
-             oks: list(Account.t()),
+             accounts: list(Account.t()),
              errors:
                list(%{
                  reason: :invalid_params | :invalid_field | :already_exists,
@@ -36,7 +39,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
     GenServer.call(__MODULE__, {:update, account, params})
   end
 
-  @spec search_code(Account.account_code()) :: {:ok, Account.t()} | {:error, :not_found}
+  @spec search_code(Account.account_code()) ::
+          {:ok, Account.t()} | {:error, :not_found | :invalid_code}
   def search_code(code) do
     GenServer.call(__MODULE__, {:search_code, code})
   end
@@ -65,19 +69,17 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
     {:reply, result, table}
   end
 
-  def handle_call({:search_code, code}, _from, table) do
-    result = search_code(table, code)
-    {:reply, result, table}
+  def handle_call({:search_code, prefix}, _from, table) do
+    {:reply, prefix_search_code(table, prefix), table}
   end
 
-  def handle_call({:search_name, name}, _from, table) do
-    result = search_name(table, name)
-    {:reply, result, table}
+  def handle_call({:search_name, prefix}, _from, table) do
+    {:reply, prefix_search_name(table, prefix), table}
   end
 
   defp create(table, params) do
-    with {:ok, params} <- check_similar_account(table, params),
-         {:ok, account} <- Account.create(params) do
+    with {:ok, account} <- Account.create(params),
+         {:error, :not_found} <- check_similar_account(table, account) do
       :ets.insert(table, {account.code, account.name, account})
       {:ok, account}
     end
@@ -90,15 +92,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
     end
   end
 
-  defp check_similar_account(table, params) do
-    code = Map.get(params, :code, "")
-    name = Map.get(params, :name, "")
-
-    with {:error, :not_found} <- search_code(table, code),
-         {:error, :not_found} <- search_name(table, name) do
-      {:ok, params}
-    else
-      {:ok, _account} -> {:error, :already_exists}
+  defp check_similar_account(table, account) do
+    with {:ok, _account} <- search_code(table, account.code),
+         {:ok, _account} <- search_name(table, account.name) do
+      {:error, :already_exists}
     end
   end
 
@@ -110,9 +107,47 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
   end
 
   defp search_name(table, name) do
-    result = :ets.match(table, {:_, name, :"$1"}) |> List.flatten() |> List.first()
+    result = :ets.select(table, [{{:_, name, :"$1"}, [], [:"$1"]}]) |> List.first()
     if is_nil(result), do: {:error, :not_found}, else: {:ok, result}
   end
+
+  defp prefix_search_code(table, prefix) when is_binary(prefix) and prefix != "" do
+    accounts =
+      :ets.foldl(
+        fn
+          {code, _, account}, acc ->
+            if String.starts_with?(code, prefix), do: [account | acc], else: acc
+
+          _, acc ->
+            acc
+        end,
+        [],
+        table
+      )
+
+    {:ok, accounts}
+  end
+
+  defp prefix_search_code(_table, _code), do: {:error, :invalid_code}
+
+  defp prefix_search_name(table, prefix) when is_binary(prefix) and prefix != "" do
+    accounts =
+      :ets.foldl(
+        fn
+          {_, name, account}, acc ->
+            if String.starts_with?(name, prefix), do: [account | acc], else: acc
+
+          _, acc ->
+            acc
+        end,
+        [],
+        table
+      )
+
+    {:ok, accounts}
+  end
+
+  defp prefix_search_name(_table, _name), do: {:error, :invalid_name}
 
   defp check_csv(path) when is_binary(path) do
     file_path = Path.expand(path, __DIR__)
@@ -168,12 +203,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
 
   defp bulk_generate_params(error), do: error
 
-  defp bulk_create([]), do: {:error, :invalid_file}
-
   defp bulk_create(params_list) when is_list(params_list) do
-    Enum.reduce(params_list, %{oks: [], errors: []}, fn params, acc ->
+    Enum.reduce(params_list, %{accounts: [], errors: []}, fn params, acc ->
       case create(params) do
-        {:ok, account} -> %{acc | oks: [account | acc.oks]}
+        {:ok, account} -> %{acc | accounts: [account | acc.accounts]}
         {:error, reason} -> %{acc | errors: [%{reason: reason, params: params} | acc.errors]}
       end
     end)

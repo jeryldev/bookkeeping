@@ -4,7 +4,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Manager do
   alias Bookkeeping.Boundary.ChartOfAccounts2.Worker
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+    case GenServer.start_link(__MODULE__, :ok, name: __MODULE__) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
+    end
   end
 
   def init(_) do
@@ -14,6 +17,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Manager do
 
     table =
       :ets.new(:give_away, [
+        :ordered_set,
         :private,
         write_concurrency: true,
         read_concurrency: true

@@ -1,326 +1,229 @@
 defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
-  use ExUnit.Case, async: true
-  alias Bookkeeping.Boundary.ChartOfAccounts.Backup, as: ChartOfAccountsBackup
-  alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
+  use ExUnit.Case
+  alias Bookkeeping.Boundary.ChartOfAccounts2.Worker, as: ChartOfAccounts
+  alias Bookkeeping.Boundary.ChartOfAccounts2.Supervisor, as: ChartOfAccountsSupervisor
 
   setup do
-    description = "description"
-    details = %{email: "example@example.com"}
+    params = %{
+      code: "1000",
+      name: "Cash",
+      classification: "asset",
+      description: "description",
+      audit_details: %{email: "example@example.com"},
+      active: true
+    }
 
-    {:ok, details: details, description: description}
+    invalid_params = %{
+      code: "1000",
+      name: "Cash",
+      classification: "invalid",
+      description: "description",
+      audit_details: %{email: "example@example.com"},
+      active: true
+    }
+
+    {:ok, server_pid} = ChartOfAccountsSupervisor.start_link([])
+
+    {:ok, params: params, invalid_params: invalid_params, server_pid: server_pid}
   end
 
-  test "start link" do
-    {:ok, server} = ChartOfAccountsServer.start_link()
-    assert server in Process.list()
+  describe "Worker start_link/1 " do
+    test "with valid params" do
+      {:ok, server} = ChartOfAccounts.start_link([])
+      assert server in Process.list()
+    end
+
+    test "with invalid params" do
+      {:ok, server} = ChartOfAccounts.start_link(test: nil)
+    end
   end
 
-  test "create account", %{description: description, details: details} do
-    assert {:ok, account} =
-             ChartOfAccountsServer.create_account(
-               "1000",
-               "Cash1",
-               "asset",
-               description,
-               details
-             )
+  describe "create/1" do
+    test "with valid params", %{params: params} do
+      assert {:ok, account} = ChartOfAccounts.create(params)
+      assert account.code == "1000"
+      assert account.name == "Cash"
+      assert account.classification.name == "Asset"
+      assert account.description == "description"
+      assert is_struct(account.classification, Bookkeeping.Core.Account.Classification)
+      assert is_list(account.audit_logs)
+    end
 
-    assert account.code == "1000"
-    assert account.name == "Cash1"
+    test "with invalid params" do
+      assert {:error, :invalid_params} = ChartOfAccounts.create("apple")
+      assert {:error, :invalid_params} = ChartOfAccounts.create(%{})
+      assert {:error, :invalid_params} = ChartOfAccounts.create(%{code: "1000"})
+      assert {:error, :invalid_params} = ChartOfAccounts.create(%{name: "Cash"})
+      assert {:error, :invalid_params} = ChartOfAccounts.create(%{classification: "asset"})
+      assert {:error, :invalid_params} = ChartOfAccounts.create(%{description: "description"})
 
-    assert {:error, :account_already_exists} =
-             ChartOfAccountsServer.create_account(
-               "1000",
-               "Cash1",
-               "asset",
-               description,
-               details
-             )
+      assert {:error, :invalid_params} =
+               ChartOfAccounts.create(%{audit_details: %{email: "example@example.com"}})
 
-    assert {:error, :invalid_account} =
-             ChartOfAccountsServer.create_account(
-               "1002",
-               "Inventory",
-               "invalid",
-               description,
-               true,
-               details
-             )
+      assert {:error, :invalid_params} = ChartOfAccounts.create(%{active: true})
+    end
 
-    assert {:error, :invalid_account} =
-             ChartOfAccountsServer.create_account(
-               "1003",
-               "",
-               "asset",
-               description,
-               details
-             )
+    test "with invalid field", %{params: params, invalid_params: invalid_params} do
+      assert {:error, :invalid_field} = ChartOfAccounts.create(invalid_params)
+    end
+
+    test "that already exists", %{params: params} do
+      assert {:ok, account} = ChartOfAccounts.create(params)
+      assert {:error, :already_exists} = ChartOfAccounts.create(params)
+    end
   end
 
-  test "import default accounts" do
-    assert {:ok, []} = ChartOfAccountsServer.reset_accounts()
+  describe "import/1" do
+    test "with a valid file" do
+      assert %{accounts: accounts, errors: _errors} =
+               ChartOfAccounts.import_file(
+                 "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
+               )
 
-    # importing a valid file
-    assert {:ok, %{ok: _oks, error: _errors}} =
-             ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
-             )
+      assert Enum.count(accounts) == 9
+    end
 
-    # importing an invalid or missing file
-    assert {:error, :invalid_file} =
-             ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/data/invalid_file.csv"
-             )
+    test "with a valid file twice" do
+      assert %{accounts: accounts, errors: errors} =
+               ChartOfAccounts.import_file(
+                 "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
+               )
 
-    # importing accounts with empty fields
-    assert {:error, %{message: :invalid_csv, errors: _errors}} =
-             ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/data/invalid_chart_of_accounts.csv"
-             )
+      assert %{accounts: [], errors: errors} =
+               ChartOfAccounts.import_file(
+                 "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
+               )
 
-    # importing an empty file
-    assert {:error, :invalid_file} =
-             ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/data/empty_chart_of_accounts.csv"
-             )
+      assert Enum.count(accounts) == 9
+      assert Enum.count(errors) == 9
+      assert Enum.all?(errors, fn error -> error.reason == :already_exists end)
 
-    # importing accounts with invalid account classification
-    assert {:error, %{message: :invalid_csv, errors: _errors}} =
-             ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/data/decode_error_chart_of_accounts.csv"
-             )
+      assert %{accounts: [], errors: errors} =
+               ChartOfAccounts.import_file(
+                 "../../../../test/bookkeeping/data/empty_chart_of_accounts_2.csv"
+               )
+    end
 
-    # importing duplicate accounts in a single file
-    assert {:ok, %{ok: _oks, error: _errors}} =
-             ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/data/duplicate_chart_of_accounts.csv"
-             )
+    test "with an invalid file" do
+      assert {:error, :invalid_file} =
+               ChartOfAccounts.import_file("../../../../test/bookkeeping/data/invalid_file.csv")
 
-    # importing the file twice
-    assert {:error, %{ok: _oks, error: _errors}} =
-             ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/data/duplicate_chart_of_accounts.csv"
-             )
+      assert {:error, :invalid_file} =
+               ChartOfAccounts.import_file(
+                 "../../../../test/bookkeeping/data/empty_chart_of_accounts.csv"
+               )
 
-    # importing a partially valid file
-    assert {:ok, %{error: errors, ok: oks}} =
-             ChartOfAccountsServer.import_accounts(
-               "../../../../test/bookkeeping/data/partially_valid_chart_of_accounts.csv"
-             )
+      assert {:error, :invalid_file} =
+               ChartOfAccounts.import_file("../../../../test/bookkeeping/data/text_file.txt")
 
-    assert errors == [
-             %{
-               error: :account_already_exists,
-               account_code: "1000001012",
-               account_name: "Accounts Receivable Bulk Test 2"
-             }
-           ]
+      assert {:error, :invalid_file} = ChartOfAccounts.import_file(nil)
+    end
 
-    assert Enum.count(oks) == 8
+    test "with a file with invalid values" do
+      assert %{accounts: accounts, errors: errors} =
+               ChartOfAccounts.import_file(
+                 "../../../../test/bookkeeping/data/partially_valid_chart_of_accounts.csv"
+               )
+
+      assert Enum.count(accounts) == 7
+      assert Enum.count(errors) == 3
+
+      assert Enum.all?(errors, fn error ->
+               error.reason in [:already_exists, :invalid_field]
+             end)
+    end
   end
 
-  test "update account" do
-    assert {:ok, account} =
-             ChartOfAccountsServer.create_account(
-               "1000update",
-               "Cash original",
-               "asset",
-               "",
-               %{}
-             )
+  describe "update/2" do
+    test "with valid params", %{params: params} do
+      {:ok, account} = ChartOfAccounts.create(params)
 
-    assert {:ok, updated_account} =
-             ChartOfAccountsServer.update_account(account, %{name: "Cash updated"})
+      assert {:ok, updated_account} =
+               ChartOfAccounts.update(account, %{
+                 name: "Cash updated",
+                 description: "description updated",
+                 audit_details: %{updated_by: "example@example.com"},
+                 active: false
+               })
 
-    assert updated_account.code == "1000update"
-    assert updated_account.name == "Cash updated"
-    assert updated_account.classification.name == "Asset"
-    assert {:error, :invalid_account} = ChartOfAccountsServer.update_account(account, %{name: ""})
+      assert updated_account.code == "1000"
+      assert updated_account.name == "Cash updated"
+      assert updated_account.classification.name == "Asset"
+      assert updated_account.description == "description updated"
+      assert is_struct(updated_account.classification, Bookkeeping.Core.Account.Classification)
+      assert is_list(updated_account.audit_logs)
+      assert length(updated_account.audit_logs) == 2
+      assert updated_account.active == false
+    end
 
-    assert {:error, :invalid_account} =
-             ChartOfAccountsServer.update_account(account, %{name: 1000})
+    test "with invalid account" do
+      assert {:error, :invalid_account} = ChartOfAccounts.update(nil, %{name: "Cash updated"})
+      assert {:error, :invalid_account} = ChartOfAccounts.update("apple", %{name: "Cash updated"})
+    end
 
-    assert {:ok, new_updated_account} = ChartOfAccountsServer.update_account(updated_account, %{})
-    assert updated_account.code == new_updated_account.code
-    assert updated_account.name == new_updated_account.name
-    assert updated_account.classification == new_updated_account.classification
+    test "with invalid field", %{params: params} do
+      {:ok, account} = ChartOfAccounts.create(params)
+
+      assert {:error, :invalid_field} = ChartOfAccounts.update(account, %{code: "1001"})
+
+      assert {:error, :invalid_field} =
+               ChartOfAccounts.update(account, %{classification: "liability"})
+
+      assert {:error, :invalid_field} = ChartOfAccounts.update(account, %{test: "test"})
+    end
+
+    test "with invalid params", %{params: params} do
+      {:ok, account} = ChartOfAccounts.create(params)
+
+      assert {:error, :invalid_params} = ChartOfAccounts.update(account, nil)
+      assert {:error, :invalid_params} = ChartOfAccounts.update(account, "apple")
+      assert {:error, :invalid_params} = ChartOfAccounts.update(account, %{})
+    end
   end
 
-  test "all accounts" do
-    assert {:ok, accounts} = ChartOfAccountsServer.all_accounts()
-    assert is_list(accounts)
+  describe "search_code/1" do
+    test "with complete code", %{params: params} do
+      {:ok, account} = ChartOfAccounts.create(params)
+      assert {:ok, accounts} = ChartOfAccounts.search_code(account.code)
+      assert Enum.member?(accounts, account)
+
+      assert {:ok, accounts} = ChartOfAccounts.search_code("10")
+      assert accounts == [account]
+    end
+
+    test "with code prefix", %{params: params} do
+      {:ok, account} = ChartOfAccounts.create(params)
+      assert {:ok, accounts} = ChartOfAccounts.search_code("10")
+      assert Enum.member?(accounts, account)
+    end
+
+    test "with invalid code" do
+      assert {:error, :invalid_code} = ChartOfAccounts.search_code(nil)
+      assert {:error, :invalid_code} = ChartOfAccounts.search_code(%{})
+      assert {:error, :invalid_code} = ChartOfAccounts.search_code("")
+    end
   end
 
-  test "find account by code" do
-    assert {:ok, account} =
-             ChartOfAccountsServer.create_account(
-               "1001",
-               "Accounts receivable",
-               "asset",
-               "",
-               %{}
-             )
+  describe "search_name/1" do
+    test "with complete name", %{params: params} do
+      {:ok, account} = ChartOfAccounts.create(params)
+      assert {:ok, accounts} = ChartOfAccounts.search_name(account.name)
+      assert Enum.member?(accounts, account)
 
-    assert {:ok, account} = ChartOfAccountsServer.find_account_by_code(account.code)
-    assert account.code == "1001"
-    assert account.name == "Accounts receivable"
-    assert {:error, :not_found} = ChartOfAccountsServer.find_account_by_code("2001")
-    assert {:error, :invalid_code} = ChartOfAccountsServer.find_account_by_code(nil)
+      assert {:ok, accounts} = ChartOfAccounts.search_name("Cash")
+      assert accounts == [account]
+    end
+
+    test "with name prefix", %{params: params} do
+      {:ok, account} = ChartOfAccounts.create(params)
+      assert {:ok, accounts} = ChartOfAccounts.search_name("Ca")
+      assert Enum.member?(accounts, account)
+    end
+
+    test "with invalid name" do
+      assert {:error, :invalid_name} = ChartOfAccounts.search_name(nil)
+      assert {:error, :invalid_name} = ChartOfAccounts.search_name(%{})
+      assert {:error, :invalid_name} = ChartOfAccounts.search_name("")
+    end
   end
-
-  test "find account by name" do
-    assert {:ok, account} =
-             ChartOfAccountsServer.create_account(
-               "10010000",
-               "Accounts receivable4",
-               "asset",
-               "",
-               %{}
-             )
-
-    assert {:ok, account} = ChartOfAccountsServer.find_account_by_name(account.name)
-    assert account.code == "10010000"
-    assert account.name == "Accounts receivable4"
-    assert {:error, :not_found} = ChartOfAccountsServer.find_account_by_name("Accounts payable4")
-    assert {:error, :invalid_name} = ChartOfAccountsServer.find_account_by_name(nil)
-  end
-
-  test "search accounts by code or name" do
-    assert {:ok, account_1} =
-             ChartOfAccountsServer.create_account("100100", "Cash2", "asset", "", %{})
-
-    assert {:ok, account_2} =
-             ChartOfAccountsServer.create_account("100200", "Receivable2", "asset", "", %{})
-
-    assert {:ok, account_3} =
-             ChartOfAccountsServer.create_account("100300", "Inventory2", "asset", "", %{})
-
-    assert {:ok, accounts} = ChartOfAccountsServer.search_accounts("100")
-    assert Enum.member?(accounts, account_1)
-    assert Enum.member?(accounts, account_2)
-    assert Enum.member?(accounts, account_3)
-
-    assert {:ok, accounts} = ChartOfAccountsServer.search_accounts("receivable")
-    refute Enum.member?(accounts, account_1)
-    assert Enum.member?(accounts, account_2)
-    refute Enum.member?(accounts, account_3)
-
-    assert {:error, :invalid_query} = ChartOfAccountsServer.search_accounts(nil)
-    assert {:error, :invalid_query} = ChartOfAccountsServer.search_accounts(%{})
-  end
-
-  test "get all sorted accounts by code or name" do
-    assert {:ok, account_1} =
-             ChartOfAccountsServer.create_account("1001000", "Cash4", "asset", "", %{})
-
-    assert {:ok, account_2} =
-             ChartOfAccountsServer.create_account("1002000", "Receivable4", "asset", "", %{})
-
-    assert {:ok, account_3} =
-             ChartOfAccountsServer.create_account("1003000", "Inventory4", "asset", "", %{})
-
-    assert {:ok, accounts} = ChartOfAccountsServer.all_accounts()
-    assert Enum.member?(accounts, account_1)
-    assert Enum.member?(accounts, account_2)
-    assert Enum.member?(accounts, account_3)
-
-    assert {:ok, accounts} = ChartOfAccountsServer.all_sorted_accounts("code")
-    account_1_index = find_account_index(accounts, "1001000")
-    account_2_index = find_account_index(accounts, "1002000")
-    account_3_index = find_account_index(accounts, "1003000")
-    assert account_2_index > account_1_index
-    assert account_3_index > account_2_index
-
-    assert {:ok, accounts} = ChartOfAccountsServer.all_sorted_accounts("name")
-    account_1_index = find_account_index(accounts, "1001000")
-    account_2_index = find_account_index(accounts, "1002000")
-    account_3_index = find_account_index(accounts, "1003000")
-    assert account_2_index > account_1_index
-    assert account_3_index < account_2_index
-
-    assert {:error, :invalid_field} = ChartOfAccountsServer.all_sorted_accounts("invalid")
-  end
-
-  test "reset accounts" do
-    assert {:ok, account_1} =
-             ChartOfAccountsServer.create_account("10010000101", "Cash5", "asset", "", %{})
-
-    assert {:ok, account_2} =
-             ChartOfAccountsServer.create_account(
-               "10020000101",
-               "Receivable5",
-               "asset",
-               "",
-               %{}
-             )
-
-    assert {:ok, account_3} =
-             ChartOfAccountsServer.create_account(
-               "10030000101",
-               "Inventory5",
-               "asset",
-               "",
-               %{}
-             )
-
-    assert {:ok, accounts} = ChartOfAccountsServer.all_accounts()
-    assert Enum.member?(accounts, account_1)
-    assert Enum.member?(accounts, account_2)
-    assert Enum.member?(accounts, account_3)
-
-    assert {:ok, []} = ChartOfAccountsServer.reset_accounts()
-
-    assert {:ok, accounts} = ChartOfAccountsServer.all_accounts()
-    refute Enum.member?(accounts, account_1)
-    refute Enum.member?(accounts, account_2)
-    refute Enum.member?(accounts, account_3)
-  end
-
-  test "get chart of accounts state" do
-    assert {:ok, state} = ChartOfAccountsServer.get_chart_of_accounts_state()
-    assert is_map(state) == true
-  end
-
-  test "test chart of accounts with working backup" do
-    assert {:ok, account_1} =
-             ChartOfAccountsServer.create_account(
-               "1001000010101",
-               "Cash6",
-               "asset",
-               "",
-               %{}
-             )
-
-    assert {:ok, account_2} =
-             ChartOfAccountsServer.create_account(
-               "1002000010101",
-               "Receivable6",
-               "asset",
-               "",
-               %{}
-             )
-
-    assert {:ok, account_3} =
-             ChartOfAccountsServer.create_account("1003000010101", "Inventory6", "asset", "", %{})
-
-    assert {:ok, accounts} = ChartOfAccountsServer.all_accounts()
-    assert Enum.member?(accounts, account_1)
-    assert Enum.member?(accounts, account_2)
-    assert Enum.member?(accounts, account_3)
-    assert {:ok, backup} = ChartOfAccountsBackup.get()
-    assert backup == %{}
-    assert {:ok, :backup_updated} = ChartOfAccountsBackup.update(accounts)
-    assert {:ok, backup} = ChartOfAccountsBackup.get()
-    assert backup == accounts
-    assert {:ok, []} = ChartOfAccountsServer.reset_accounts()
-    assert {:ok, accounts} = ChartOfAccountsServer.all_accounts()
-    refute Enum.member?(accounts, account_1)
-    refute Enum.member?(accounts, account_2)
-    refute Enum.member?(accounts, account_3)
-    assert {:ok, %{}} = ChartOfAccountsBackup.get()
-
-    assert {:ok, :backup_updated} = ChartOfAccountsServer.terminate(:normal, %{})
-  end
-
-  defp find_account_index(accounts, code), do: Enum.find_index(accounts, &(&1.code == code))
 end

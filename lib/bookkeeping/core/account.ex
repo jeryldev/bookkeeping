@@ -233,7 +233,7 @@ defmodule Bookkeeping.Core.Account do
     - account: The account to be updated.
     - attrs: The attributes to be updated. The editable attributes are `name`, `description`, `active`, and `audit_details`.
 
-  Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`.
+  Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`, `{:error, :invalid_field}`, or `{:error, :invalid_params}`.
 
   ## Examples
 
@@ -327,7 +327,7 @@ defmodule Bookkeeping.Core.Account do
 
   defp maybe_create({:error, reason}), do: {:error, reason}
 
-  defp validate_update_params(params, _account) when not is_map(params),
+  defp validate_update_params(params, _account) when not is_map(params) or params == %{},
     do: {:error, :invalid_params}
 
   defp validate_update_params(%{audit_details: _audit_details} = params, account) do
