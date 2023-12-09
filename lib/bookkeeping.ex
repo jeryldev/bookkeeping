@@ -11,7 +11,7 @@ defmodule Bookkeeping do
   """
 
   alias Bookkeeping.Boundary.AccountingJournal.Server, as: AccountingJournal
-  alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccounts
+  alias Bookkeeping.Boundary.ChartOfAccounts.Worker, as: ChartOfAccounts
   alias Bookkeeping.Core.{Account, JournalEntry}
 
   ##########################################################

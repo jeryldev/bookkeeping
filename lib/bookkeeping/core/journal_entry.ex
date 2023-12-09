@@ -55,8 +55,8 @@ defmodule Bookkeeping.Core.JournalEntry do
   ## Examples
 
       iex> JournalEntry.create(DateTime.utc_now(), DateTime.utc_now(), %{
-                 left: [%{account: asset_account, amount: Decimal.new(100), line_item_description: ""}],
-                 right: [%{account: revenue_account, amount: Decimal.new(100), line_item_description: ""}]
+                 left: [%{account: asset_account, amount: Decimal.new(100), description: ""}],
+                 right: [%{account: revenue_account, amount: Decimal.new(100), description: ""}]
                }, "JE001001", "INV001001", "description", %{}, %{})
       {:ok, %JournalEntry{...}}
 

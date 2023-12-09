@@ -15,9 +15,8 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Supervisor do
     Supervisor.start_link(__MODULE__, :ok, options)
   end
 
-  @impl true
-
   @spec init(any()) :: {:ok, {sup_flags_t(), children_specs_t}}
+  @impl true
   def init(_init_arg) do
     children = [
       {Worker, [name: Worker]},

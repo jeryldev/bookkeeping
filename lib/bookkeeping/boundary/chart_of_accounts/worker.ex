@@ -1,4 +1,10 @@
 defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
+  @moduledoc """
+  This module is responsible for managing the chart of accounts.
+  The Chart of Accounts is a list of all the accounts used by an organization.
+  This module wraps the private Chart of Accounts ETS table and provides the interface to other modules.
+  The ETS table is a key-value store where the key is the account code, and the values are the account name and the account struct.
+  """
   use GenServer
 
   alias Bookkeeping.Core.Account
@@ -64,11 +70,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
   @impl true
   def handle_info({:"ETS-TRANSFER", table, _pid, _data}, _table) do
     {:noreply, table}
-  end
-
-  @impl true
-  def handle_info(_msg, state) do
-    {:noreply, state}
   end
 
   @impl true

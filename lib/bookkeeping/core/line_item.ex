@@ -9,7 +9,7 @@ defmodule Bookkeeping.Core.LineItem do
           account: Account.t(),
           amount: Decimal.t(),
           entry_type: Types.entry(),
-          line_item_description: String.t()
+          description: String.t()
         }
 
   @type t_accounts :: %{
@@ -20,13 +20,13 @@ defmodule Bookkeeping.Core.LineItem do
   @type account_amount_pair :: %{
           account: Account.t(),
           amount: Decimal.t(),
-          line_item_description: String.t()
+          description: String.t()
         }
 
   defstruct account: %Account{},
             amount: 0,
             entry_type: nil,
-            line_item_description: ""
+            description: ""
 
   @doc """
   Creates a list of line item structs.
@@ -40,7 +40,7 @@ defmodule Bookkeeping.Core.LineItem do
 
   ## Examples
 
-      iex> LineItem.bulk_create(%{left: [%{account: expense_account, amount: Decimal.new(100), line_item_description: ""}], right: [%{account: asset_account, amount: Decimal.new(100), line_item_description: ""}]})
+      iex> LineItem.bulk_create(%{left: [%{account: expense_account, amount: Decimal.new(100), description: ""}], right: [%{account: asset_account, amount: Decimal.new(100), description: ""}]})
       {:ok, [%LineItem{...}, %LineItem{...}]}
 
       iex> LineItem.bulk_create(%{left: [%{account: expense_account, amount: Decimal.new(100)}], right: []})
@@ -89,7 +89,7 @@ defmodule Bookkeeping.Core.LineItem do
     Arguments:
       - account_amount_pair: The map with account and amount field.
       - atom_entry_type: The atom that represents the entry type of the line item. The atom must be either `:debit` or `:credit`.
-      - line_item_description (optional): The description of the line item.
+      - description (optional): The description of the line item.
 
     Returns `{:ok, %LineItem{}}` if the line item is valid. Otherwise, returns `{:error, :invalid_line_items}`, `{:error, :unbalanced_line_items}`, or `{:error, list(:invalid_amount | :invalid_account | :inactive_account)}`.
 
@@ -107,14 +107,14 @@ defmodule Bookkeeping.Core.LineItem do
     with {:ok, %{account: account, amount: amount}} <-
            validate_account_and_amount(account_amount_pair),
          {:ok, entry_type} <- validate_entry_type(atom_entry_type) do
-      line_item_description = Map.get(account_amount_pair, :line_item_description, "")
+      description = Map.get(account_amount_pair, :description, "")
 
       {:ok,
        %__MODULE__{
          account: account,
          amount: amount,
          entry_type: entry_type,
-         line_item_description: line_item_description
+         description: description
        }}
     else
       {:error, message} -> {:error, message}

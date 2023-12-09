@@ -1,5 +1,4 @@
 defmodule Bookkeeping.Boundary.ChartOfAccountsBenchmark do
-  alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
   alias Bookkeeping.Boundary.ChartOfAccounts.Supervisor, as: ChartOfAccountsSupervisor
   alias Bookkeeping.Boundary.ChartOfAccounts.Worker
 

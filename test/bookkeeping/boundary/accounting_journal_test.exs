@@ -2,7 +2,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   use ExUnit.Case, async: true
   alias Bookkeeping.Boundary.AccountingJournal.Backup, as: AccountingJournalBackup
   alias Bookkeeping.Boundary.AccountingJournal.Server, as: AccountingJournalServer
-  alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
+  alias Bookkeeping.Boundary.ChartOfAccounts.Worker, as: ChartOfAccountsServer
   alias Bookkeeping.Core.Account
 
   setup do
@@ -41,14 +41,14 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
         %{
           account: cash_account,
           amount: Decimal.new(100),
-          line_item_description: "cash from service revenue"
+          description: "cash from service revenue"
         }
       ],
       right: [
         %{
           account: revenue_account,
           amount: Decimal.new(100),
-          line_item_description: "service revenue"
+          description: "service revenue"
         }
       ]
     }
@@ -414,15 +414,15 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     assert Enum.member?(journal_entry_descriptions, "JE_1007_INV")
 
-    line_item_descriptions =
+    descriptions =
       created_journals
       |> Enum.map(fn journal_entry -> journal_entry.line_items end)
       |> List.flatten()
-      |> Enum.map(fn line_item -> line_item.line_item_description end)
+      |> Enum.map(fn line_item -> line_item.description end)
 
-    assert Enum.member?(line_item_descriptions, "Bought a new property")
-    assert Enum.member?(line_item_descriptions, "Bought additional inventory from AAA Company")
-    assert Enum.member?(line_item_descriptions, "Remaining Payable amount")
+    assert Enum.member?(descriptions, "Bought a new property")
+    assert Enum.member?(descriptions, "Bought additional inventory from AAA Company")
+    assert Enum.member?(descriptions, "Remaining Payable amount")
 
     assert created_journals |> length() == 2
 

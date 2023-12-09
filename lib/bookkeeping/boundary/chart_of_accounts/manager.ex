@@ -3,6 +3,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Manager do
 
   alias Bookkeeping.Boundary.ChartOfAccounts.Worker
 
+  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, any()}
   def start_link(_) do
     case GenServer.start_link(__MODULE__, :ok, name: __MODULE__) do
       {:ok, pid} -> {:ok, pid}
@@ -11,15 +12,19 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Manager do
     end
   end
 
+  @spec init(any()) :: {:ok, atom() | :ets.tid()}
+  @impl true
   def init(_) do
     Process.flag(:trap_exit, true)
     setup_table()
   end
 
+  @impl true
   def handle_info({:EXIT, _from, _reason}, table) do
     {:noreply, table}
   end
 
+  @impl true
   def handle_info({:"ETS-TRANSFER", table, _pid, data}, _table) do
     worker = wait_for_worker()
     Process.link(worker)
@@ -27,7 +32,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Manager do
     {:noreply, table}
   end
 
-  def wait_for_worker() do
+  defp wait_for_worker() do
     case Process.whereis(Worker) do
       nil ->
         Process.sleep(1)
@@ -38,7 +43,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Manager do
     end
   end
 
-  def setup_table() do
+  defp setup_table() do
     case Process.whereis(Worker) do
       nil ->
         Process.sleep(1)

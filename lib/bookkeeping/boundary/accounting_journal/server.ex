@@ -706,7 +706,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       journal_entry_description = Map.get(csv_item, "Journal Entry Description", "")
       journal_entry_details = Map.get(csv_item, "Journal Entry Details", "{}")
       audit_details = Map.get(csv_item, "Audit Details", "{}")
-      line_item_description = Map.get(csv_item, "Line Item Description", "")
+      description = Map.get(csv_item, "Line Item Description", "")
 
       posted_field = csv_posted |> String.trim() |> String.downcase()
       posted = if posted_field == "yes", do: true, else: false
@@ -726,7 +726,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
                journal_entry_details,
                audit_details,
                csv_posted,
-               line_item_description
+               description
              ),
            {:ok, transaction_date} <- parse_date(csv_item, "Transaction Date"),
            {:ok, general_ledger_posting_date} <-
@@ -739,7 +739,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
           journal_entry_number: journal_entry_number,
           transaction_reference_number: transaction_reference_number,
           journal_entry_description: updated_journal_entry_description,
-          line_item_description: line_item_description,
+          description: description,
           transaction_date: transaction_date,
           general_ledger_posting_date: general_ledger_posting_date,
           journal_entry_details: journal_entry_details,
@@ -776,12 +776,12 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
          journal_entry_details,
          audit_details,
          csv_posted,
-         line_item_description
+         description
        ) do
     is_binary(journal_entry_number) and journal_entry_number != "" and
       is_binary(transaction_reference_number) and is_binary(journal_entry_description) and
       is_binary(journal_entry_details) and is_binary(audit_details) and is_binary(csv_posted) and
-      is_binary(line_item_description)
+      is_binary(description)
   end
 
   defp generate_updated_journal_description(
@@ -813,14 +813,14 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
          journal_entry_number
        ) do
     account = Map.get(csv_item, "Account Name", "")
-    line_item_description = Map.get(csv_item, "Line Item Description", "")
+    description = Map.get(csv_item, "Line Item Description", "")
     debit = Map.get(csv_item, "Debit", "")
     credit = Map.get(csv_item, "Credit", "")
 
     case Enum.find(ok_params, fn param -> param.journal_entry_number == journal_entry_number end) do
       nil ->
         updated_t_accounts =
-          set_t_accounts(debit, credit, account, line_item_description, initial_params)
+          set_t_accounts(debit, credit, account, description, initial_params)
 
         params = Map.put(initial_params, :t_accounts, updated_t_accounts)
 
@@ -828,7 +828,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
       found_param ->
         updated_t_accounts =
-          set_t_accounts(debit, credit, account, line_item_description, found_param)
+          set_t_accounts(debit, credit, account, description, found_param)
 
         Enum.map(ok_params, fn
           %{journal_entry_number: je_number} when je_number == journal_entry_number ->
@@ -840,13 +840,13 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
     end
   end
 
-  defp set_t_accounts(debit, "" = _credit, account, line_item_description, params) do
+  defp set_t_accounts(debit, "" = _credit, account, description, params) do
     debit_amount = if debit == "", do: "0", else: Decimal.new(debit)
 
     t_accounts_debit_item = %{
       account: account,
       amount: Decimal.new(debit_amount),
-      line_item_description: line_item_description
+      description: description
     }
 
     %{
@@ -855,13 +855,13 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
     }
   end
 
-  defp set_t_accounts("" = _debit, credit, account, line_item_description, params) do
+  defp set_t_accounts("" = _debit, credit, account, description, params) do
     credit_amount = if credit == "", do: "0", else: Decimal.new(credit)
 
     t_accounts_credit_item = %{
       account: account,
       amount: Decimal.new(credit_amount),
-      line_item_description: line_item_description
+      description: description
     }
 
     %{

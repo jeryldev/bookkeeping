@@ -26,14 +26,14 @@ defmodule Bookkeeping.Core.JournalEntryTest do
         %{
           account: asset_account,
           amount: Decimal.new(100),
-          line_item_description: "cash from service revenue"
+          description: "cash from service revenue"
         }
       ],
       right: [
         %{
           account: revenue_account,
           amount: Decimal.new(100),
-          line_item_description: "service revenue"
+          description: "service revenue"
         }
       ]
     }
