@@ -1,4 +1,4 @@
-defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
+defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
   use GenServer
 
   alias Bookkeeping.Core.Account
@@ -50,31 +50,50 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts2.Worker do
     GenServer.call(__MODULE__, {:search_name, name})
   end
 
+  @spec die() :: :ok
+  def die do
+    GenServer.cast(__MODULE__, :die)
+  end
+
   @spec init(any()) :: {:ok, nil}
+  @impl true
   def init(_) do
     {:ok, nil}
   end
 
+  @impl true
   def handle_info({:"ETS-TRANSFER", table, _pid, _data}, _table) do
     {:noreply, table}
   end
 
+  @impl true
+  def handle_info(_msg, state) do
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_call({:create, params}, _from, table) do
-    result = create(table, params)
-    {:reply, result, table}
+    {:reply, create(table, params), table}
   end
 
+  @impl true
   def handle_call({:update, account, params}, _from, table) do
-    result = update(table, account, params)
-    {:reply, result, table}
+    {:reply, update(table, account, params), table}
   end
 
+  @impl true
   def handle_call({:search_code, prefix}, _from, table) do
     {:reply, prefix_search_code(table, prefix), table}
   end
 
+  @impl true
   def handle_call({:search_name, prefix}, _from, table) do
     {:reply, prefix_search_name(table, prefix), table}
+  end
+
+  @impl true
+  def handle_cast(:die, table) do
+    {:stop, table, :killed}
   end
 
   defp create(table, params) do

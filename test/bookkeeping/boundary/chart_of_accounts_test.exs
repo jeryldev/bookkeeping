@@ -1,7 +1,6 @@
 defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
   use ExUnit.Case
-  alias Bookkeeping.Boundary.ChartOfAccounts2.Worker, as: ChartOfAccounts
-  alias Bookkeeping.Boundary.ChartOfAccounts2.Supervisor, as: ChartOfAccountsSupervisor
+  alias Bookkeeping.Boundary.ChartOfAccounts.Worker, as: ChartOfAccounts
 
   setup do
     params = %{
@@ -22,9 +21,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
       active: true
     }
 
-    {:ok, server_pid} = ChartOfAccountsSupervisor.start_link([])
-
-    {:ok, params: params, invalid_params: invalid_params, server_pid: server_pid}
+    {:ok, params: params, invalid_params: invalid_params}
   end
 
   describe "Worker start_link/1 " do
@@ -34,15 +31,16 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     end
 
     test "with invalid params" do
-      {:ok, server} = ChartOfAccounts.start_link(test: nil)
+      {:ok, _server} = ChartOfAccounts.start_link(test: nil)
     end
   end
 
   describe "create/1" do
     test "with valid params", %{params: params} do
+      params = update_params(params)
       assert {:ok, account} = ChartOfAccounts.create(params)
-      assert account.code == "1000"
-      assert account.name == "Cash"
+      assert account.code == params.code
+      assert account.name == params.name
       assert account.classification.name == "Asset"
       assert account.description == "description"
       assert is_struct(account.classification, Bookkeeping.Core.Account.Classification)
@@ -63,42 +61,38 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
       assert {:error, :invalid_params} = ChartOfAccounts.create(%{active: true})
     end
 
-    test "with invalid field", %{params: params, invalid_params: invalid_params} do
-      assert {:error, :invalid_field} = ChartOfAccounts.create(invalid_params)
+    test "with invalid field", %{invalid_params: invalid_params} do
+      params = update_params(invalid_params)
+      assert {:error, :invalid_field} = ChartOfAccounts.create(params)
     end
 
     test "that already exists", %{params: params} do
-      assert {:ok, account} = ChartOfAccounts.create(params)
+      params = update_params(params)
+      assert {:ok, _account} = ChartOfAccounts.create(params)
       assert {:error, :already_exists} = ChartOfAccounts.create(params)
     end
   end
 
   describe "import/1" do
-    test "with a valid file" do
+    test "with a valid file twice" do
       assert %{accounts: accounts, errors: _errors} =
                ChartOfAccounts.import_file(
                  "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
                )
 
-      assert Enum.count(accounts) == 9
-    end
+      assert length(accounts) == 9
 
-    test "with a valid file twice" do
-      assert %{accounts: accounts, errors: errors} =
-               ChartOfAccounts.import_file(
-                 "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
-               )
+      Process.sleep(300)
 
       assert %{accounts: [], errors: errors} =
                ChartOfAccounts.import_file(
                  "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
                )
 
-      assert Enum.count(accounts) == 9
       assert Enum.count(errors) == 9
       assert Enum.all?(errors, fn error -> error.reason == :already_exists end)
 
-      assert %{accounts: [], errors: errors} =
+      assert %{accounts: [], errors: _errors} =
                ChartOfAccounts.import_file(
                  "../../../../test/bookkeeping/data/empty_chart_of_accounts_2.csv"
                )
@@ -136,6 +130,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   describe "update/2" do
     test "with valid params", %{params: params} do
+      params = update_params(params)
       {:ok, account} = ChartOfAccounts.create(params)
 
       assert {:ok, updated_account} =
@@ -146,7 +141,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
                  active: false
                })
 
-      assert updated_account.code == "1000"
+      assert updated_account.code == account.code
       assert updated_account.name == "Cash updated"
       assert updated_account.classification.name == "Asset"
       assert updated_account.description == "description updated"
@@ -162,6 +157,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     end
 
     test "with invalid field", %{params: params} do
+      params = update_params(params)
       {:ok, account} = ChartOfAccounts.create(params)
 
       assert {:error, :invalid_field} = ChartOfAccounts.update(account, %{code: "1001"})
@@ -173,6 +169,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     end
 
     test "with invalid params", %{params: params} do
+      params = update_params(params)
       {:ok, account} = ChartOfAccounts.create(params)
 
       assert {:error, :invalid_params} = ChartOfAccounts.update(account, nil)
@@ -183,17 +180,21 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   describe "search_code/1" do
     test "with complete code", %{params: params} do
+      params = update_params(params)
       {:ok, account} = ChartOfAccounts.create(params)
       assert {:ok, accounts} = ChartOfAccounts.search_code(account.code)
       assert Enum.member?(accounts, account)
-
-      assert {:ok, accounts} = ChartOfAccounts.search_code("10")
-      assert accounts == [account]
+      code_prefix = String.slice(account.code, 0, 2)
+      assert {:ok, accounts} = ChartOfAccounts.search_code(code_prefix)
+      assert account in accounts
     end
 
     test "with code prefix", %{params: params} do
+      params = update_params(params)
       {:ok, account} = ChartOfAccounts.create(params)
-      assert {:ok, accounts} = ChartOfAccounts.search_code("10")
+
+      code_prefix = String.slice(account.code, 0, 2)
+      assert {:ok, accounts} = ChartOfAccounts.search_code(code_prefix)
       assert Enum.member?(accounts, account)
     end
 
@@ -206,18 +207,21 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
   describe "search_name/1" do
     test "with complete name", %{params: params} do
+      params = update_params(params)
       {:ok, account} = ChartOfAccounts.create(params)
       assert {:ok, accounts} = ChartOfAccounts.search_name(account.name)
       assert Enum.member?(accounts, account)
-
-      assert {:ok, accounts} = ChartOfAccounts.search_name("Cash")
-      assert accounts == [account]
+      name_prefix = String.slice(account.name, 0, 2)
+      assert {:ok, accounts} = ChartOfAccounts.search_name(name_prefix)
+      assert account in accounts
     end
 
     test "with name prefix", %{params: params} do
+      params = update_params(params)
       {:ok, account} = ChartOfAccounts.create(params)
-      assert {:ok, accounts} = ChartOfAccounts.search_name("Ca")
-      assert Enum.member?(accounts, account)
+      name_prefix = String.slice(account.name, 0, 2)
+      assert {:ok, accounts} = ChartOfAccounts.search_name(name_prefix)
+      assert account in accounts
     end
 
     test "with invalid name" do
@@ -225,5 +229,32 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
       assert {:error, :invalid_name} = ChartOfAccounts.search_name(%{})
       assert {:error, :invalid_name} = ChartOfAccounts.search_name("")
     end
+  end
+
+  describe "Worker die/0" do
+    test "still restores the state of the table", %{params: params} do
+      params = update_params(params)
+      assert {:ok, account} = ChartOfAccounts.create(params)
+      assert is_struct(account)
+
+      ChartOfAccounts.die()
+
+      # We need to add another test and feature that will allow ChartOfAccounts to
+      # delay the process calls until the worker is ready again.
+      Process.sleep(300)
+
+      assert {:ok, accounts} = ChartOfAccounts.search_code(account.code)
+      assert account in accounts
+    end
+  end
+
+  defp update_params(params) do
+    code = random_string()
+    name = random_string()
+    Map.merge(params, %{code: code, name: name})
+  end
+
+  defp random_string do
+    for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
   end
 end
