@@ -205,6 +205,14 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     end
   end
 
+  describe "all_accounts/0" do
+    test "returns all accounts", %{params: params} do
+      {:ok, account} = ChartOfAccounts.create(params)
+      assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+      assert account in accounts
+    end
+  end
+
   describe "search_name/1" do
     test "with complete name", %{params: params} do
       params = update_params(params)
@@ -242,6 +250,20 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
       # We need to add another test and feature that will allow ChartOfAccounts to
       # delay the process calls until the worker is ready again.
       Process.sleep(300)
+
+      assert {:ok, accounts} = ChartOfAccounts.search_code(account.code)
+      assert account in accounts
+    end
+
+    test "returns error if the table is not yet available yet", %{params: params} do
+      ChartOfAccounts.die()
+      assert {:error, :invalid_table} = ChartOfAccounts.all_accounts()
+      assert {:error, :invalid_table} = ChartOfAccounts.create(params)
+
+      Process.sleep(300)
+      params = update_params(params)
+      assert {:ok, account} = ChartOfAccounts.create(params)
+      assert is_struct(account)
 
       assert {:ok, accounts} = ChartOfAccounts.search_code(account.code)
       assert account in accounts

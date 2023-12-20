@@ -19,9 +19,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
   end
 
   @spec create(Account.create_params()) ::
-          {:ok, Account.t()} | {:error, :already_exists | :invalid_field | :invalid_params}
+          {:ok, Account.t()}
+          | {:error, :invalid_table | :already_exists | :invalid_field | :invalid_params}
   def create(params) do
-    GenServer.call(__MODULE__, {:create, params})
+    maybe_handle_call({:create, params})
   end
 
   @spec import_file(String.t()) ::
@@ -30,7 +31,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
              accounts: list(Account.t()),
              errors:
                list(%{
-                 reason: :invalid_params | :invalid_field | :already_exists,
+                 reason: :invalid_table | :invalid_params | :invalid_field | :already_exists,
                  params: Account.create_params()
                })
            }}
@@ -40,20 +41,26 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
   end
 
   @spec update(Account.t(), Account.update_params()) ::
-          {:ok, Account.t()} | {:error, :invalid_account | :invalid_field | :invalid_params}
+          {:ok, Account.t()}
+          | {:error, :invalid_table | :invalid_account | :invalid_field | :invalid_params}
   def update(account, params) do
-    GenServer.call(__MODULE__, {:update, account, params})
+    maybe_handle_call({:update, account, params})
+  end
+
+  @spec all_accounts() :: {:ok, list(Account.t())} | {:error, :invalid_table}
+  def all_accounts do
+    maybe_handle_call(:all_accounts)
   end
 
   @spec search_code(Account.account_code()) ::
-          {:ok, Account.t()} | {:error, :not_found | :invalid_code}
+          {:ok, Account.t()} | {:error, :invalid_table | :not_found | :invalid_code}
   def search_code(code) do
-    GenServer.call(__MODULE__, {:search_code, code})
+    maybe_handle_call({:search_code, code})
   end
 
-  @spec search_name(String.t()) :: {:ok, Account.t()} | {:error, :not_found}
+  @spec search_name(String.t()) :: {:ok, Account.t()} | {:error, :invalid_table | :not_found}
   def search_name(name) do
-    GenServer.call(__MODULE__, {:search_name, name})
+    maybe_handle_call({:search_name, name})
   end
 
   @spec die() :: :ok
@@ -74,27 +81,52 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
 
   @impl true
   def handle_call({:create, params}, _from, table) do
-    {:reply, create(table, params), table}
+    account = maybe_handle_function(&create/2, table, [params])
+    {:reply, account, table}
   end
 
   @impl true
   def handle_call({:update, account, params}, _from, table) do
-    {:reply, update(table, account, params), table}
+    account = maybe_handle_function(&update/3, table, [account, params])
+    {:reply, account, table}
+  end
+
+  @impl true
+  def handle_call(:all_accounts, _from, table) do
+    accounts = maybe_handle_function(&all_accounts/1, table)
+    {:reply, accounts, table}
   end
 
   @impl true
   def handle_call({:search_code, prefix}, _from, table) do
-    {:reply, prefix_search_code(table, prefix), table}
+    accounts = maybe_handle_function(&prefix_search_code/2, table, [prefix])
+    {:reply, accounts, table}
   end
 
   @impl true
   def handle_call({:search_name, prefix}, _from, table) do
-    {:reply, prefix_search_name(table, prefix), table}
+    accounts = maybe_handle_function(&prefix_search_name/2, table, [prefix])
+    {:reply, accounts, table}
   end
 
   @impl true
   def handle_cast(:die, table) do
+    table = maybe_handle_function(fn x -> x end, table)
     {:stop, table, :killed}
+  end
+
+  defp maybe_handle_function(fun, table, params \\ []) do
+    with {:ok, table} <- check_table(table) do
+      case params do
+        [] -> fun.(table)
+        [params] -> fun.(table, params)
+        [params1, params2] -> fun.(table, params1, params2)
+      end
+    end
+  end
+
+  defp check_table(table) do
+    if Enum.member?(:ets.all(), table), do: {:ok, table}, else: {:error, :invalid_table}
   end
 
   defp create(table, params) do
@@ -112,21 +144,25 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
     end
   end
 
+  defp all_accounts(table) do
+    {:ok, :ets.select(table, [{{:_, :_, :"$1"}, [], [:"$1"]}])}
+  end
+
   defp check_similar_account(table, account) do
-    with {:ok, _account} <- search_code(table, account.code),
-         {:ok, _account} <- search_name(table, account.name) do
+    with {:ok, _account} <- match_code(table, account.code),
+         {:ok, _account} <- match_name(table, account.name) do
       {:error, :already_exists}
     end
   end
 
-  defp search_code(table, code) do
+  defp match_code(table, code) do
     case :ets.lookup(table, code) do
       [{_, _, account}] -> {:ok, account}
-      [] -> {:error, :not_found}
+      _ -> {:error, :not_found}
     end
   end
 
-  defp search_name(table, name) do
+  defp match_name(table, name) do
     result = :ets.select(table, [{{:_, name, :"$1"}, [], [:"$1"]}]) |> List.first()
     if is_nil(result), do: {:error, :not_found}, else: {:ok, result}
   end
@@ -233,4 +269,12 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
   end
 
   defp bulk_create(error), do: error
+
+  defp maybe_handle_call(handle_call) do
+    try do
+      GenServer.call(__MODULE__, handle_call)
+    catch
+      _message, _reason -> {:error, :invalid_table}
+    end
+  end
 end
