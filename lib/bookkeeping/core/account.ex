@@ -75,6 +75,23 @@ defmodule Bookkeeping.Core.Account do
               category: nil,
               contra: false
 
+    @doc """
+    Returns the classification struct.
+
+    Arguments:
+    - classification: The name of the classification.The account classification must be one of the following: `asset`, `liability`, `equity`, `revenue`, `expense`, `gain`, `loss`, `contra_asset`, `contra_liability`, `contra_equity`, `contra_revenue`, `contra_expense`, `contra_gain`, `contra_loss`.
+
+    Returns `%Classification{}` if the classification is valid. Otherwise, returns `nil`.
+
+    ## Examples
+
+        iex> Classification.classify("asset")
+        %Classification{...}
+
+        iex> Classification.classify("invalid")
+        nil
+    """
+    @spec classify(String.t()) :: __MODULE__.t()
     def classify("asset") do
       %Classification{
         name: "Asset",
@@ -200,6 +217,8 @@ defmodule Bookkeeping.Core.Account do
         contra: true
       }
     end
+
+    def classify(_), do: nil
   end
 
   @doc """
