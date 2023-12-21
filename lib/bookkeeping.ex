@@ -49,7 +49,7 @@ defmodule Bookkeeping do
   @doc """
   Imports accounts from a CSV file.
 
-  The header of the CSV file must be `Account Code`, `Account Name`, `Classification`, `Account Description`, and `Audit Details`.
+  The header of the CSV file must be `Code`, `Name`, `Classification`, `Description`, and `Audit Details`.
 
   Arguments:
     - path: The path of the CSV file.
@@ -250,7 +250,7 @@ defmodule Bookkeeping do
 
   # @doc """
   # Imports journal entries from a CSV file.
-  # The header of the CSV file must be `Journal Entry Number`, `Transaction Date`, `Account Name`, `Debit`, `Credit`, `Line Item Description`, `Posted`, `Journal Entry Description`, `Journal Entry Details`, `Audit Details`, `General Ledger Posting Date`, and `Transaction Reference Number`
+  # The header of the CSV file must be `Journal Entry Number`, `Transaction Date`, `Name`, `Debit`, `Credit`, `Line Item Description`, `Posted`, `Journal Entry Description`, `Journal Entry Details`, `Audit Details`, `General Ledger Posting Date`, and `Transaction Reference Number`
 
   # Arguments:
   #   - path: The path of the CSV file.

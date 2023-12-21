@@ -164,7 +164,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
 
   @doc """
   Imports journal entries from a CSV file.
-  The header of the CSV file must be `Journal Entry Number`, `Transaction Date`, `Account Name`, `Debit`, `Credit`, `Line Item Description`, `Posted`, `Journal Entry Description`, `Journal Entry Details`, `Audit Details`, `General Ledger Posting Date`, and `Transaction Reference Number`
+  The header of the CSV file must be `Journal Entry Number`, `Transaction Date`, `Name`, `Debit`, `Credit`, `Line Item Description`, `Posted`, `Journal Entry Description`, `Journal Entry Details`, `Audit Details`, `General Ledger Posting Date`, and `Transaction Reference Number`
 
   Arguments:
     - path: The path of the CSV file.
@@ -812,7 +812,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
          initial_params,
          journal_entry_number
        ) do
-    account = Map.get(csv_item, "Account Name", "")
+    account = Map.get(csv_item, "Name", "")
     description = Map.get(csv_item, "Line Item Description", "")
     debit = Map.get(csv_item, "Debit", "")
     credit = Map.get(csv_item, "Credit", "")

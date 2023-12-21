@@ -220,10 +220,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
 
   defp bulk_generate_params({:ok, csv}) do
     Enum.reduce(csv, [], fn csv_item, acc ->
-      code = Map.get(csv_item, "Account Code")
-      name = Map.get(csv_item, "Account Name")
+      code = Map.get(csv_item, "Code")
+      name = Map.get(csv_item, "Name")
       classification = Map.get(csv_item, "Classification")
-      description = Map.get(csv_item, "Account Description", "")
+      description = Map.get(csv_item, "Description", "")
 
       audit_details =
         case csv_item |> Map.get("Audit Details", "{}") |> Jason.decode() do

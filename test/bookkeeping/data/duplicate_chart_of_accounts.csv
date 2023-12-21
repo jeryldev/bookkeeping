@@ -1,4 +1,4 @@
-Account Code,Account Name,Classification,Account Description,Audit Details
+Code,Name,Classification,Description,Audit Details
 100000101,Accounts Receivable Bulk Duplicate Test,asset,Accounts Receivable,{}
 100000001,Cash Bulk Duplicate Test,asset,Cash,"{""approved_by"": ""example@example.com""}"
 100000001,Cash Bulk Duplicate Test,asset,Cash,"{""approved_by"": ""example@example.com""}"

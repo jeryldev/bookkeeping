@@ -1,4 +1,4 @@
-Account Code,Account Name,Classification,Account Description,Audit Details
+Code,Name,Classification,Description,Audit Details
 1001_bookkeeping_test,Accounts Receivable Bookkeeping Test,asset,Accounts Receivable,{}
 1002_bookkeeping_test,Cash Bookkeeping Test,asset,Cash,"{""approved_by"": ""example@example.com""}"
 101_bookkeeping_test,Cash Bookkeeping Test,asset,Cash,"{""approved_by"": ""example@example.com""}"
