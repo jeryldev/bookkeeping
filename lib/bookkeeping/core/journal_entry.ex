@@ -135,7 +135,12 @@ defmodule Bookkeeping.Core.JournalEntry do
   def update(journal_entry, attrs)
       when is_map(attrs) and map_size(attrs) > 0 and journal_entry.posted == false do
     with {:ok, params} <- validate_update_params(journal_entry, attrs),
-         {:ok, audit_log} <- AuditLog.create("journal_entry", "update", params.audit_details),
+         {:ok, audit_log} <-
+           AuditLog.create(%{
+             record_type: "journal_entry",
+             action_type: "update",
+             audit_details: params.audit_details
+           }),
          {:ok, initial_je_update} <-
            update_dates_and_line_items(
              journal_entry,
@@ -175,7 +180,12 @@ defmodule Bookkeeping.Core.JournalEntry do
          audit_details
        ) do
     with {:ok, line_items} <- LineItem.bulk_create(t_accounts),
-         {:ok, audit_log} <- AuditLog.create("journal_entry", "create", audit_details) do
+         {:ok, audit_log} <-
+           AuditLog.create(%{
+             record_type: "journal_entry",
+             action_type: "create",
+             audit_details: audit_details
+           }) do
       {:ok,
        %__MODULE__{
          id: UUID.uuid4(),

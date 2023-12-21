@@ -225,7 +225,13 @@ defmodule Bookkeeping.Core.Account do
   Creates a new account struct.
 
   Arguments:
-    - params: The parameters of the account. The parameters must include the following fields: `code`, `name`, `description`, `classification`, `audit_details`, and `active`.
+    - params: The parameters of the account. It must contain the following keys:
+      - code: The code of the account.
+      - name: The name of the account.
+      - description: The description of the account.
+      - classification: The classification of the account.
+      - audit_details: The details of the audit log.
+      - active: The status of the account.
 
   Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_params}` or `{:error, :invalid_field}`.
 
@@ -250,7 +256,11 @@ defmodule Bookkeeping.Core.Account do
 
   Arguments:
     - account: The account to be updated.
-    - attrs: The attributes to be updated. The editable attributes are `name`, `description`, `active`, and `audit_details`.
+    - attrs: The attributes to be updated. The editable attributes are:
+      - name: The name of the account.
+      - description: The description of the account.
+      - active: The status of the account.
+      - audit_details: The details of the audit log.
 
   Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_account}`, `{:error, :invalid_field}`, or `{:error, :invalid_params}`.
 
@@ -330,7 +340,13 @@ defmodule Bookkeeping.Core.Account do
          audit_details: audit_details,
          active: active
        }) do
-    {:ok, audit_log} = AuditLog.create("account", "create", audit_details)
+    {:ok, audit_log} =
+      AuditLog.create(%{
+        record_type: "account",
+        action_type: "create",
+        audit_details: audit_details
+      })
+
     classification = Classification.classify(classification)
 
     {:ok,
@@ -375,7 +391,13 @@ defmodule Bookkeeping.Core.Account do
 
   defp verify_update_field(key, value, acc, account)
        when key == :audit_details and is_map(value) do
-    {:ok, audit_log} = AuditLog.create("account", "update", value)
+    {:ok, audit_log} =
+      AuditLog.create(%{
+        record_type: "account",
+        action_type: "update",
+        audit_details: value
+      })
+
     Map.put(acc, :audit_logs, [audit_log | account.audit_logs])
   end
 

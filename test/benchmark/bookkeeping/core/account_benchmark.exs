@@ -16,7 +16,13 @@ defmodule Bookkeeping.Core.AccountBenchmark do
     #   Account.create("1001", "Cash 1", "asset", "Cash and Cash Equivalents 1", %{})
     # end,
     "create/1 struct only" => fn ->
-      audit_log = AuditLog.create("account", "create", %{})
+      audit_log =
+        AuditLog.create(%{
+          record_type: "account",
+          action_type: "create",
+          audit_details: %{}
+        })
+
       classification = Account.Classification.classify("asset")
 
       struct(%Account{}, %{

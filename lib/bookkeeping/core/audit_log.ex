@@ -5,6 +5,11 @@ defmodule Bookkeeping.Core.AuditLog do
   in the general ledger that is used to sort and store transactions.
   It is also used to track changes to records like accounts.
   """
+  alias Bookkeeping.Core.AuditLog
+
+  @typedoc """
+  t type is a struct that represents an audit log.
+  """
   @type t :: %__MODULE__{
           id: UUID.t(),
           record_type: String.t(),
@@ -13,6 +18,15 @@ defmodule Bookkeeping.Core.AuditLog do
           created_at: nil | integer(),
           updated_at: nil | integer(),
           deleted_at: nil | integer()
+        }
+
+  @typedoc """
+  create_params type is a map that represents the params of the create function.
+  """
+  @type create_params :: %{
+          record_type: String.t(),
+          action_type: String.t(),
+          audit_details: map()
         }
 
   defstruct id: UUID.uuid4(),
@@ -26,35 +40,54 @@ defmodule Bookkeeping.Core.AuditLog do
   @action_types ["create", "update", "delete"]
 
   @doc """
-  Creates a new audit log struct.
+    Creates a new audit log struct.
 
-  Arguments:
-    - record_type: The type of the record.
-    - action_type: The type of the action.
-    - audit_details: The details of the audit log.
+    Arguments:
+      - params: The params of the audit log. It must contain the following keys:
+        - record_type: The type of the record.
+        - action_type: The type of the action.
+        - audit_details: The details of the audit log.
 
-  Returns `{:ok, %AuditLog{}}` if the audit log is valid. Otherwise, returns `{:error, :invalid_audit_log}`.
+    Returns `{:ok, %AuditLog{}}` if the audit log is valid. Otherwise, returns `{:error, :invalid_field}` or `{:error, :invalid_params}`.
 
-  ## Examples
+    ## Examples
 
-      iex> AuditLog.create("account", "create", %{email: "example@example.com"})
-      {:ok, %AuditLog{...}}
+        iex> AuditLog.create(%{record_type: "account", action_type: "create", audit_details: %{email: "test@test.com"}})
+        {:ok, %AuditLog{...}}
 
+        iex> AuditLog.create(%{record_type: nil, action_type: "update", audit_details: %{}})
+        {:error, :invalid_field}
 
-      iex> Audit.create("account", "update", %{email: "example@example.com"})
-      {:ok, %AuditLog{...}}
-
-      iex> AuditLog.create("account", "delete", %{email: "example@example.com"})
-      {:ok, %AuditLog{...}}
-
-      iex> AuditLog.create("account", "invalid", %{})
-      {:error, :invalid_audit_log}
+        iex> AuditLog.create(nil)
+        {:error, :invalid_params}
   """
-  @spec create(String.t(), String.t(), map()) ::
-          {:ok, __MODULE__.t()} | {:error, :invalid_audit_log}
-  def create(record_type, action_type, audit_details)
-      when is_binary(record_type) and record_type != "" and is_binary(action_type) and
-             action_type in @action_types and is_map(audit_details) do
+  @spec create(create_params()) ::
+          {:ok, AuditLog.t()} | {:error, :invalid_field | :invalid_params}
+  def create(params) do
+    params |> validate_create_params() |> maybe_create()
+  end
+
+  defp validate_create_params(
+         %{
+           record_type: record_type,
+           action_type: action_type,
+           audit_details: audit_details
+         } =
+           params
+       ) do
+    if is_binary(record_type) and record_type != "" and is_binary(action_type) and
+         action_type in @action_types and is_map(audit_details),
+       do: params,
+       else: {:error, :invalid_field}
+  end
+
+  defp validate_create_params(_), do: {:error, :invalid_params}
+
+  defp maybe_create(%{
+         record_type: record_type,
+         action_type: action_type,
+         audit_details: audit_details
+       }) do
     unix_datetime = DateTime.to_unix(DateTime.utc_now())
     created_at = if action_type == "create", do: unix_datetime, else: nil
     deleted_at = if action_type == "delete", do: unix_datetime, else: nil
@@ -70,5 +103,5 @@ defmodule Bookkeeping.Core.AuditLog do
      }}
   end
 
-  def create(_, _, _), do: {:error, :invalid_audit_log}
+  defp maybe_create({:error, reason}), do: {:error, reason}
 end
