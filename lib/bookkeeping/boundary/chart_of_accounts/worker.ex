@@ -50,11 +50,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
   @spec all_accounts() :: {:ok, list(Account.t())}
   def all_accounts, do: maybe_handle_call(:all_accounts)
 
-  @spec search_code(Account.account_code()) ::
-          {:ok, Account.t()} | {:error, :not_found | :invalid_code}
+  @spec search_code(Account.account_code()) :: {:ok, list(Account.t())} | {:error, :invalid_code}
   def search_code(code), do: maybe_handle_call({:search_code, code})
 
-  @spec search_name(String.t()) :: {:ok, Account.t()} | {:error, :not_found}
+  @spec search_name(String.t()) :: {:ok, list(Account.t())} | {:error, :invalid_name}
   def search_name(name), do: maybe_handle_call({:search_name, name})
 
   @spec die() :: :ok

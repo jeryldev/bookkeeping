@@ -1,393 +1,283 @@
 defmodule BookkeepingTest do
   use ExUnit.Case
   alias Bookkeeping
+  alias Bookkeeping.Boundary.ChartOfAccounts
   alias Bookkeeping.Core.{Account, JournalEntry}
 
-  test "create account" do
-    assert {:ok, _account} =
-             Bookkeeping.create_account(
-               "1000_bookkeeping_test",
-               "Cash_bookkeeping_test",
-               "asset",
-               "Cash in Bank",
-               %{}
-             )
-
-    assert {:error, :account_already_exists} =
-             Bookkeeping.create_account(
-               "1000_bookkeeping_test",
-               "Cash_bookkeeping_test",
-               "asset",
-               "Cash in Bank",
-               %{}
-             )
-  end
-
-  test "import accounts" do
-    assert {:ok, []} = Bookkeeping.reset_accounts()
-    assert {:ok, []} = Bookkeeping.all_accounts()
-
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
-             )
-
-    assert {:error, :invalid_file} =
-             Bookkeeping.import_accounts("test/bookkeeping/data/valid_bookkeeping_accounts.csv")
-  end
-
-  test "update account" do
-    assert {:ok, account} =
-             Bookkeeping.create_account(
-               "1000_bookkeeping_test_for_update",
-               "Cash_bookkeeping_test_for_update",
-               "asset",
-               "Cash in Bank",
-               %{}
-             )
-
-    assert {:ok, _account} =
-             Bookkeeping.update_account(
-               account,
-               %{name: "Cash_bookkeeping_test_updated"}
-             )
-
-    assert {:error, :invalid_account} =
-             Bookkeeping.update_account(
-               %Account{},
-               %{name: "Cash_bookkeeping_test_updated"}
-             )
-  end
-
-  test "all accounts" do
-    assert {:ok, _accounts} = Bookkeeping.all_accounts()
-  end
-
-  test "find account by code" do
-    assert {:ok, _account} =
-             Bookkeeping.create_account(
-               "1000_bookkeeping_test_for_find_by_code",
-               "Cash_bookkeeping_test_for_find_by_code",
-               "asset",
-               "Cash in Bank",
-               %{}
-             )
-
-    assert {:ok, _account} =
-             Bookkeeping.find_account_by_code("1000_bookkeeping_test_for_find_by_code")
-
-    assert {:error, :not_found} =
-             Bookkeeping.find_account_by_code("1000_bookkeeping_test_for_find_by_code_not_found")
-  end
-
-  test "find account by name" do
-    assert {:ok, _account} =
-             Bookkeeping.create_account(
-               "1000_bookkeeping_test_for_find_by_name",
-               "Cash_bookkeeping_test_for_find_by_name",
-               "asset",
-               "Cash in Bank",
-               %{}
-             )
-
-    assert {:ok, _account} =
-             Bookkeeping.find_account_by_name("Cash_bookkeeping_test_for_find_by_name")
-
-    assert {:error, :not_found} =
-             Bookkeeping.find_account_by_name("Cash_bookkeeping_test_for_find_by_name_not_found")
-  end
-
-  test "search accounts" do
-    assert {:ok, _accounts} = Bookkeeping.search_accounts("Cash_bookkeeping_test")
-  end
-
-  test "all sorted accounts" do
-    assert {:ok, _accounts} = Bookkeeping.all_sorted_accounts("code")
-    assert {:ok, _accounts} = Bookkeeping.all_sorted_accounts("name")
-    assert {:error, :invalid_field} = Bookkeeping.all_sorted_accounts("classification")
-    assert {:error, :invalid_field} = Bookkeeping.all_sorted_accounts(nil)
-  end
-
-  test "reset accounts" do
-    assert {:ok, _accounts} = Bookkeeping.reset_accounts()
-  end
-
-  test "get chart of accounts state" do
-    assert {:ok, state} = Bookkeeping.get_chart_of_accounts_state()
-    assert is_map(state)
-  end
-
-  test "create journal entry" do
-    transaction_date = DateTime.utc_now()
-    general_ledger_posting_date = DateTime.utc_now()
-    journal_entry_number = "JE100100_Bookkeeping_Test"
-    transaction_reference_number = "INV100100"
-    journal_entry_description = "journal entry description"
-    audit_details = %{email: "example@example.com"}
-
-    assert {:ok, cash_account} =
-             Bookkeeping.create_account(
-               "1000_000_bookkeeping_test",
-               "1000_000_Cash_bookkeeping_test",
-               "asset",
-               "Cash in Bank",
-               %{}
-             )
-
-    {:ok, revenue_account} =
-      Bookkeeping.create_account(
-        "20_000_000_bookkeeping_test",
-        "20_000_000_Sales_revenue_bookkeeping_test",
-        "revenue",
-        "sales revenue description",
-        %{}
-      )
-
-    t_accounts = %{
-      left: [%{account: cash_account, amount: Decimal.new(100)}],
-      right: [%{account: revenue_account, amount: Decimal.new(100)}]
+  setup do
+    params = %{
+      code: "1000",
+      name: "Cash",
+      classification: "asset",
+      description: "description",
+      audit_details: %{email: "example@example.com"},
+      active: true
     }
 
-    journal_entry_details = %{approved_by: "John Doe", approved_at: DateTime.utc_now()}
-
-    create_je_params = %{
-      transaction_date: transaction_date,
-      general_ledger_posting_date: general_ledger_posting_date,
-      t_accounts: t_accounts,
-      journal_entry_number: journal_entry_number,
-      transaction_reference_number: transaction_reference_number,
-      journal_entry_description: journal_entry_description,
-      journal_entry_details: journal_entry_details,
-      audit_details: audit_details
+    invalid_params = %{
+      code: "1000",
+      name: "Cash",
+      classification: "invalid",
+      description: "description",
+      audit_details: %{email: "example@example.com"},
+      active: true
     }
 
-    assert {:ok, _journal_entry_0} = Bookkeeping.create_journal_entry(create_je_params)
-
-    assert {:error, :duplicate_journal_entry_number} =
-             Bookkeeping.create_journal_entry(create_je_params)
+    {:ok, params: params, invalid_params: invalid_params}
   end
 
-  test "import journal entries" do
-    assert {:ok, _accounts} = Bookkeeping.reset_accounts()
-    assert {:ok, []} = Bookkeeping.all_accounts()
+  ##########################################################
+  # Chart of Accounts Tests                                #
+  ##########################################################
 
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
-             )
+  describe "Bookkeeping create_account/1 " do
+    test "with valid params", %{params: params} do
+      params = update_params(params)
+      assert {:ok, account} = Bookkeeping.create_account(params)
+      assert account.code == params.code
+      assert account.name == params.name
+      assert account.classification.name == "Asset"
+      assert account.description == "description"
+      assert is_struct(account.classification, Bookkeeping.Core.Account.Classification)
+      assert is_list(account.audit_logs)
+    end
 
-    assert {:ok, []} = Bookkeeping.reset_journal_entries()
-    assert {:ok, []} = Bookkeeping.all_journal_entries()
+    test "with invalid params" do
+      assert {:error, :invalid_params} = Bookkeeping.create_account("apple")
+      assert {:error, :invalid_params} = Bookkeeping.create_account(%{})
+      assert {:error, :invalid_params} = Bookkeeping.create_account(%{code: "1000"})
+      assert {:error, :invalid_params} = Bookkeeping.create_account(%{name: "Cash"})
+      assert {:error, :invalid_params} = Bookkeeping.create_account(%{classification: "asset"})
+      assert {:error, :invalid_params} = Bookkeeping.create_account(%{description: "description"})
 
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
-             )
+      assert {:error, :invalid_params} =
+               Bookkeeping.create_account(%{audit_details: %{email: "example@example.com"}})
 
-    assert {:error, :invalid_file} =
-             Bookkeeping.import_journal_entries(
-               "test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
-             )
+      assert {:error, :invalid_params} = Bookkeeping.create_account(%{active: true})
+    end
+
+    test "with invalid field", %{invalid_params: invalid_params} do
+      params = update_params(invalid_params)
+      assert {:error, :invalid_field} = Bookkeeping.create_account(params)
+    end
+
+    test "that already exists", %{params: params} do
+      params = update_params(params)
+      assert {:ok, _account} = Bookkeeping.create_account(params)
+      assert {:error, :already_exists} = Bookkeeping.create_account(params)
+    end
+
+    test "with invalid table" do
+      ChartOfAccounts.Worker.die()
+      assert {:error, :invalid_params} = Bookkeeping.create_account(%{code: "1000", name: "Cash"})
+    end
   end
 
-  test "all journal entries" do
-    assert {:ok, _journal_entries} = Bookkeeping.all_journal_entries()
+  describe "Bookkeeping import_accounts/1" do
+    test "with a valid file twice" do
+      assert %{accounts: accounts, errors: _errors} =
+               Bookkeeping.import_accounts(
+                 "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
+               )
+
+      assert length(accounts) == 9
+
+      Process.sleep(300)
+
+      assert %{accounts: [], errors: errors} =
+               Bookkeeping.import_accounts(
+                 "../../../../test/bookkeeping/data/valid_chart_of_accounts.csv"
+               )
+
+      assert Enum.count(errors) == 9
+      assert Enum.all?(errors, fn error -> error.reason == :already_exists end)
+
+      assert %{accounts: [], errors: _errors} =
+               Bookkeeping.import_accounts(
+                 "../../../../test/bookkeeping/data/empty_chart_of_accounts_2.csv"
+               )
+    end
+
+    test "with an invalid file" do
+      assert {:error, :invalid_file} =
+               Bookkeeping.import_accounts("../../../../test/bookkeeping/data/invalid_file.csv")
+
+      assert {:error, :invalid_file} =
+               Bookkeeping.import_accounts(
+                 "../../../../test/bookkeeping/data/empty_chart_of_accounts.csv"
+               )
+
+      assert {:error, :invalid_file} =
+               Bookkeeping.import_accounts("../../../../test/bookkeeping/data/text_file.txt")
+
+      assert {:error, :invalid_file} = Bookkeeping.import_accounts(nil)
+    end
+
+    test "with a file with invalid values" do
+      assert %{accounts: accounts, errors: errors} =
+               Bookkeeping.import_accounts(
+                 "../../../../test/bookkeeping/data/partially_valid_chart_of_accounts.csv"
+               )
+
+      assert Enum.count(accounts) == 7
+      assert Enum.count(errors) == 3
+
+      assert Enum.all?(errors, fn error ->
+               error.reason in [:already_exists, :invalid_field]
+             end)
+    end
   end
 
-  test "find journal entry by journal entry number" do
-    assert {:ok, _accounts} = Bookkeeping.reset_accounts()
-    assert {:ok, []} = Bookkeeping.all_accounts()
+  describe "Bookkeeping update_accounts/2" do
+    test "with valid params", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
 
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
-             )
+      assert {:ok, updated_account} =
+               Bookkeeping.update_account(account, %{
+                 name: "Cash updated",
+                 description: "description updated",
+                 audit_details: %{updated_by: "example@example.com"},
+                 active: false
+               })
 
-    assert {:ok, []} = Bookkeeping.reset_journal_entries()
-    assert {:ok, []} = Bookkeeping.all_journal_entries()
+      assert updated_account.code == account.code
+      assert updated_account.name == "Cash updated"
+      assert updated_account.classification.name == "Asset"
+      assert updated_account.description == "description updated"
+      assert is_struct(updated_account.classification, Bookkeeping.Core.Account.Classification)
+      assert is_list(updated_account.audit_logs)
+      assert length(updated_account.audit_logs) == 2
+      assert updated_account.active == false
+    end
 
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
-             )
+    test "with invalid account" do
+      assert {:error, :invalid_account} = Bookkeeping.update_account(nil, %{name: "Cash updated"})
 
-    assert {:ok, _journal_entry} =
-             Bookkeeping.find_journal_entry_by_journal_entry_number("1001_Bookkeeping_Test")
+      assert {:error, :invalid_account} =
+               Bookkeeping.update_account("apple", %{name: "Cash updated"})
+    end
 
-    assert {:error, :not_found} =
-             Bookkeeping.find_journal_entry_by_journal_entry_number(
-               "JE100100_Bookkeeping_Test_not_found"
-             )
+    test "with invalid field", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
+
+      assert {:error, :invalid_field} = Bookkeeping.update_account(account, %{code: "1001"})
+
+      assert {:error, :invalid_field} =
+               Bookkeeping.update_account(account, %{classification: "liability"})
+
+      assert {:error, :invalid_field} = Bookkeeping.update_account(account, %{test: "test"})
+    end
+
+    test "with invalid params", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
+
+      assert {:error, :invalid_params} = Bookkeeping.update_account(account, nil)
+      assert {:error, :invalid_params} = Bookkeeping.update_account(account, "apple")
+      assert {:error, :invalid_params} = Bookkeeping.update_account(account, %{})
+    end
   end
 
-  test "find journal entry by journal entry id" do
-    assert {:ok, _accounts} = Bookkeeping.reset_accounts()
-    assert {:ok, []} = Bookkeeping.all_accounts()
-
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
-             )
-
-    assert {:ok, []} = Bookkeeping.reset_journal_entries()
-    assert {:ok, []} = Bookkeeping.all_journal_entries()
-
-    assert {:ok, %{ok: ok, error: _error}} =
-             Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
-             )
-
-    first_journal_entry_id = ok |> List.first() |> Map.get(:id)
-
-    assert {:ok, journal_entry} = Bookkeeping.find_journal_entries_by_id(first_journal_entry_id)
-    assert journal_entry.id == first_journal_entry_id
-    assert {:error, :invalid_id} = Bookkeeping.find_journal_entries_by_id(nil)
+  describe "Bookkeeping all_accounts/0" do
+    test "returns all accounts", %{params: params} do
+      {:ok, account} = Bookkeeping.create_account(params)
+      assert {:ok, accounts} = Bookkeeping.all_accounts()
+      assert account in accounts
+    end
   end
 
-  test "find journal entries by general ledger posting date" do
-    assert {:ok, _accounts} = Bookkeeping.reset_accounts()
-    assert {:ok, []} = Bookkeeping.all_accounts()
+  describe "Bookkeeping search_accounts_by_code/1" do
+    test "with complete code", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
+      assert {:ok, accounts} = Bookkeeping.search_accounts_by_code(account.code)
+      assert Enum.member?(accounts, account)
+      code_prefix = String.slice(account.code, 0, 2)
+      assert {:ok, accounts} = Bookkeeping.search_accounts_by_code(code_prefix)
+      assert account in accounts
+    end
 
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
-             )
+    test "with code prefix", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
 
-    assert {:ok, []} = Bookkeeping.reset_journal_entries()
-    assert {:ok, []} = Bookkeeping.all_journal_entries()
+      code_prefix = String.slice(account.code, 0, 2)
+      assert {:ok, accounts} = Bookkeeping.search_accounts_by_code(code_prefix)
+      assert Enum.member?(accounts, account)
+    end
 
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
-             )
-
-    assert {:ok, []} =
-             Bookkeeping.find_journal_entries_by_general_ledger_posting_date(DateTime.utc_now())
-
-    {:ok, datetime, _} = DateTime.from_iso8601("2023-08-12T00:00:00Z")
-
-    assert {:ok, journal_entries} =
-             Bookkeeping.find_journal_entries_by_general_ledger_posting_date(datetime)
-
-    refute journal_entries == []
-    assert length(journal_entries) == 2
-
-    assert {:error, :invalid_date} =
-             Bookkeeping.find_journal_entries_by_general_ledger_posting_date("invalid_date")
+    test "with invalid code" do
+      assert {:error, :invalid_code} = Bookkeeping.search_accounts_by_code(nil)
+      assert {:error, :invalid_code} = Bookkeeping.search_accounts_by_code(%{})
+      assert {:error, :invalid_code} = Bookkeeping.search_accounts_by_code("")
+    end
   end
 
-  test "find journal entries by general ledger posting date range" do
-    assert {:ok, _accounts} = Bookkeeping.reset_accounts()
-    assert {:ok, []} = Bookkeeping.all_accounts()
+  describe "Bookkeeping search_accounts_by_name/1" do
+    test "with complete name", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
+      assert {:ok, accounts} = Bookkeeping.search_accounts_by_name(account.name)
+      assert Enum.member?(accounts, account)
+      name_prefix = String.slice(account.name, 0, 2)
+      assert {:ok, accounts} = Bookkeeping.search_accounts_by_name(name_prefix)
+      assert account in accounts
+    end
 
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
-             )
+    test "with name prefix", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
+      name_prefix = String.slice(account.name, 0, 2)
+      assert {:ok, accounts} = Bookkeeping.search_accounts_by_name(name_prefix)
+      assert account in accounts
+    end
 
-    assert {:ok, []} = Bookkeeping.reset_journal_entries()
-    assert {:ok, []} = Bookkeeping.all_journal_entries()
-
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
-             )
-
-    assert {:ok, []} =
-             Bookkeeping.find_journal_entries_by_general_ledger_posting_date_range(
-               DateTime.utc_now(),
-               DateTime.utc_now()
-             )
-
-    {:ok, datetime, _} = DateTime.from_iso8601("2023-08-11T00:00:00Z")
-
-    assert {:ok, journal_entries} =
-             Bookkeeping.find_journal_entries_by_general_ledger_posting_date_range(
-               datetime,
-               DateTime.utc_now()
-             )
-
-    assert journal_entries != []
-    assert length(journal_entries) == 2
-
-    {:ok, datetime, _} = DateTime.from_iso8601("2023-08-12T00:00:00Z")
-
-    assert {:ok, journal_entries_2} =
-             Bookkeeping.find_journal_entries_by_general_ledger_posting_date_range(
-               datetime,
-               %{year: 2023, month: 9, day: 1}
-             )
-
-    assert journal_entries_2 != []
-    assert length(journal_entries_2) == 2
-
-    assert {:error, :invalid_date} =
-             Bookkeeping.find_journal_entries_by_general_ledger_posting_date_range(
-               "invalid_date",
-               DateTime.utc_now()
-             )
-
-    assert {:error, :invalid_date} =
-             Bookkeeping.find_journal_entries_by_general_ledger_posting_date_range(
-               DateTime.utc_now(),
-               "invalid_date"
-             )
+    test "with invalid name" do
+      assert {:error, :invalid_name} = Bookkeeping.search_accounts_by_name(nil)
+      assert {:error, :invalid_name} = Bookkeeping.search_accounts_by_name(%{})
+      assert {:error, :invalid_name} = Bookkeeping.search_accounts_by_name("")
+    end
   end
 
-  test "update journal entry" do
-    assert {:ok, _accounts} = Bookkeeping.reset_accounts()
-    assert {:ok, []} = Bookkeeping.all_accounts()
+  describe "Bookkeeping search_accounts/1" do
+    test "with complete name", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
+      assert {:ok, accounts} = Bookkeeping.search_accounts(account.name)
+      assert Enum.member?(accounts, account)
+      name_prefix = String.slice(account.name, 0, 2)
+      assert {:ok, accounts} = Bookkeeping.search_accounts(name_prefix)
+      assert account in accounts
+    end
 
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_accounts(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_accounts.csv"
-             )
+    test "with name prefix", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
+      name_prefix = String.slice(account.name, 0, 2)
+      assert {:ok, accounts} = Bookkeeping.search_accounts(name_prefix)
+      assert account in accounts
+    end
 
-    assert {:ok, []} = Bookkeeping.reset_journal_entries()
-    assert {:ok, []} = Bookkeeping.all_journal_entries()
-
-    assert {:ok, %{ok: _ok, error: _error}} =
-             Bookkeeping.import_journal_entries(
-               "../../../../test/bookkeeping/data/valid_bookkeeping_journal_entries.csv"
-             )
-
-    assert {:ok, journal_entry} =
-             Bookkeeping.find_journal_entry_by_journal_entry_number("1001_Bookkeeping_Test")
-
-    assert {:ok, journal_entry} =
-             Bookkeeping.update_journal_entry(
-               journal_entry,
-               %{journal_entry_description: "updated journal entry description"}
-             )
-
-    assert {:ok, first_journal_entry_update} =
-             Bookkeeping.update_journal_entry(
-               journal_entry,
-               %{
-                 journal_entry_description: "first journal entry description update",
-                 posted: true
-               }
-             )
-
-    assert {:error, :already_posted_journal_entry} =
-             Bookkeeping.update_journal_entry(
-               first_journal_entry_update,
-               %{journal_entry_description: "second journal entry description update"}
-             )
-
-    assert {:error, :invalid_journal_entry} =
-             Bookkeeping.update_journal_entry(
-               %JournalEntry{},
-               %{journal_entry_description: "updated journal entry description", posted: true}
-             )
+    test "with invalid name" do
+      assert {:error, :invalid_name} = Bookkeeping.search_accounts(nil)
+      assert {:error, :invalid_name} = Bookkeeping.search_accounts(%{})
+      assert {:error, :invalid_name} = Bookkeeping.search_accounts("")
+    end
   end
 
-  test "reset journal entries" do
-    assert {:ok, _journal_entries} = Bookkeeping.reset_journal_entries()
+  ##########################################################
+  # Accounting Journal Tests                               #
+  ##########################################################
+
+  defp update_params(params) do
+    code = random_string()
+    name = random_string()
+    Map.merge(params, %{code: code, name: name})
   end
 
-  test "get accounting journal state" do
-    assert {:ok, state} = Bookkeeping.get_accounting_journal_state()
-    assert is_map(state)
+  defp random_string do
+    for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
   end
 end
