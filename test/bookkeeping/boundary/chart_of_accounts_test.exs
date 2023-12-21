@@ -247,26 +247,39 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
 
       ChartOfAccounts.die()
 
-      # We need to add another test and feature that will allow ChartOfAccounts to
-      # delay the process calls until the worker is ready again.
-      Process.sleep(300)
-
       assert {:ok, accounts} = ChartOfAccounts.search_code(account.code)
       assert account in accounts
     end
 
-    test "returns error if the table is not yet available yet", %{params: params} do
+    test "repeats the call until the proper response is returned if the table is not yet available and then function was immediately called",
+         %{params: params} do
       ChartOfAccounts.die()
-      assert {:error, :invalid_table} = ChartOfAccounts.all_accounts()
-      assert {:error, :invalid_table} = ChartOfAccounts.create(params)
-
-      Process.sleep(300)
       params = update_params(params)
       assert {:ok, account} = ChartOfAccounts.create(params)
       assert is_struct(account)
 
+      ChartOfAccounts.die()
       assert {:ok, accounts} = ChartOfAccounts.search_code(account.code)
       assert account in accounts
+      assert {:ok, accounts} = ChartOfAccounts.search_name(account.name)
+      assert account in accounts
+
+      ChartOfAccounts.die()
+      assert {:ok, updated_account} = ChartOfAccounts.update(account, %{name: "Cash updated"})
+      assert updated_account.code == account.code
+      assert updated_account.name == "Cash updated"
+
+      ChartOfAccounts.die()
+
+      assert %{accounts: accounts, errors: []} =
+               ChartOfAccounts.import_file(
+                 "../../../../test/bookkeeping/data/valid_chart_of_accounts_2.csv"
+               )
+
+      assert length(accounts) == 9
+
+      ChartOfAccounts.die()
+      assert {:ok, _accounts} = ChartOfAccounts.all_accounts()
     end
   end
 

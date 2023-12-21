@@ -20,7 +20,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
 
   @spec create(Account.create_params()) ::
           {:ok, Account.t()}
-          | {:error, :invalid_table | :already_exists | :invalid_field | :invalid_params}
+          | {:error, :already_exists | :invalid_field | :invalid_params}
   def create(params) do
     maybe_handle_call({:create, params})
   end
@@ -31,7 +31,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
              accounts: list(Account.t()),
              errors:
                list(%{
-                 reason: :invalid_table | :invalid_params | :invalid_field | :already_exists,
+                 reason: :invalid_params | :invalid_field | :already_exists,
                  params: Account.create_params()
                })
            }}
@@ -42,23 +42,23 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
 
   @spec update(Account.t(), Account.update_params()) ::
           {:ok, Account.t()}
-          | {:error, :invalid_table | :invalid_account | :invalid_field | :invalid_params}
+          | {:error, :invalid_account | :invalid_field | :invalid_params}
   def update(account, params) do
     maybe_handle_call({:update, account, params})
   end
 
-  @spec all_accounts() :: {:ok, list(Account.t())} | {:error, :invalid_table}
+  @spec all_accounts() :: {:ok, list(Account.t())}
   def all_accounts do
     maybe_handle_call(:all_accounts)
   end
 
   @spec search_code(Account.account_code()) ::
-          {:ok, Account.t()} | {:error, :invalid_table | :not_found | :invalid_code}
+          {:ok, Account.t()} | {:error, :not_found | :invalid_code}
   def search_code(code) do
     maybe_handle_call({:search_code, code})
   end
 
-  @spec search_name(String.t()) :: {:ok, Account.t()} | {:error, :invalid_table | :not_found}
+  @spec search_name(String.t()) :: {:ok, Account.t()} | {:error, :not_found}
   def search_name(name) do
     maybe_handle_call({:search_name, name})
   end
@@ -270,11 +270,22 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
 
   defp bulk_create(error), do: error
 
-  defp maybe_handle_call(handle_call) do
-    try do
-      GenServer.call(__MODULE__, handle_call)
-    catch
-      _message, _reason -> {:error, :invalid_table}
+  defp maybe_handle_call(handle_call, backoff \\ 100) do
+    result =
+      try do
+        GenServer.call(__MODULE__, handle_call)
+      catch
+        _message, _reason -> {:error, :invalid_table}
+      end
+
+    case result do
+      {:error, :invalid_table} ->
+        Process.sleep(backoff)
+        backoff = min(3000, round(backoff * 2))
+        maybe_handle_call(handle_call, backoff)
+
+      result ->
+        result
     end
   end
 end

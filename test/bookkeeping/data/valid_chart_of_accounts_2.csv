@@ -1,0 +1,10 @@
+Account Code,Account Name,Account Type,Account Description,Audit Details
+1013,Cash,asset,Cash,"{""approved_by"": ""example@example.com""}"
+100000101,Accounts Receivable Bulk Test,asset,Accounts Receivable,{}
+1034,Inventory,asset,Inventory,"{""approved_by"": ""example@example.com""}"
+1045,"Property, Plant, and Equipment",asset,"Property,  Plant, and Equipment","{""approved_by"": ""example@example.com""}"
+4029,Service Revenue,revenue,Service Revenue,"{""approved_by"": ""example@example.com""}"
+2027,Short-term Debt,liability,Short-term Debt,"{""approved_by"": ""example@example.com""}"
+2016,Accounts Payable,liability,Accounts Payable,"{""approved_by"": ""example@example.com""}"
+100000002,Cash Bulk Test,asset,Cash,"{""approved_by"": ""example@example.com""}"
+2038,Long-term Debt,liability,Long-term Debt,"{""approved_by"": ""example@example.com""}"
