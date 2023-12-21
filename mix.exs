@@ -33,7 +33,6 @@ defmodule Bookkeeping.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:decimal, "~> 2.0"},
-      {:uuid, "~> 1.1"},
       {:excoveralls, "~> 0.10", only: :test},
       {:nimble_csv, "~> 1.2"},
       {:jason, "~> 1.4"},

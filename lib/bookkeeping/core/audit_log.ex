@@ -11,7 +11,6 @@ defmodule Bookkeeping.Core.AuditLog do
   t type is a struct that represents an audit log.
   """
   @type t :: %__MODULE__{
-          id: UUID.t(),
           record_type: String.t(),
           action_type: String.t(),
           details: map(),
@@ -29,8 +28,7 @@ defmodule Bookkeeping.Core.AuditLog do
           audit_details: map()
         }
 
-  defstruct id: UUID.uuid4(),
-            record_type: "",
+  defstruct record_type: "",
             action_type: "",
             details: %{},
             created_at: nil,
