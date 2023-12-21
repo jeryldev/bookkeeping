@@ -21,9 +21,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
   @spec create(Account.create_params()) ::
           {:ok, Account.t()}
           | {:error, :already_exists | :invalid_field | :invalid_params}
-  def create(params) do
-    maybe_handle_call({:create, params})
-  end
+  def create(params), do: maybe_handle_call({:create, params})
 
   @spec import_file(String.t()) ::
           {:ok,
@@ -37,47 +35,37 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
            }}
           | {:error, :invalid_file}
   def import_file(file_path) do
-    file_path |> check_csv() |> read_csv() |> bulk_generate_params() |> bulk_create()
+    file_path
+    |> check_csv()
+    |> read_csv()
+    |> bulk_generate_params()
+    |> bulk_create()
   end
 
   @spec update(Account.t(), Account.update_params()) ::
           {:ok, Account.t()}
           | {:error, :invalid_account | :invalid_field | :invalid_params}
-  def update(account, params) do
-    maybe_handle_call({:update, account, params})
-  end
+  def update(account, params), do: maybe_handle_call({:update, account, params})
 
   @spec all_accounts() :: {:ok, list(Account.t())}
-  def all_accounts do
-    maybe_handle_call(:all_accounts)
-  end
+  def all_accounts, do: maybe_handle_call(:all_accounts)
 
   @spec search_code(Account.account_code()) ::
           {:ok, Account.t()} | {:error, :not_found | :invalid_code}
-  def search_code(code) do
-    maybe_handle_call({:search_code, code})
-  end
+  def search_code(code), do: maybe_handle_call({:search_code, code})
 
   @spec search_name(String.t()) :: {:ok, Account.t()} | {:error, :not_found}
-  def search_name(name) do
-    maybe_handle_call({:search_name, name})
-  end
+  def search_name(name), do: maybe_handle_call({:search_name, name})
 
   @spec die() :: :ok
-  def die do
-    GenServer.cast(__MODULE__, :die)
-  end
+  def die, do: GenServer.cast(__MODULE__, :die)
 
   @spec init(any()) :: {:ok, nil}
   @impl true
-  def init(_) do
-    {:ok, nil}
-  end
+  def init(_), do: {:ok, nil}
 
   @impl true
-  def handle_info({:"ETS-TRANSFER", table, _pid, _data}, _table) do
-    {:noreply, table}
-  end
+  def handle_info({:"ETS-TRANSFER", table, _pid, _data}, _table), do: {:noreply, table}
 
   @impl true
   def handle_call({:create, params}, _from, table) do
@@ -235,7 +223,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
     Enum.reduce(csv, [], fn csv_item, acc ->
       code = Map.get(csv_item, "Account Code")
       name = Map.get(csv_item, "Account Name")
-      classification = Map.get(csv_item, "Account Type")
+      classification = Map.get(csv_item, "Classification")
       description = Map.get(csv_item, "Account Description", "")
 
       audit_details =

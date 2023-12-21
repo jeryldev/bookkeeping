@@ -178,6 +178,14 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
     end
   end
 
+  describe "all_accounts/0" do
+    test "returns all accounts", %{params: params} do
+      {:ok, account} = ChartOfAccounts.create(params)
+      assert {:ok, accounts} = ChartOfAccounts.all_accounts()
+      assert account in accounts
+    end
+  end
+
   describe "search_code/1" do
     test "with complete code", %{params: params} do
       params = update_params(params)
@@ -202,14 +210,6 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
       assert {:error, :invalid_code} = ChartOfAccounts.search_code(nil)
       assert {:error, :invalid_code} = ChartOfAccounts.search_code(%{})
       assert {:error, :invalid_code} = ChartOfAccounts.search_code("")
-    end
-  end
-
-  describe "all_accounts/0" do
-    test "returns all accounts", %{params: params} do
-      {:ok, account} = ChartOfAccounts.create(params)
-      assert {:ok, accounts} = ChartOfAccounts.all_accounts()
-      assert account in accounts
     end
   end
 

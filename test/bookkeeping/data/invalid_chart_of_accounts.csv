@@ -1,4 +1,4 @@
-Account Code,Account Name,Account Type,Account Description,Audit Details
+Account Code,Account Name,Classification,Account Description,Audit Details
 ,,asset,Cash,"{""approved_by"": ""example@example.com""}"
 ,,
 1000000020,Accounts Receivable Bulk Test,asset,Accounts Receivable,100
