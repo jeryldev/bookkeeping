@@ -64,10 +64,10 @@ defmodule Bookkeeping.Core.AuditLog do
   @spec create(create_params()) ::
           {:ok, AuditLog.t()} | {:error, :invalid_field | :invalid_params}
   def create(params) do
-    params |> validate_create_params() |> maybe_create()
+    params |> validate_params() |> maybe_create()
   end
 
-  defp validate_create_params(
+  defp validate_params(
          %{
            record_type: record_type,
            action_type: action_type,
@@ -81,7 +81,7 @@ defmodule Bookkeeping.Core.AuditLog do
        else: {:error, :invalid_field}
   end
 
-  defp validate_create_params(_), do: {:error, :invalid_params}
+  defp validate_params(_), do: {:error, :invalid_params}
 
   defp maybe_create(%{
          record_type: record_type,

@@ -248,7 +248,7 @@ defmodule Bookkeeping.Core.Account do
   """
   @spec create(create_params()) :: {:ok, Account.t()} | {:error, :invalid_params | :invalid_field}
   def create(params) do
-    params |> validate_create_params() |> maybe_create()
+    params |> validate_params() |> maybe_create()
   end
 
   @doc """
@@ -312,7 +312,7 @@ defmodule Bookkeeping.Core.Account do
        else: {:error, :invalid_account}
   end
 
-  defp validate_create_params(
+  defp validate_params(
          %{
            code: code,
            name: name,
@@ -330,7 +330,7 @@ defmodule Bookkeeping.Core.Account do
        else: {:error, :invalid_field}
   end
 
-  defp validate_create_params(_params), do: {:error, :invalid_params}
+  defp validate_params(_params), do: {:error, :invalid_params}
 
   defp maybe_create(%{
          code: code,
