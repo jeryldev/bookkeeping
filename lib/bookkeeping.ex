@@ -10,9 +10,8 @@ defmodule Bookkeeping do
   4. Run `Bookkeeping.import_journal_entries("../../data/sample_journal_entries.csv")` to import sample journal entries.
   """
 
-  alias Bookkeeping.Boundary.AccountingJournal.Server, as: AccountingJournal
   alias Bookkeeping.Boundary.ChartOfAccounts.Worker, as: ChartOfAccounts
-  alias Bookkeeping.Core.{Account, JournalEntry}
+  alias Bookkeeping.Core.Account
 
   ##########################################################
   # Chart of Accounts Functions                            #
@@ -205,14 +204,14 @@ defmodule Bookkeeping do
 
   # Arguments:
   #   - transaction_date: The date of the transaction. This is usually the date of the source document (i.e. invoice date, check date, etc.)
-  #   - general_ledger_posting_date: The date of the General Ledger posting. This is usually the date when the journal entry is posted to the General Ledger.
+  #   - posting_date: The date of the General Ledger posting. This is usually the date when the journal entry is posted to the General Ledger.
   #   - t_accounts: The map of line items. The map must have the following keys:
   #     - left: The list of maps with account and amount field and represents the entry type of debit.
   #     - right: The list of maps with account and amount field and represents the entry type of credit.
-  #   - journal_entry_number: The unique reference number of the journal entry. This is an auto-generated unique sequential identifier that is distinct from the transaction reference number (i.e. JE001000, JE001002, etc).
-  #   - transaction_reference_number (optional): The reference number of the transaction. This is usually the reference number of the source document (i.e. invoice number, check number, etc.)
-  #   - journal_entry_description (optional): The description of the journal entry. This is usually the description of the source document (i.e. invoice description, check description, etc.)
-  #   - journal_entry_details (optional): The details of the journal entry. The details are usually the details of the source document (i.e. invoice details, check details, etc.)
+  #   - document_number: The unique reference number of the journal entry. This is an auto-generated unique sequential identifier that is distinct from the transaction reference number (i.e. JE001000, JE001002, etc).
+  #   - reference_number (optional): The reference number of the transaction. This is usually the reference number of the source document (i.e. invoice number, check number, etc.)
+  #   - description (optional): The description of the journal entry. This is usually the description of the source document (i.e. invoice description, check description, etc.)
+  #   - particulars (optional): The details of the journal entry. The details are usually the details of the source document (i.e. invoice details, check details, etc.)
   #   - audit_details (optional): The details of the audit log.
 
   # Returns `{:ok, JournalEntry.t()}` if the journal entry is created successfully. Otherwise, returns `{:error, :invalid_journal_entry}`.
@@ -221,7 +220,7 @@ defmodule Bookkeeping do
 
   #     iex> Bookkeeping.create_journal_entry(%{
   #     ...>   transaction_date: ~U[2021-10-10 10:10:10.000000Z],
-  #     ...>   general_ledger_posting_date: ~U[2021-10-10 10:10:10.000000Z],
+  #     ...>   posting_date: ~U[2021-10-10 10:10:10.000000Z],
   #     ...>   t_accounts: %{
   #     ...>     left: [
   #     ...>       %{
@@ -236,10 +235,10 @@ defmodule Bookkeeping do
   #     ...>       }
   #     ...>     ]F
   #     ...>   },
-  #     ...>   journal_entry_number: "JE001001",
-  #     ...>   transaction_reference_number: "INV001001",
-  #     ...>   journal_entry_description: "description",
-  #     ...>   journal_entry_details: %{},
+  #     ...>   document_number: "JE001001",
+  #     ...>   reference_number: "INV001001",
+  #     ...>   description: "description",
+  #     ...>   particulars: %{},
   #     ...>   audit_details: %{}
   #     ...> })
   #     %{:ok, %Bookkeeping.Core.JournalEntry{...}}
@@ -291,11 +290,11 @@ defmodule Bookkeeping do
   # defdelegate find_journal_entry_by_journal_entry_number(journal_entry_number),
   #   to: AccountingJournal
 
-  # @spec find_journal_entries_by_general_ledger_posting_date(
+  # @spec find_journal_entries_by_posting_date(
   #         DateTime.t()
-  #         | AccountingJournal.general_ledger_posting_date_details()
+  #         | AccountingJournal.posting_date_details()
   #       ) :: {:ok, list(JournalEntry.t())} | {:error, :invalid_date}
-  # defdelegate find_journal_entries_by_general_ledger_posting_date(datetime), to: AccountingJournal
+  # defdelegate find_journal_entries_by_posting_date(datetime), to: AccountingJournal
 
   # @doc """
   # Returns a journal entry by id.
@@ -320,20 +319,20 @@ defmodule Bookkeeping do
 
   # ## Examples
 
-  #     iex> Bookkeeping.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
+  #     iex> Bookkeeping.find_journal_entries_by_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
   #     {:ok, [%JournalEntry{...}]}
 
-  #     iex> Bookkeeping.find_journal_entries_by_general_ledger_posting_date_range(%{year: 2021, month: 10, day: 10}, %{year: 2021, month: 10, day: 10})
+  #     iex> Bookkeeping.find_journal_entries_by_posting_date_range(%{year: 2021, month: 10, day: 10}, %{year: 2021, month: 10, day: 10})
   #     {:ok, [%JournalEntry{...}]}
 
-  #     iex> Bookkeeping.find_journal_entries_by_general_ledger_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
+  #     iex> Bookkeeping.find_journal_entries_by_posting_date_range(~U[2021-10-10 10:10:10.000000Z], ~U[2021-10-10 10:10:10.000000Z])
   #     {:error, :invalid_date}
   # """
-  # @spec find_journal_entries_by_general_ledger_posting_date_range(
-  #         DateTime.t() | AccountingJournal.general_ledger_posting_date_details(),
-  #         DateTime.t() | AccountingJournal.general_ledger_posting_date_details()
+  # @spec find_journal_entries_by_posting_date_range(
+  #         DateTime.t() | AccountingJournal.posting_date_details(),
+  #         DateTime.t() | AccountingJournal.posting_date_details()
   #       ) :: {:ok, list(JournalEntry.t())} | {:error, :invalid_date}
-  # defdelegate find_journal_entries_by_general_ledger_posting_date_range(
+  # defdelegate find_journal_entries_by_posting_date_range(
   #               from_datetime,
   #               to_datetime
   #             ),
@@ -349,10 +348,10 @@ defmodule Bookkeeping do
   #     iex> Bookkeeping.find_journal_entry_by_journal_entry_number("ref_num_1")
   #     {:ok, %JournalEntry{...}}
 
-  #     iex> Bookkeeping.update_journal_entry(%JournalEntry{...}, %{journal_entry_description: "updated description",posted: true})
-  #     {:ok, %JournalEntry{journal_entry_description: "updated description", posted: true, ...}}
+  #     iex> Bookkeeping.update_journal_entry(%JournalEntry{...}, %{description: "updated description",posted: true})
+  #     {:ok, %JournalEntry{description: "updated description", posted: true, ...}}
 
-  #     iex> Bookkeeping.update_journal_entry(%JournalEntry{}, %{journal_entry_description: "updated description",posted: true})
+  #     iex> Bookkeeping.update_journal_entry(%JournalEntry{}, %{description: "updated description",posted: true})
   #     {:error, :invalid_journal_entry}
   # """
   # @spec update_journal_entry(JournalEntry.t(), map()) ::

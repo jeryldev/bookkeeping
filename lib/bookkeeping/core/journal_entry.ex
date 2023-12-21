@@ -9,12 +9,12 @@ defmodule Bookkeeping.Core.JournalEntry do
   @type t :: %__MODULE__{
           id: UUID.t(),
           transaction_date: DateTime.t(),
-          general_ledger_posting_date: DateTime.t(),
+          posting_date: DateTime.t(),
           line_items: list(LineItem.t()),
-          journal_entry_number: String.t(),
-          transaction_reference_number: String.t(),
-          journal_entry_description: String.t(),
-          journal_entry_details: map(),
+          document_number: String.t(),
+          reference_number: String.t(),
+          description: String.t(),
+          particulars: map(),
           audit_logs: list(AuditLog.t()),
           posted: boolean()
         }
@@ -26,11 +26,11 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   defstruct id: UUID.uuid4(),
             transaction_date: DateTime.utc_now(),
-            general_ledger_posting_date: DateTime.utc_now(),
-            journal_entry_number: "",
-            transaction_reference_number: "",
-            journal_entry_description: "",
-            journal_entry_details: %{},
+            posting_date: DateTime.utc_now(),
+            document_number: "",
+            reference_number: "",
+            description: "",
+            particulars: %{},
             line_items: [],
             audit_logs: [],
             posted: false
@@ -40,14 +40,14 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   Arguments:
     - transaction_date: The date of the transaction. This is usually the date of the source document (i.e. invoice date, check date, etc.)
-    - general_ledger_posting_date: The date of the General Ledger posting. This is usually the date when the journal entry is posted to the General Ledger.
+    - posting_date: The date of the General Ledger posting. This is usually the date when the journal entry is posted to the General Ledger.
     - t_accounts: The map of line items. The map must have the following keys:
       - left: The list of maps with account and amount field and represents the entry type of debit.
       - right: The list of maps with account and amount field and represents the entry type of credit.
-    - journal_entry_number: The unique reference number of the journal entry. This is an auto-generated unique sequential identifier that is distinct from the transaction reference number (i.e. JE001000, JE001002, etc).
-    - transaction_reference_number: The reference number of the transaction. This is usually the reference number of the source document (i.e. invoice number, check number, etc.)
-    - journal_entry_description: The description of the journal entry. This is usually the description of the source document (i.e. invoice description, check description, etc.)
-    - journal_entry_details: The details of the journal entry. The details are usually the details of the source document (i.e. invoice details, check details, etc.)
+    - document_number: The unique reference number of the journal entry. This is an auto-generated unique sequential identifier that is distinct from the transaction reference number (i.e. JE001000, JE001002, etc).
+    - reference_number: The reference number of the transaction. This is usually the reference number of the source document (i.e. invoice number, check number, etc.)
+    - description: The description of the journal entry. This is usually the description of the source document (i.e. invoice description, check description, etc.)
+    - particulars: The details of the journal entry. The details are usually the details of the source document (i.e. invoice details, check details, etc.)
     - audit_details: The details of the audit log.
 
   Returns `{:ok, %JournalEntry{}}` if the journal entry is valid. Otherwise, returns `{:error, :invalid_journal_entry}`, `{:error, :invalid_line_items}`, `{:error, :unbalanced_line_items}`, or `{:error, list(:invalid_amount | :invalid_account | :inactive_account)}`.
@@ -81,29 +81,29 @@ defmodule Bookkeeping.Core.JournalEntry do
           | {:error, list(:invalid_amount | :invalid_account | :inactive_account)}
   def create(
         transaction_date,
-        general_ledger_posting_date,
+        posting_date,
         t_accounts,
         journal_entry_number,
-        transaction_reference_number,
-        journal_entry_description,
-        journal_entry_details,
+        reference_number,
+        description,
+        particulars,
         audit_details
       ) do
     valid_fields? =
-      is_binary(journal_entry_number) and is_binary(transaction_reference_number) and
-        is_binary(journal_entry_description) and is_map(journal_entry_details) and
+      is_binary(journal_entry_number) and is_binary(reference_number) and
+        is_binary(description) and is_map(particulars) and
         is_map(t_accounts) and is_map(audit_details) and not is_nil(transaction_date) and
-        not is_nil(general_ledger_posting_date)
+        not is_nil(posting_date)
 
     if valid_fields? do
       new(
         transaction_date,
-        general_ledger_posting_date,
+        posting_date,
         t_accounts,
         journal_entry_number,
-        transaction_reference_number,
-        journal_entry_description,
-        journal_entry_details,
+        reference_number,
+        description,
+        particulars,
         audit_details
       )
     else
@@ -116,7 +116,7 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   Arguments:
     - journal_entry: The journal entry to be updated.
-    - attrs: The attributes to be updated. The editable attributes are `transaction_date`, `journal_entry_number`, `journal_entry_description`, `posted`, `t_accounts`, and `audit_details`.
+    - attrs: The attributes to be updated. The editable attributes are `transaction_date`, `journal_entry_number`, `description`, `posted`, `t_accounts`, and `audit_details`.
 
   Returns `{:ok, %JournalEntry{}}` if the journal entry is valid. Otherwise, returns `{:error, :invalid_journal_entry}`.
 
@@ -145,16 +145,16 @@ defmodule Bookkeeping.Core.JournalEntry do
            update_dates_and_line_items(
              journal_entry,
              params.transaction_date,
-             params.general_ledger_posting_date,
+             params.posting_date,
              params.t_accounts
            ),
          {:ok, final_je_update} <-
-           update_other_journal_entry_details(
+           update_other_particulars(
              initial_je_update,
              params.journal_entry_number,
-             params.transaction_reference_number,
-             params.journal_entry_description,
-             params.journal_entry_details,
+             params.reference_number,
+             params.description,
+             params.particulars,
              audit_log,
              params.posted
            ) do
@@ -171,12 +171,12 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   defp new(
          transaction_date,
-         general_ledger_posting_date,
+         posting_date,
          t_accounts,
          journal_entry_number,
-         transaction_reference_number,
-         journal_entry_description,
-         journal_entry_details,
+         reference_number,
+         description,
+         particulars,
          audit_details
        ) do
     with {:ok, line_items} <- LineItem.bulk_create(t_accounts),
@@ -190,12 +190,12 @@ defmodule Bookkeeping.Core.JournalEntry do
        %__MODULE__{
          id: UUID.uuid4(),
          transaction_date: transaction_date,
-         general_ledger_posting_date: general_ledger_posting_date,
+         posting_date: posting_date,
          line_items: line_items,
-         journal_entry_number: journal_entry_number,
-         transaction_reference_number: transaction_reference_number,
-         journal_entry_description: journal_entry_description,
-         journal_entry_details: journal_entry_details,
+         document_number: journal_entry_number,
+         reference_number: reference_number,
+         description: description,
+         particulars: particulars,
          audit_logs: [audit_log]
        }}
     else
@@ -205,26 +205,21 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   defp validate_update_fields(params) do
     is_binary(params.journal_entry_number) and params.journal_entry_number != "" and
-      is_binary(params.transaction_reference_number) and
-      is_binary(params.journal_entry_description) and
-      not is_nil(params.transaction_date) and not is_nil(params.general_ledger_posting_date) and
+      is_binary(params.reference_number) and
+      is_binary(params.description) and
+      not is_nil(params.transaction_date) and not is_nil(params.posting_date) and
       is_boolean(params.posted) and is_map(params.t_accounts) and is_map(params.audit_details)
   end
 
   defp validate_update_params(journal_entry, attrs) do
     params = %{
       transaction_date: Map.get(attrs, :transaction_date, journal_entry.transaction_date),
-      general_ledger_posting_date:
-        Map.get(attrs, :general_ledger_posting_date, journal_entry.general_ledger_posting_date),
+      posting_date: Map.get(attrs, :posting_date, journal_entry.posting_date),
       t_accounts: Map.get(attrs, :t_accounts, %{left: [], right: []}),
-      journal_entry_number:
-        Map.get(attrs, :journal_entry_number, journal_entry.journal_entry_number),
-      transaction_reference_number:
-        Map.get(attrs, :transaction_reference_number, journal_entry.transaction_reference_number),
-      journal_entry_description:
-        Map.get(attrs, :journal_entry_description, journal_entry.journal_entry_description),
-      journal_entry_details:
-        Map.get(attrs, :journal_entry_details, journal_entry.journal_entry_details),
+      document_number: Map.get(attrs, :journal_entry_number, journal_entry.journal_entry_number),
+      reference_number: Map.get(attrs, :reference_number, journal_entry.reference_number),
+      description: Map.get(attrs, :description, journal_entry.description),
+      particulars: Map.get(attrs, :particulars, journal_entry.particulars),
       posted: Map.get(attrs, :posted, journal_entry.posted),
       audit_details: Map.get(attrs, :audit_details, %{})
     }
@@ -237,7 +232,7 @@ defmodule Bookkeeping.Core.JournalEntry do
   defp update_dates_and_line_items(
          journal_entry,
          transaction_date,
-         general_ledger_posting_date,
+         posting_date,
          t_accounts
        ) do
     line_items =
@@ -250,29 +245,29 @@ defmodule Bookkeeping.Core.JournalEntry do
 
     update_params = %{
       transaction_date: transaction_date,
-      general_ledger_posting_date: general_ledger_posting_date,
+      posting_date: posting_date,
       line_items: line_items
     }
 
     {:ok, Map.merge(journal_entry, update_params)}
   end
 
-  defp update_other_journal_entry_details(
+  defp update_other_particulars(
          journal_entry,
          journal_entry_number,
-         transaction_reference_number,
-         journal_entry_description,
-         journal_entry_details,
+         reference_number,
+         description,
+         particulars,
          audit_log,
          posted
        ) do
     existing_audit_logs = Map.get(journal_entry, :audit_logs, [])
 
     update_params = %{
-      journal_entry_number: journal_entry_number,
-      transaction_reference_number: transaction_reference_number,
-      journal_entry_description: journal_entry_description,
-      journal_entry_details: journal_entry_details,
+      document_number: journal_entry_number,
+      reference_number: reference_number,
+      description: description,
+      particulars: particulars,
       audit_logs: [audit_log | existing_audit_logs],
       posted: posted
     }
