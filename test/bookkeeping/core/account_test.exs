@@ -3,8 +3,16 @@ defmodule Bookkeeping.Core.AccountTest do
   alias Bookkeeping.Core.Account
 
   setup do
-    details = %{email: "example@example.com"}
-    {:ok, details: details}
+    params = %{
+      code: "10_000",
+      name: "cash",
+      classification: "asset",
+      description: "description",
+      audit_details: %{email: "example@example.com"},
+      active: true
+    }
+
+    {:ok, params: params}
   end
 
   describe "Classification classify/1" do
@@ -87,17 +95,8 @@ defmodule Bookkeeping.Core.AccountTest do
   end
 
   describe "create/1" do
-    test "with valid params", %{details: details} do
-      assert {:ok, account} =
-               Account.create(%{
-                 code: "10_000",
-                 name: "cash",
-                 classification: "asset",
-                 description: "description",
-                 audit_details: details,
-                 active: true
-               })
-
+    test "with valid params", %{params: params} do
+      assert {:ok, account} = Account.create(params)
       assert account.code == "10_000"
       assert account.name == "cash"
       assert account.classification.name == "Asset"
@@ -107,19 +106,47 @@ defmodule Bookkeeping.Core.AccountTest do
       assert is_list(account.audit_logs)
       assert is_struct(account.classification, Bookkeeping.Core.Account.Classification)
     end
+
+    test "with invalid code", %{params: params} do
+      params = Map.put(params, :code, nil)
+      assert {:error, :invalid_code} = Account.create(params)
+    end
+
+    test "with invalid name", %{params: params} do
+      params = Map.put(params, :name, nil)
+      assert {:error, :invalid_name} = Account.create(params)
+    end
+
+    test "with invalid classification", %{params: params} do
+      params = Map.put(params, :classification, nil)
+      assert {:error, :invalid_classification} = Account.create(params)
+    end
+
+    test "with invalid description", %{params: params} do
+      params = Map.put(params, :description, nil)
+      assert {:error, :invalid_description} = Account.create(params)
+    end
+
+    test "with invalid active state", %{params: params} do
+      params = Map.put(params, :active, nil)
+      assert {:error, :invalid_active_state} = Account.create(params)
+    end
+
+    test "with invalid audit_details", %{params: params} do
+      params = Map.put(params, :audit_details, nil)
+      assert {:error, :invalid_audit_details} = Account.create(params)
+    end
+
+    test "with invalid params" do
+      assert {:error, :invalid_params} = Account.create(nil)
+      assert {:error, :invalid_params} = Account.create("apple")
+      assert {:error, :invalid_params} = Account.create(%{})
+    end
   end
 
   describe "update/2" do
-    test "with valid params", %{details: details} do
-      assert {:ok, account} =
-               Account.create(%{
-                 code: "10_000",
-                 name: "cash",
-                 classification: "asset",
-                 description: "description",
-                 audit_details: details,
-                 active: true
-               })
+    test "with valid params", %{params: params} do
+      assert {:ok, account} = Account.create(params)
 
       assert {:ok, account_2} =
                Account.update(account, %{
@@ -150,39 +177,79 @@ defmodule Bookkeeping.Core.AccountTest do
       assert {:error, :invalid_account} = Account.update(nil, params)
     end
 
-    test "with invalid field" do
-      {:ok, account} =
-        Account.create(%{
-          code: "10_000",
-          name: "cash",
-          classification: "asset",
-          description: "description",
-          audit_details: %{},
-          active: true
-        })
-
-      assert {:error, :invalid_field} = Account.update(account, %{name: nil})
-      assert {:error, :invalid_field} = Account.update(account, %{name: "cash", active: nil})
-      assert {:error, :invalid_field} = Account.update(account, %{name: "cash", test: "test"})
-
-      assert {:error, :invalid_field} =
-               Account.update(account, %{name: "cash", classification: nil})
+    test "with invalid name", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      assert {:error, :invalid_name} = Account.update(account, %{name: nil})
     end
 
-    test "with invalid params" do
-      {:ok, account} =
-        Account.create(%{
-          code: "10_000",
-          name: "cash",
-          classification: "asset",
-          description: "description",
-          audit_details: %{},
-          active: true
-        })
+    test "with invalid description", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      assert {:error, :invalid_description} = Account.update(account, %{description: nil})
+    end
 
+    test "with invalid active state", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      assert {:error, :invalid_active_state} = Account.update(account, %{active: nil})
+    end
+
+    test "with invalid audit_details", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      assert {:error, :invalid_audit_details} = Account.update(account, %{audit_details: nil})
+    end
+
+    test "with invalid params", %{params: params} do
+      {:ok, account} = Account.create(params)
       assert {:error, :invalid_params} = Account.update(account, nil)
       assert {:error, :invalid_params} = Account.update(account, "apple")
       assert {:error, :invalid_params} = Account.update(account, %{})
+    end
+  end
+
+  describe "validate/1" do
+    test "with valid account", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      assert {:ok, _account} = Account.validate(account)
+    end
+
+    test "with invalid account" do
+      assert {:error, :invalid_account} = Account.validate(%Account{})
+      assert {:error, :invalid_account} = Account.validate(nil)
+    end
+
+    test "with invalid code", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      account = Map.put(account, :code, nil)
+      assert {:error, :invalid_account} = Account.validate(account)
+    end
+
+    test "with invalid name", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      account = Map.put(account, :name, nil)
+      assert {:error, :invalid_account} = Account.validate(account)
+    end
+
+    test "with invalid classification", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      account = Map.put(account, :classification, nil)
+      assert {:error, :invalid_account} = Account.validate(account)
+    end
+
+    test "with invalid description", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      account = Map.put(account, :description, nil)
+      assert {:error, :invalid_account} = Account.validate(account)
+    end
+
+    test "with invalid active state", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      account = Map.put(account, :active, nil)
+      assert {:error, :invalid_account} = Account.validate(account)
+    end
+
+    test "with invalid audit logs", %{params: params} do
+      assert {:ok, account} = Account.create(params)
+      account = Map.put(account, :audit_logs, nil)
+      assert {:error, :invalid_account} = Account.validate(account)
     end
   end
 end

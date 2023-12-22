@@ -12,9 +12,6 @@ defmodule Bookkeeping.Core.AccountBenchmark do
         active: true
       })
     end,
-    # "create/5" => fn ->
-    #   Account.create("1001", "Cash 1", "asset", "Cash and Cash Equivalents 1", %{})
-    # end,
     "create/1 struct only" => fn ->
       audit_log =
         AuditLog.create(%{
@@ -36,40 +33,19 @@ defmodule Bookkeeping.Core.AccountBenchmark do
     end
   })
 
-  # Benchee.run(%{
-  #   "validate_account/1" => fn ->
-  #     Account.validate_account(%Account{
-  #       code: "1003",
-  #       name: "Cash 3",
-  #       classification: "asset",
-  #       description: "Cash and Cash Equivalents 3",
-  #       audit_logs: [],
-  #       active: true
-  #     })
-  #   end,
-  #   "validate/1" => fn ->
-  #     Account.validate(%Account{
-  #       code: "1004",
-  #       name: "Cash 4",
-  #       classification: "asset",
-  #       description: "Cash and Cash Equivalents 4",
-  #       audit_logs: [],
-  #       active: true
-  #     })
-  #   end,
-  #   "validate2/1" => fn ->
-  #     Account.validate2(%Account{
-  #       code: "1005",
-  #       name: "Cash 5",
-  #       classification: "asset",
-  #       description: "Cash and Cash Equivalents 5",
-  #       audit_logs: [],
-  #       active: true
-  #     })
-  #   end
-  # })
+  {:ok, cash_account_1} =
+    Account.create(%{
+      code: "1000",
+      name: "Cash 0",
+      classification: "asset",
+      description: "Cash and Cash Equivalents 0",
+      audit_details: %{},
+      active: true
+    })
 
-  {:ok, cash_account} =
+  Benchee.run(%{"validate/1" => fn -> Account.validate(cash_account_1) end})
+
+  {:ok, cash_account_2} =
     Account.create(%{
       code: "1000",
       name: "Cash 0",
@@ -80,21 +56,10 @@ defmodule Bookkeeping.Core.AccountBenchmark do
     })
 
   Benchee.run(%{
-    "current update/2" => fn ->
+    "update/2" => fn ->
       random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
 
-      Account.update(cash_account, %{
-        code: random_string,
-        name: random_string,
-        description: "Cash and Cash Equivalents 1",
-        audit_details: %{email: "test@test.com"},
-        active: false
-      })
-    end,
-    "new update/2" => fn ->
-      random_string = for _ <- 1..10, into: "", do: <<Enum.random(~c"0123456789abcdef")>>
-
-      Account.update(cash_account, %{
+      Account.update(cash_account_2, %{
         code: random_string,
         name: random_string,
         classification: "asset",
