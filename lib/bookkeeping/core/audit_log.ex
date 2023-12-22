@@ -75,17 +75,20 @@ defmodule Bookkeeping.Core.AuditLog do
        ) do
     if is_binary(record_type) and record_type != "" and is_binary(action_type) and
          action_type in @action_types and is_map(audit_details),
-       do: params,
+       do: {:ok, params},
        else: {:error, :invalid_field}
   end
 
   defp validate_params(_), do: {:error, :invalid_params}
 
-  defp maybe_create(%{
-         record_type: record_type,
-         action_type: action_type,
-         audit_details: audit_details
-       }) do
+  defp maybe_create(
+         {:ok,
+          %{
+            record_type: record_type,
+            action_type: action_type,
+            audit_details: audit_details
+          }}
+       ) do
     unix_datetime = DateTime.to_unix(DateTime.utc_now())
     created_at = if action_type == "create", do: unix_datetime, else: nil
     deleted_at = if action_type == "delete", do: unix_datetime, else: nil
