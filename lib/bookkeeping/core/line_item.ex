@@ -69,7 +69,9 @@ defmodule Bookkeeping.Core.LineItem do
              | :invalid_particulars
              | :invalid_params}
   def create(params) do
-    params |> validate_params() |> maybe_create()
+    with {:ok, params} <- validate_params(params) do
+      {:ok, Map.merge(%__MODULE__{}, params)}
+    end
   end
 
   @doc """
@@ -99,64 +101,46 @@ defmodule Bookkeeping.Core.LineItem do
 
   def validate(_), do: {:error, :invalid_line_item}
 
-  defp validate_params(params) when is_map(params) and map_size(params) > 0 do
-    with {:ok, _} <- validate_account(params),
-         {:ok, _} <- validate_amount(params),
-         {:ok, _} <- validate_entry(params),
-         {:ok, _} <- validate_particulars(params) do
+  defp validate_params(
+         %{
+           account: account,
+           amount: amount,
+           entry: entry,
+           particulars: particulars
+         } = params
+       ) do
+    with {:ok, _account} <- validate_account(account),
+         {:ok, _amount} <- validate_amount(amount),
+         {:ok, _entry} <- validate_entry(entry),
+         {:ok, _particulars} <- validate_particulars(particulars) do
       {:ok, params}
     end
   end
 
   defp validate_params(_), do: {:error, :invalid_params}
 
-  defp maybe_create(
-         {:ok,
-          %{
-            account: account,
-            amount: amount,
-            entry: entry,
-            particulars: particulars
-          }}
-       ) do
-    {:ok,
-     %__MODULE__{
-       account: account,
-       amount: amount,
-       entry: entry,
-       particulars: particulars
-     }}
-  end
-
-  defp maybe_create({:error, reason}), do: {:error, reason}
-
-  defp validate_account(%{account: account} = params) when is_map(params) do
+  defp validate_account(account) do
     case Account.validate(account) do
-      {:ok, _account} -> {:ok, params}
+      {:ok, _account} -> {:ok, account}
       {:error, _reason} -> {:error, :invalid_account}
     end
   end
 
-  defp validate_account(_params), do: {:error, :invalid_account}
-
-  defp validate_amount(%{amount: amount} = params)
-       when is_map(params) and is_struct(amount, Decimal) do
+  defp validate_amount(amount) when is_struct(amount, Decimal) do
     if Decimal.gt?(amount, Decimal.new(0)),
-      do: {:ok, params},
+      do: {:ok, amount},
       else: {:error, :invalid_amount}
   end
 
-  defp validate_amount(_params), do: {:error, :invalid_amount}
+  defp validate_amount(_amount), do: {:error, :invalid_amount}
 
-  defp validate_entry(%{entry: entry} = params)
-       when is_map(params) and entry in [:debit, :credit],
-       do: {:ok, params}
+  defp validate_entry(entry) when entry in [:debit, :credit],
+    do: {:ok, entry}
 
-  defp validate_entry(_params), do: {:error, :invalid_entry}
+  defp validate_entry(_entry), do: {:error, :invalid_entry}
 
-  defp validate_particulars(%{particulars: particulars} = params)
-       when is_map(params) and is_binary(particulars),
-       do: {:ok, params}
+  defp validate_particulars(particulars) when is_binary(particulars),
+    do: {:ok, particulars}
 
-  defp validate_particulars(_params), do: {:error, :invalid_particulars}
+  defp validate_particulars(_particulars), do: {:error, :invalid_particulars}
 end

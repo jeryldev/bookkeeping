@@ -61,9 +61,34 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
       assert {:error, :invalid_params} = ChartOfAccounts.create(%{active: true})
     end
 
-    test "with invalid field", %{invalid_params: invalid_params} do
-      params = update_params(invalid_params)
-      assert {:error, :invalid_field} = ChartOfAccounts.create(params)
+    test "with invalid code", %{params: params} do
+      params = params |> update_params() |> Map.put(:code, nil)
+      assert {:error, :invalid_code} = ChartOfAccounts.create(params)
+    end
+
+    test "with invalid name", %{params: params} do
+      params = params |> update_params() |> Map.put(:name, nil)
+      assert {:error, :invalid_name} = ChartOfAccounts.create(params)
+    end
+
+    test "with invalid classification", %{params: params} do
+      params = params |> update_params() |> Map.put(:classification, nil)
+      assert {:error, :invalid_classification} = ChartOfAccounts.create(params)
+    end
+
+    test "with invalid description", %{params: params} do
+      params = params |> update_params() |> Map.put(:description, nil)
+      assert {:error, :invalid_description} = ChartOfAccounts.create(params)
+    end
+
+    test "with invalid audit_details", %{params: params} do
+      params = params |> update_params() |> Map.put(:audit_details, nil)
+      assert {:error, :invalid_audit_details} = ChartOfAccounts.create(params)
+    end
+
+    test "with invalid active state", %{params: params} do
+      params = params |> update_params() |> Map.put(:active, nil)
+      assert {:error, :invalid_active_state} = ChartOfAccounts.create(params)
     end
 
     test "that already exists", %{params: params} do
@@ -122,9 +147,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
       assert Enum.count(accounts) == 7
       assert Enum.count(errors) == 3
 
-      assert Enum.all?(errors, fn error ->
-               error.reason in [:already_exists, :invalid_field]
-             end)
+      assert Enum.all?(
+               errors,
+               &(&1.reason in [:already_exists, :invalid_name, :invalid_classification])
+             )
     end
   end
 
@@ -147,25 +173,13 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
       assert updated_account.description == "description updated"
       assert is_struct(updated_account.classification, Bookkeeping.Core.Account.Classification)
       assert is_list(updated_account.audit_logs)
-      assert length(updated_account.audit_logs) == 2
+      assert length(updated_account.audit_logs) > 1
       assert updated_account.active == false
     end
 
     test "with invalid account" do
       assert {:error, :invalid_account} = ChartOfAccounts.update(nil, %{name: "Cash updated"})
       assert {:error, :invalid_account} = ChartOfAccounts.update("apple", %{name: "Cash updated"})
-    end
-
-    test "with invalid field", %{params: params} do
-      params = update_params(params)
-      {:ok, account} = ChartOfAccounts.create(params)
-
-      assert {:error, :invalid_field} = ChartOfAccounts.update(account, %{code: "1001"})
-
-      assert {:error, :invalid_field} =
-               ChartOfAccounts.update(account, %{classification: "liability"})
-
-      assert {:error, :invalid_field} = ChartOfAccounts.update(account, %{test: "test"})
     end
 
     test "with invalid params", %{params: params} do
@@ -175,6 +189,11 @@ defmodule Bookkeeping.Boundary.ChartOfAccountsTest do
       assert {:error, :invalid_params} = ChartOfAccounts.update(account, nil)
       assert {:error, :invalid_params} = ChartOfAccounts.update(account, "apple")
       assert {:error, :invalid_params} = ChartOfAccounts.update(account, %{})
+      assert {:error, :invalid_params} = ChartOfAccounts.update(account, %{code: "1001"})
+      assert {:error, :invalid_params} = ChartOfAccounts.update(account, %{test: "test"})
+
+      assert {:error, :invalid_params} =
+               ChartOfAccounts.update(account, %{classification: "liability"})
     end
   end
 

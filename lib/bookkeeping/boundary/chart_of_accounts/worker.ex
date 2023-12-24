@@ -10,6 +10,10 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
   alias Bookkeeping.Core.Account
   alias NimbleCSV.RFC4180, as: CSV
 
+  @doc """
+  Starts the Chart of Accounts worker.
+  It is started automatically by the Bookkeeping application.
+  """
   @spec start_link(any()) :: {:ok, pid()} | {:error, any()} | {:error, :already_started}
   def start_link(_) do
     case GenServer.start_link(__MODULE__, :ok, name: __MODULE__) do
@@ -18,18 +22,104 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
     end
   end
 
+  @doc """
+  Creates a new account and inserts it into the Chart of Accounts ETS table.
+
+  Arguments:
+    - params: The parameters of the account. It must contain the following keys:
+      - code: The code of the account.
+      - name: The name of the account.
+      - description: The description of the account.
+      - classification: The classification of the account.
+      - audit_details: The details of the audit log.
+      - active: The status of the account.
+
+  Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns any of the following:
+    - `{:error, :already_exists}`
+    - `{:error, :invalid_code}`
+    - `{:error, :invalid_name}`
+    - `{:error, :invalid_description}`
+    - `{:error, :invalid_classification}`
+    - `{:error, :invalid_audit_details}`
+    - `{:error, :invalid_active_state}`
+    - `{:error, :invalid_params}`
+
+  ## Examples
+
+      iex> Account.create(%{code: "1000", name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:ok, %Account{...}}
+
+      iex> Account.create(%{code: "1000", name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:error, :already_exists}
+
+      iex> Account.create(%{code: nil, name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:error, :invalid_code}
+
+      iex> Account.create(%{code: "1000", name: nil, classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:error, :invalid_name}
+
+      iex> Account.create(%{code: "1000", name: "Cash 0", classification: nil, description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:error, :invalid_classification}
+
+      iex> Account.create(%{code: "1000", name: "Cash 0", classification: "asset", description: nil, audit_details: %{}, active: true})
+      {:error, :invalid_description}
+
+      iex> Account.create(%{code: "1000", name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: nil, active: true})
+      {:error, :invalid_audit_details}
+
+      iex> Account.create(%{code: "1000", name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: nil})
+      {:error, :invalid_active_state}
+
+      iex> Account.create(nil)
+      {:error, :invalid_params}
+  """
   @spec create(Account.create_params()) ::
           {:ok, Account.t()}
-          | {:error, :already_exists | :invalid_field | :invalid_params}
+          | {:error,
+             :already_exists
+             | :invalid_code
+             | :invalid_name
+             | :invalid_classification
+             | :invalid_description
+             | :invalid_active_state
+             | :invalid_audit_details
+             | :invalid_params}
   def create(params), do: maybe_handle_call({:create, params})
 
+  @doc """
+  Imports a CSV file containing the accounts to be created and inserts them into the Chart of Accounts ETS table.
+
+  Arguments:
+    - file_path: The path of the CSV file.
+
+  Returns `{:ok, %{accounts: list(%Account{}), errors: list(%{reason: atom(), params: Account.create_params()})}}` if the CSV file is valid. Otherwise, returns `{:error, :invalid_file}`.
+
+  ## Examples
+
+      iex> Account.import_file("test/support/accounts.csv")
+      {:ok, %{accounts: [%Account{...}], errors: []}}
+
+      iex> Account.import_file("test/support/invalid_accounts.csv")
+      {:ok, %{accounts: [], errors: [%{reason: :invalid_code, params: %{...}}]}}
+
+      iex> Account.import_file("test/support/invalid_file.csv")
+      {:error, :invalid_file}
+  """
   @spec import_file(String.t()) ::
           {:ok,
            %{
              accounts: list(Account.t()),
              errors:
                list(%{
-                 reason: :invalid_params | :invalid_field | :already_exists,
+                 reason:
+                   :already_exists
+                   | :invalid_code
+                   | :invalid_name
+                   | :invalid_classification
+                   | :invalid_description
+                   | :invalid_active_state
+                   | :invalid_audit_details
+                   | :invalid_params,
                  params: Account.create_params()
                })
            }}
@@ -42,17 +132,110 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Worker do
     |> bulk_create()
   end
 
+  @doc """
+  Updates an existing account in the Chart of Accounts ETS table.
+
+  Arguments:
+  - account: The account to be updated.
+  - params: The parameters of the account. It must contain the following keys:
+    - name: The name of the account.
+    - description: The description of the account.
+    - active: The status of the account.
+    - audit_details: The details of the audit log.
+
+  Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns any of the following:
+  - `{:error, :invalid_account}`
+  - `{:error, :invalid_name}`
+  - `{:error, :invalid_description}`
+  - `{:error, :invalid_active_state}`
+  - `{:error, :invalid_audit_details}`
+  - `{:error, :invalid_params}`
+
+  ## Examples
+
+      iex> Account.update(%Account{...}, %{name: "Cash 1", description: "Cash and Cash Equivalents 1", audit_details: %{}, active: true})
+      {:ok, %Account{...}}
+
+      iex> Account.update(%Account{...}, %{name: nil, description: "Cash and Cash Equivalents 1", audit_details: %{}, active: true})
+      {:error, :invalid_name}
+
+      iex> Account.update(%Account{...}, %{name: "Cash 1", description: nil, audit_details: %{}, active: true})
+      {:error, :invalid_description}
+
+      iex> Account.update(%Account{...}, %{name: "Cash 1", description: "Cash and Cash Equivalents 1", audit_details: %{}, active: nil})
+      {:error, :invalid_active_state}
+
+      iex> Account.update(%Account{...}, %{name: "Cash 1", description: "Cash and Cash Equivalents 1", audit_details: nil, active: true})
+      {:error, :invalid_audit_details}
+
+      iex> Account.update(%Account{...}, nil)
+      {:error, :invalid_params}
+  """
   @spec update(Account.t(), Account.update_params()) ::
           {:ok, Account.t()}
-          | {:error, :invalid_account | :invalid_field | :invalid_params}
+          | {:error,
+             :invalid_account
+             | :invalid_name
+             | :invalid_description
+             | :invalid_active_state
+             | :invalid_audit_details
+             | :invalid_params}
   def update(account, params), do: maybe_handle_call({:update, account, params})
 
+  @doc """
+  Searches for an account in the Chart of Accounts ETS table by its code.
+
+  Arguments:
+    - code: The code of the account.
+
+  Returns `{:ok, list(%Account{})}` if the code is valid. Otherwise, returns `{:error, :invalid_code}`.
+
+  ## Examples
+
+      iex> Account.search_code("1000")
+      {:ok, [%Account{...}]}
+
+      iex> Account.search_code(nil)
+      {:error, :invalid_code}
+  """
   @spec all_accounts() :: {:ok, list(Account.t())}
   def all_accounts, do: maybe_handle_call(:all_accounts)
 
+  @doc """
+  Searches for an account in the Chart of Accounts ETS table by its code.
+
+  Arguments:
+    - code: The code of the account.
+
+  Returns `{:ok, list(%Account{})}` if the code is valid. Otherwise, returns `{:error, :invalid_code}`.
+
+  ## Examples
+
+      iex> Account.search_code("1000")
+      {:ok, [%Account{...}]}
+
+      iex> Account.search_code(nil)
+      {:error, :invalid_code}
+  """
   @spec search_code(Account.account_code()) :: {:ok, list(Account.t())} | {:error, :invalid_code}
   def search_code(code), do: maybe_handle_call({:search_code, code})
 
+  @doc """
+  Searches for an account in the Chart of Accounts ETS table by its name.
+
+  Arguments:
+    - name: The name of the account.
+
+  Returns `{:ok, list(%Account{})}` if the name is valid. Otherwise, returns `{:error, :invalid_name}`.
+
+  ## Examples
+
+      iex> Account.search_name("Cash 0")
+      {:ok, [%Account{...}]}
+
+      iex> Account.search_name(nil)
+      {:error, :invalid_name}
+  """
   @spec search_name(String.t()) :: {:ok, list(Account.t())} | {:error, :invalid_name}
   def search_name(name), do: maybe_handle_call({:search_name, name})
 

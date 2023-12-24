@@ -15,9 +15,9 @@ defmodule Bookkeeping.Core.AccountBenchmark do
     "create/1 struct only" => fn ->
       audit_log =
         AuditLog.create(%{
-          record_type: "account",
-          action_type: "create",
-          audit_details: %{}
+          record: "account",
+          action: "create",
+          details: %{}
         })
 
       classification = Account.Classification.classify("asset")

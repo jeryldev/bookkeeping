@@ -276,14 +276,21 @@ defmodule Bookkeeping.Core.Account do
              | :invalid_name
              | :invalid_classification
              | :invalid_description
-             | :invalid_audit_details
-             | :invalid_active_state}
+             | :invalid_active_state
+             | :invalid_audit_details}
   def create(params) do
-    params
-    |> validate_params()
-    |> validate_classification()
-    |> validate_audit_details()
-    |> maybe_create()
+    with {:ok, params} <- validate_params(params),
+         {:ok, audit_log} <- validate_audit_details(params, "create") do
+      {:ok,
+       %__MODULE__{
+         code: params.code,
+         name: params.name,
+         description: params.description,
+         classification: Classification.classify(params.classification),
+         audit_logs: [audit_log],
+         active: params.active
+       }}
+    end
   end
 
   @doc """
@@ -341,7 +348,9 @@ defmodule Bookkeeping.Core.Account do
              | :invalid_params}
   def update(account, params) do
     with {:ok, _account} <- validate(account),
-         {:ok, %{}} <- validate_update_params(params) do
+         {:ok, %{}} <- validate_update_params(params),
+         {:ok, audit_log} <- validate_audit_details(params, "update") do
+      params = Map.put(params, :audit_logs, [audit_log | account.audit_logs])
       {:ok, Map.merge(account, params)}
     end
   end
@@ -364,162 +373,107 @@ defmodule Bookkeeping.Core.Account do
   """
   @spec validate(Account.t()) :: {:ok, __MODULE__.t()} | {:error, :invalid_account}
   def validate(account) when is_struct(account, __MODULE__) do
-    validation_result =
-      account
-      |> validate_params()
-      |> validate_classification()
-      |> validate_audit_logs()
-
-    case validation_result do
-      {:ok, account} -> {:ok, account}
-      {:error, _reason} -> {:error, :invalid_account}
+    with {:ok, account} <- validate_params(account),
+         {:ok, _audit_logs} <- validate_audit_logs(account) do
+      {:ok, account}
+    else
+      _ -> {:error, :invalid_account}
     end
   end
 
   def validate(_), do: {:error, :invalid_account}
 
-  defp validate_params(params) when is_map(params) and map_size(params) > 0 do
-    with {:ok, _} <- validate_code(params),
-         {:ok, _} <- validate_name(params),
-         {:ok, _} <- validate_description(params),
-         {:ok, _} <- validate_active_state(params) do
-      {:ok, params}
+  defp validate_params(
+         %{
+           code: code,
+           name: name,
+           description: description,
+           active: active,
+           classification: classification
+         } = params_or_account
+       ) do
+    with {:ok, _code} <- validate_code(code),
+         {:ok, _name} <- validate_name(name),
+         {:ok, _description} <- validate_description(description),
+         {:ok, _active} <- validate_active_state(active),
+         {:ok, _classification} <- validate_classification(classification) do
+      {:ok, params_or_account}
     end
   end
 
   defp validate_params(_params), do: {:error, :invalid_params}
 
-  defp validate_update_params(%{name: _name} = params)
-       when is_map(params) and map_size(params) > 0 do
-    with {:ok, _} <- validate_name(params) do
-      params
-      |> Map.delete(:name)
-      |> maybe_validate_update_params()
+  defp validate_update_params(%{name: name} = params) do
+    with {:ok, _name} <- validate_name(name) do
+      maybe_reduce_update_params(params, :name)
     end
   end
 
-  defp validate_update_params(%{description: _description} = params)
-       when is_map(params) and map_size(params) > 0 do
-    with {:ok, _} <- validate_description(params) do
-      params
-      |> Map.delete(:description)
-      |> maybe_validate_update_params()
+  defp validate_update_params(%{description: description} = params) do
+    with {:ok, _description} <- validate_description(description) do
+      maybe_reduce_update_params(params, :description)
     end
   end
 
-  defp validate_update_params(%{active: _active} = params)
-       when is_map(params) and map_size(params) > 0 do
-    with {:ok, _} <- validate_active_state(params) do
-      params
-      |> Map.delete(:active)
-      |> maybe_validate_update_params()
+  defp validate_update_params(%{active: active} = params) do
+    with {:ok, _active} <- validate_active_state(active) do
+      maybe_reduce_update_params(params, :active)
     end
   end
 
-  defp validate_update_params(%{audit_details: _audit_details} = params)
-       when is_map(params) and map_size(params) > 0 do
-    with {:ok, _} <- validate_audit_details(params) do
-      params
-      |> Map.delete(:audit_details)
-      |> maybe_validate_update_params()
-    end
+  defp validate_update_params(%{audit_details: _audit_details} = params) do
+    maybe_reduce_update_params(params, :audit_details)
   end
 
   defp validate_update_params(_params), do: {:error, :invalid_params}
 
-  defp maybe_validate_update_params(params) when params == %{}, do: {:ok, %{}}
-  defp maybe_validate_update_params(params), do: validate_update_params(params)
+  defp maybe_reduce_update_params(params, field) do
+    params = Map.delete(params, field)
 
-  defp validate_code(%{code: code} = params)
-       when is_map(params) and is_binary(code) and code != "",
-       do: {:ok, params}
-
-  defp validate_code(_params), do: {:error, :invalid_code}
-
-  defp validate_name(%{name: name} = params)
-       when is_map(params) and is_binary(name) and name != "",
-       do: {:ok, params}
-
-  defp validate_name(_params), do: {:error, :invalid_name}
-
-  defp validate_description(%{description: description} = params)
-       when is_map(params) and is_binary(description),
-       do: {:ok, params}
-
-  defp validate_description(_params), do: {:error, :invalid_description}
-
-  defp validate_active_state(%{active: active} = params)
-       when is_map(params) and is_boolean(active),
-       do: {:ok, params}
-
-  defp validate_active_state(_params), do: {:error, :invalid_active_state}
-
-  defp validate_classification({:ok, account}) when is_struct(account, __MODULE__) do
-    valid_classification? =
-      account
-      |> Map.get(:classification)
-      |> is_struct(__MODULE__.Classification)
-
-    if valid_classification?,
-      do: {:ok, account},
-      else: {:error, :invalid_classification}
+    if params == %{},
+      do: {:ok, params},
+      else: validate_update_params(params)
   end
 
-  defp validate_classification({:ok, %{classification: classification} = params})
-       when is_binary(classification) and classification in @account_classifications,
-       do: {:ok, params}
+  defp validate_code(code) when is_binary(code) and code != "", do: {:ok, code}
+  defp validate_code(_code), do: {:error, :invalid_code}
 
-  defp validate_classification({:error, reason}), do: {:error, reason}
-  defp validate_classification(_account_or_params), do: {:error, :invalid_classification}
+  defp validate_name(name) when is_binary(name) and name != "", do: {:ok, name}
+  defp validate_name(_name), do: {:error, :invalid_name}
 
-  defp validate_audit_details({:ok, %{audit_details: audit_details} = params})
-       when is_map(audit_details),
-       do: {:ok, params}
+  defp validate_description(description) when is_binary(description), do: {:ok, description}
+  defp validate_description(_description), do: {:error, :invalid_description}
 
-  defp validate_audit_details(%{audit_details: audit_details} = params)
-       when is_map(audit_details),
-       do: {:ok, params}
+  defp validate_active_state(active) when is_boolean(active), do: {:ok, active}
+  defp validate_active_state(_active), do: {:error, :invalid_active_state}
 
-  defp validate_audit_details({:error, reason}), do: {:error, reason}
-  defp validate_audit_details(_params), do: {:error, :invalid_audit_details}
+  defp validate_classification(classification)
+       when classification in @account_classifications,
+       do: {:ok, classification}
 
-  defp validate_audit_logs({:ok, %{audit_logs: audit_logs} = account})
-       when is_struct(account, __MODULE__) and is_list(audit_logs) and length(audit_logs) >= 1,
-       do: {:ok, account}
+  defp validate_classification(classification)
+       when is_struct(classification, __MODULE__.Classification),
+       do: {:ok, classification}
 
-  defp validate_audit_logs({:error, reason}), do: {:error, reason}
-  defp validate_audit_logs(_account), do: {:error, :invalid_audit_logs}
+  defp validate_classification(_classification),
+    do: {:error, :invalid_classification}
 
-  defp maybe_create(
-         {:ok,
-          %{
-            code: code,
-            name: name,
-            description: description,
-            classification: classification,
-            audit_details: audit_details,
-            active: active
-          }}
-       ) do
-    {:ok, audit_log} =
-      AuditLog.create(%{
-        record_type: "account",
-        action_type: "create",
-        audit_details: audit_details
-      })
+  defp validate_audit_details(params, action) do
+    details = Map.get(params, :audit_details, %{})
 
-    classification = Classification.classify(classification)
-
-    {:ok,
-     %__MODULE__{
-       code: code,
-       name: name,
-       description: description,
-       classification: classification,
-       audit_logs: [audit_log],
-       active: active
-     }}
+    case AuditLog.create(%{
+           record: "account",
+           action: action,
+           details: details
+         }) do
+      {:ok, audit_log} -> {:ok, audit_log}
+      {:error, _reason} -> {:error, :invalid_audit_details}
+    end
   end
 
-  defp maybe_create({:error, reason}), do: {:error, reason}
+  defp validate_audit_logs(%{audit_logs: audit_logs})
+       when is_list(audit_logs) and length(audit_logs) >= 1,
+       do: {:ok, audit_logs}
+
+  defp validate_audit_logs(_params), do: {:error, :invalid_audit_logs}
 end

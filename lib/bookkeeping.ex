@@ -29,20 +29,56 @@ defmodule Bookkeeping do
       - audit_details: The details of the audit log.
       - active: The status of the account. The account status must be one of the following: `true` or `false`.
 
-  Returns `{:ok, %Account{}}` if the account is valid. Otherwise, returns `{:error, :invalid_params}` or `{:error, :invalid_field}`.
+  Returns `{:ok, Account.t()}` if the account is valid. Otherwise, returns any of the following:
+    - `{:error, :already_exists}`
+    - `{:error, :invalid_code}`
+    - `{:error, :invalid_name}`
+    - `{:error, :invalid_classification}`
+    - `{:error, :invalid_description}`
+    - `{:error, :invalid_active_state}`
+    - `{:error, :invalid_audit_details}`
+    - `{:error, :invalid_params}`
 
   ## Examples
 
-     iex> Bookkeeping.create_account(%{code: "10_000", name: "cash", classification: "asset", description: "", audit_details: %{}, active: true})
-      {:ok, %Account{...}}
+      iex> Bookkeeping.create_account(%{code: "1000", name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:ok, %Bookkeeping.Core.Account{...}}
 
-      iex> Bookkeeping.create_account([])"
+      iex> Bookkeeping.create_account(%{code: "1000", name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:error, :already_exists}
+
+      iex> Bookkeeping.create_account(%{code: nil, name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:error, :invalid_code}
+
+      iex> Bookkeeping.create_account(%{code: "1000", name: nil, classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:error, :invalid_name}
+
+      iex> Bookkeeping.create_account(%{code: "1000", name: "Cash 0", classification: "invalid", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: true})
+      {:error, :invalid_classification}
+
+      iex> Bookkeeping.create_account(%{code: "1000", name: "Cash 0", classification: "asset", description: nil, audit_details: %{}, active: true})
+      {:error, :invalid_description}
+
+      iex> Bookkeeping.create_account(%{code: "1000", name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: nil, active: true})
+      {:error, :invalid_audit_details}
+
+      iex> Bookkeeping.create_account(%{code: "1000", name: "Cash 0", classification: "asset", description: "Cash and Cash Equivalents 0", audit_details: %{}, active: nil})
+      {:error, :invalid_active_state}
+
+      iex> Bookkeeping.create_account(nil)
       {:error, :invalid_params}
-
-      iex> Bookkeeping.create_account(%{code: "invalid", name: "invalid", classification: "invalid", description: nil, audit_details: false, active: %{}})
-      {:error, :invalid_field}
   """
-  @spec create_account(map()) :: {:ok, Account.t()} | {:error, :invalid_params | :invalid_field}
+  @spec create_account(map()) ::
+          {:ok, Account.t()}
+          | {:error,
+             :already_exists
+             | :invalid_code
+             | :invalid_name
+             | :invalid_classification
+             | :invalid_description
+             | :invalid_active_state
+             | :invalid_audit_details
+             | :invalid_params}
   def create_account(params), do: ChartOfAccounts.create(params)
 
   @doc """
@@ -61,7 +97,7 @@ defmodule Bookkeeping do
       {:ok,
       %{
         accounts: [%Bookkeeping.Core.Account{...}, %Bookkeeping.Core.Account{...}, ...],
-        errors: []
+        errors: [%{reason: :already_exists, params: %{...}}, %{reason: :invalid_code, params: %{...}}, ...]
       }}
 
       iex> Bookkeeping.import_accounts("../../data/invalid_file.csv")
@@ -73,7 +109,15 @@ defmodule Bookkeeping do
              accounts: list(Account.t()),
              errors:
                list(%{
-                 reason: :invalid_params | :invalid_field | :already_exists,
+                 reason:
+                   :already_exists
+                   | :invalid_code
+                   | :invalid_name
+                   | :invalid_classification
+                   | :invalid_description
+                   | :invalid_active_state
+                   | :invalid_audit_details
+                   | :invalid_params,
                  params: Account.create_params()
                })
            }}
@@ -95,20 +139,36 @@ defmodule Bookkeeping do
 
   ## Examples
 
-      iex> Bookkeeping.update_account(account, %{name: "Cash and cash equivalents"})
+      iex> Bookkeeping.find_account_by_code("1000")
       {:ok, %Bookkeeping.Core.Account{...}}
 
-      iex> Bookkeeping.update_account(account, %{name: "Cash and cash equivalents"})
-      {:error, :invalid_account}
+      iex> Bookkeeping.update_account(%Bookkeeping.Core.Account{...}, %{name: "Cash 1", description: "Cash and Cash Equivalents 1", audit_details: %{}, active: true})
+      {:ok, %Bookkeeping.Core.Account{...}}
 
-      iex> Bookkeeping.update_account(account, %{code: "1002"})
-      {:error, :invalid_field}
+      iex> Bookkeeping.update_account(%Bookkeeping.Core.Account{...}, %{name: nil, description: "Cash and Cash Equivalents 1", audit_details: %{}, active: true})
+      {:error, :invalid_name}
 
-      iex> Bookkeeping.update_account(account, nil)
+      iex> Bookkeeping.update_account(%Bookkeeping.Core.Account{...}, %{name: "Cash 1", description: nil, audit_details: %{}, active: true})
+      {:error, :invalid_description}
+
+      iex> Bookkeeping.update_account(%Bookkeeping.Core.Account{...}, %{name: "Cash 1", description: "Cash and Cash Equivalents 1", audit_details: nil, active: true})
+      {:error, :invalid_audit_details}
+
+      iex> Bookkeeping.update_account(%Bookkeeping.Core.Account{...}, %{name: "Cash 1", description: "Cash and Cash Equivalents 1", audit_details: %{}, active: nil})
+      {:error, :invalid_active_state}
+
+      iex> Bookkeeping.update_account(%Bookkeeping.Core.Account{...}, nil)
       {:error, :invalid_params}
   """
   @spec update_account(Account.t(), map()) ::
-          {:ok, Account.t()} | {:error, :invalid_account | :invalid_field | :invalid_params}
+          {:ok, Account.t()}
+          | {:error,
+             :invalid_account
+             | :invalid_name
+             | :invalid_description
+             | :invalid_active_state
+             | :invalid_audit_details
+             | :invalid_params}
   def update_account(account, params), do: ChartOfAccounts.update(account, params)
 
   @doc """

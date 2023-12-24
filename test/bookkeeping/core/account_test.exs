@@ -251,5 +251,10 @@ defmodule Bookkeeping.Core.AccountTest do
       account = Map.put(account, :audit_logs, nil)
       assert {:error, :invalid_account} = Account.validate(account)
     end
+
+    test "with invalid params" do
+      assert {:error, :invalid_account} = Account.validate(nil)
+      assert {:error, :invalid_account} = Account.validate(%{})
+    end
   end
 end

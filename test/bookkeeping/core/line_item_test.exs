@@ -37,28 +37,28 @@ defmodule Bookkeeping.Core.LineItemTest do
     test "with invalid account", %{params: params} do
       params = Map.put(params, :account, %{})
       assert {:error, :invalid_account} = LineItem.create(params)
-      params = Map.delete(params, :account)
+      params = Map.put(params, :account, nil)
       assert {:error, :invalid_account} = LineItem.create(params)
     end
 
     test "with invalid amount", %{params: params} do
       params = Map.put(params, :amount, 100)
       assert {:error, :invalid_amount} = LineItem.create(params)
-      params = Map.delete(params, :amount)
+      params = Map.put(params, :amount, nil)
       assert {:error, :invalid_amount} = LineItem.create(params)
     end
 
     test "with invalid entry type", %{params: params} do
       params = Map.put(params, :entry, "invalid")
       assert {:error, :invalid_entry} = LineItem.create(params)
-      params = Map.delete(params, :entry)
+      params = Map.put(params, :entry, nil)
       assert {:error, :invalid_entry} = LineItem.create(params)
     end
 
     test "with invalid particulars", %{params: params} do
       params = Map.put(params, :particulars, nil)
       assert {:error, :invalid_particulars} = LineItem.create(params)
-      params = Map.delete(params, :particulars)
+      params = Map.put(params, :particulars, nil)
       assert {:error, :invalid_particulars} = LineItem.create(params)
     end
 

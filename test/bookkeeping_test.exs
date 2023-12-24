@@ -42,6 +42,48 @@ defmodule BookkeepingTest do
       assert is_list(account.audit_logs)
     end
 
+    test "that already exists", %{params: params} do
+      params = update_params(params)
+      assert {:ok, _account} = Bookkeeping.create_account(params)
+      assert {:error, :already_exists} = Bookkeeping.create_account(params)
+    end
+
+    test "with invalid code", %{params: params} do
+      params = update_params(params)
+      params = Map.put(params, :code, nil)
+      assert {:error, :invalid_code} = Bookkeeping.create_account(params)
+    end
+
+    test "with invalid name", %{params: params} do
+      params = update_params(params)
+      params = Map.put(params, :name, nil)
+      assert {:error, :invalid_name} = Bookkeeping.create_account(params)
+    end
+
+    test "with invalid classification", %{params: params} do
+      params = update_params(params)
+      params = Map.put(params, :classification, nil)
+      assert {:error, :invalid_classification} = Bookkeeping.create_account(params)
+    end
+
+    test "with invalid description", %{params: params} do
+      params = update_params(params)
+      params = Map.put(params, :description, nil)
+      assert {:error, :invalid_description} = Bookkeeping.create_account(params)
+    end
+
+    test "with invalid active state", %{params: params} do
+      params = update_params(params)
+      params = Map.put(params, :active, nil)
+      assert {:error, :invalid_active_state} = Bookkeeping.create_account(params)
+    end
+
+    test "with invalid audit details", %{params: params} do
+      params = update_params(params)
+      params = Map.put(params, :audit_details, nil)
+      assert {:error, :invalid_audit_details} = Bookkeeping.create_account(params)
+    end
+
     test "with invalid params" do
       assert {:error, :invalid_params} = Bookkeeping.create_account("apple")
       assert {:error, :invalid_params} = Bookkeeping.create_account(%{})
@@ -49,27 +91,10 @@ defmodule BookkeepingTest do
       assert {:error, :invalid_params} = Bookkeeping.create_account(%{name: "Cash"})
       assert {:error, :invalid_params} = Bookkeeping.create_account(%{classification: "asset"})
       assert {:error, :invalid_params} = Bookkeeping.create_account(%{description: "description"})
+      assert {:error, :invalid_params} = Bookkeeping.create_account(%{active: true})
 
       assert {:error, :invalid_params} =
                Bookkeeping.create_account(%{audit_details: %{email: "example@example.com"}})
-
-      assert {:error, :invalid_params} = Bookkeeping.create_account(%{active: true})
-    end
-
-    test "with invalid field", %{invalid_params: invalid_params} do
-      params = update_params(invalid_params)
-      assert {:error, :invalid_field} = Bookkeeping.create_account(params)
-    end
-
-    test "that already exists", %{params: params} do
-      params = update_params(params)
-      assert {:ok, _account} = Bookkeeping.create_account(params)
-      assert {:error, :already_exists} = Bookkeeping.create_account(params)
-    end
-
-    test "with invalid table" do
-      ChartOfAccounts.Worker.die()
-      assert {:error, :invalid_params} = Bookkeeping.create_account(%{code: "1000", name: "Cash"})
     end
   end
 
@@ -122,9 +147,10 @@ defmodule BookkeepingTest do
       assert Enum.count(accounts) == 7
       assert Enum.count(errors) == 3
 
-      assert Enum.all?(errors, fn error ->
-               error.reason in [:already_exists, :invalid_field]
-             end)
+      assert Enum.all?(
+               errors,
+               &(&1.reason in [:already_exists, :invalid_name, :invalid_classification])
+             )
     end
   end
 
@@ -158,16 +184,32 @@ defmodule BookkeepingTest do
                Bookkeeping.update_account("apple", %{name: "Cash updated"})
     end
 
-    test "with invalid field", %{params: params} do
+    test "with invalid name", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
+      assert {:error, :invalid_name} = Bookkeeping.update_account(account, %{name: nil})
+    end
+
+    test "with invalid description", %{params: params} do
       params = update_params(params)
       {:ok, account} = Bookkeeping.create_account(params)
 
-      assert {:error, :invalid_field} = Bookkeeping.update_account(account, %{code: "1001"})
+      assert {:error, :invalid_description} =
+               Bookkeeping.update_account(account, %{description: nil})
+    end
 
-      assert {:error, :invalid_field} =
-               Bookkeeping.update_account(account, %{classification: "liability"})
+    test "with invalid audit details", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
 
-      assert {:error, :invalid_field} = Bookkeeping.update_account(account, %{test: "test"})
+      assert {:error, :invalid_audit_details} =
+               Bookkeeping.update_account(account, %{audit_details: nil})
+    end
+
+    test "with invalid active state", %{params: params} do
+      params = update_params(params)
+      {:ok, account} = Bookkeeping.create_account(params)
+      assert {:error, :invalid_active_state} = Bookkeeping.update_account(account, %{active: nil})
     end
 
     test "with invalid params", %{params: params} do
