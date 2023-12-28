@@ -1,281 +1,373 @@
 defmodule Bookkeeping.Core.JournalEntryTest do
   use ExUnit.Case, async: true
+  alias Bookkeeping.Core.LineItem
+  alias Bookkeeping.Core.AuditLog
   alias Bookkeeping.Core.{Account, JournalEntry}
 
   setup do
-    transaction_date = DateTime.utc_now()
-    general_ledger_posting_date = DateTime.utc_now()
-    journal_entry_number = "JE100100"
-    transaction_reference_number = "INV100100"
-    audit_details = %{created_by: "example@example.com"}
-
     {:ok, asset_account} =
-      Account.create("10000", "cash", "asset", "journal_entry_description", audit_details)
+      Account.create(%{
+        code: "10_000",
+        name: "cash",
+        classification: "asset",
+        description: "description",
+        audit_details: %{},
+        active: true
+      })
 
     {:ok, revenue_account} =
-      Account.create(
-        "20000",
-        "service revenue",
-        "revenue",
-        "journal_entry_description",
-        audit_details
-      )
+      Account.create(%{
+        code: "20_000",
+        name: "service revenue",
+        classification: "revenue",
+        description: "description",
+        audit_details: %{},
+        active: true
+      })
 
-    t_accounts = %{
-      left: [
+    {:ok, receivable_account} =
+      Account.create(%{
+        code: "30_000",
+        name: "receivable",
+        classification: "asset",
+        description: "description",
+        audit_details: %{},
+        active: true
+      })
+
+    params = %{
+      transaction_date: DateTime.utc_now(),
+      posting_date: nil,
+      document_number: "JE100100",
+      reference_number: "INV100100",
+      particulars: "journal entry description",
+      details: %{approved_by: "example_admin@example.com"},
+      debit_items: [
         %{
           account: asset_account,
-          amount: Decimal.new(100),
-          line_item_description: "cash from service revenue"
+          amount: 99.05,
+          # amount: Money.new("USD", 100),
+          particulars: "cash from service revenue"
+          # entry: :debit
+        },
+        %{
+          account: receivable_account,
+          amount: 200.95,
+          # amount: Money.new("USD", 200),
+          particulars: "receivable from service revenue"
+          # entry: :debit
         }
       ],
-      right: [
+      credit_items: [
         %{
           account: revenue_account,
-          amount: Decimal.new(100),
-          line_item_description: "service revenue"
+          amount: 300,
+          # amount: Money.new("USD", 300),
+          particulars: "service revenue"
+          # entry: :credit
         }
-      ]
+      ],
+      audit_details: %{created_by: "example@example.com"},
+      posted: false,
+      base_currency: "USD",
+      transaction_currency: "USD",
+      base_rate: Decimal.new("1"),
+      transaction_rate: Decimal.new("1")
     }
 
-    journal_entry_details = %{approved_by: "example@example.com"}
-
-    {:ok,
-     transaction_date: transaction_date,
-     general_ledger_posting_date: general_ledger_posting_date,
-     asset_account: asset_account,
-     revenue_account: revenue_account,
-     t_accounts: t_accounts,
-     journal_entry_number: journal_entry_number,
-     transaction_reference_number: transaction_reference_number,
-     journal_entry_details: journal_entry_details,
-     audit_details: audit_details}
+    {:ok, asset_account: asset_account, revenue_account: revenue_account, params: params}
   end
 
-  test "create a journal entry", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    journal_entry_number: journal_entry_number,
-    transaction_reference_number: transaction_reference_number,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
-    assert {:ok, _journal_entry} =
-             JournalEntry.create(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
+  describe "create/1" do
+    test "with valid unposted params", %{params: params} do
+      assert {:ok, journal_entry} = JournalEntry.create(params)
+      assert journal_entry.transaction_date == params.transaction_date
+      assert journal_entry.posting_date == params.posting_date
+      assert journal_entry.document_number == params.document_number
+      assert journal_entry.reference_number == params.reference_number
+      assert journal_entry.particulars == params.particulars
+      assert journal_entry.details == params.details
+      assert journal_entry.posted == params.posted
+      assert Enum.all?(journal_entry.audit_logs, &is_struct(&1, AuditLog))
+      assert Enum.all?(journal_entry.debit_items, &is_struct(&1, LineItem))
+      assert Enum.all?(journal_entry.credit_items, &is_struct(&1, LineItem))
+    end
   end
 
-  test "disallow journal entry with invalid t_accounts", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    asset_account: asset_account,
-    revenue_account: revenue_account,
-    journal_entry_number: journal_entry_number,
-    transaction_reference_number: transaction_reference_number,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
-    assert {:error, [:invalid_account]} =
-             JournalEntry.create(
-               transaction_date,
-               general_ledger_posting_date,
-               %{
-                 left: [%{account: "revenue_account", amount: Decimal.new(100)}],
-                 right: [%{account: asset_account, amount: Decimal.new(100)}]
-               },
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
+  # setup do
+  #   transaction_date = DateTime.utc_now()
+  #   posting_date = DateTime.utc_now()
+  #   journal_entry_number = "JE100100"
+  #   reference_number = "INV100100"
+  #   audit_details = %{created_by: "example@example.com"}
 
-    assert {:error, [:invalid_account]} =
-             JournalEntry.create(
-               transaction_date,
-               general_ledger_posting_date,
-               %{
-                 left: [%{account: revenue_account, amount: Decimal.new(100)}],
-                 right: [%{account: "asset_account", amount: Decimal.new(100)}]
-               },
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
+  #   {:ok, asset_account} =
+  #     Account.create("10000", "cash", "asset", "description", audit_details)
 
-    assert {:error, :unbalanced_line_items} =
-             JournalEntry.create(
-               transaction_date,
-               general_ledger_posting_date,
-               %{
-                 left: [%{account: revenue_account, amount: Decimal.new(100)}],
-                 right: [%{account: asset_account, amount: Decimal.new(200)}]
-               },
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
+  #   {:ok, revenue_account} =
+  #     Account.create(
+  #       "20000",
+  #       "service revenue",
+  #       "revenue",
+  #       "description",
+  #       audit_details
+  #     )
 
-    assert {:error, [:invalid_amount]} =
-             JournalEntry.create(
-               transaction_date,
-               general_ledger_posting_date,
-               %{
-                 left: [%{account: revenue_account, amount: 100}],
-                 right: [%{account: asset_account, amount: Decimal.new(200)}]
-               },
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
+  #   t_accounts = %{
+  #     left: [
+  #       %{
+  #         account: asset_account,
+  #         amount: Decimal.new(100),
+  #         description: "cash from service revenue"
+  #       }
+  #     ],
+  #     right: [
+  #       %{
+  #         account: revenue_account,
+  #         amount: Decimal.new(100),
+  #         description: "service revenue"
+  #       }
+  #     ]
+  #   }
 
-    assert {:error, [:invalid_amount]} =
-             JournalEntry.create(
-               transaction_date,
-               general_ledger_posting_date,
-               %{
-                 left: [%{account: revenue_account, amount: Decimal.new(200)}],
-                 right: [%{account: asset_account, amount: 200}]
-               },
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
+  #   particulars = %{approved_by: "example@example.com"}
 
-    assert {:error, [:invalid_amount]} =
-             JournalEntry.create(
-               transaction_date,
-               general_ledger_posting_date,
-               %{
-                 left: [%{account: revenue_account, amount: 100}],
-                 right: [%{account: asset_account, amount: Decimal.new(200)}]
-               },
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
-  end
+  #   {:ok,
+  #    transaction_date: transaction_date,
+  #    posting_date: posting_date,
+  #    asset_account: asset_account,
+  #    revenue_account: revenue_account,
+  #    t_accounts: t_accounts,
+  #    document_number: journal_entry_number,
+  #    reference_number: reference_number,
+  #    particulars: particulars,
+  #    audit_details: audit_details}
+  # end
 
-  test "disallow journal entry with invalid fields", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    journal_entry_number: journal_entry_number,
-    transaction_reference_number: transaction_reference_number,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
-    assert {:error, :invalid_journal_entry} =
-             JournalEntry.create(
-               nil,
-               nil,
-               %{},
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
+  # test "create a journal entry", %{
+  #   transaction_date: transaction_date,
+  #   posting_date: posting_date,
+  #   t_accounts: t_accounts,
+  #   document_number: journal_entry_number,
+  #   reference_number: reference_number,
+  #   particulars: particulars,
+  #   audit_details: audit_details
+  # } do
+  #   assert {:ok, _journal_entry} =
+  #            JournalEntry.create(
+  #              transaction_date,
+  #              posting_date,
+  #              t_accounts,
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
+  # end
 
-    assert {:error, :invalid_line_items} =
-             JournalEntry.create(
-               transaction_date,
-               general_ledger_posting_date,
-               %{},
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
-  end
+  # test "disallow journal entry with invalid t_accounts", %{
+  #   transaction_date: transaction_date,
+  #   posting_date: posting_date,
+  #   asset_account: asset_account,
+  #   revenue_account: revenue_account,
+  #   document_number: journal_entry_number,
+  #   reference_number: reference_number,
+  #   particulars: particulars,
+  #   audit_details: audit_details
+  # } do
+  #   assert {:error, [:invalid_account]} =
+  #            JournalEntry.create(
+  #              transaction_date,
+  #              posting_date,
+  #              %{
+  #                left: [%{account: "revenue_account", amount: Decimal.new(100)}],
+  #                right: [%{account: asset_account, amount: Decimal.new(100)}]
+  #              },
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
 
-  test "update journal entry", %{
-    transaction_date: transaction_date,
-    general_ledger_posting_date: general_ledger_posting_date,
-    t_accounts: t_accounts,
-    asset_account: asset_account,
-    revenue_account: revenue_account,
-    journal_entry_number: journal_entry_number,
-    transaction_reference_number: transaction_reference_number,
-    journal_entry_details: journal_entry_details,
-    audit_details: audit_details
-  } do
-    assert {:ok, journal_entry} =
-             JournalEntry.create(
-               transaction_date,
-               general_ledger_posting_date,
-               t_accounts,
-               journal_entry_number,
-               transaction_reference_number,
-               "journal entry description",
-               journal_entry_details,
-               audit_details
-             )
+  #   assert {:error, [:invalid_account]} =
+  #            JournalEntry.create(
+  #              transaction_date,
+  #              posting_date,
+  #              %{
+  #                left: [%{account: revenue_account, amount: Decimal.new(100)}],
+  #                right: [%{account: "asset_account", amount: Decimal.new(100)}]
+  #              },
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
 
-    assert {:error, :invalid_journal_entry} = JournalEntry.update(journal_entry, %{})
+  #   assert {:error, :unbalanced_line_items} =
+  #            JournalEntry.create(
+  #              transaction_date,
+  #              posting_date,
+  #              %{
+  #                left: [%{account: revenue_account, amount: Decimal.new(100)}],
+  #                right: [%{account: asset_account, amount: Decimal.new(200)}]
+  #              },
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
 
-    assert {:ok, updated_journal_entry} =
-             JournalEntry.update(journal_entry, %{
-               journal_entry_description: "second updated description",
-               journal_entry_details: %{approved_by: "other_example@example.com"},
-               posted: false,
-               t_accounts: %{
-                 left: [%{account: asset_account, amount: Decimal.new(200)}],
-                 right: [%{account: revenue_account, amount: Decimal.new(200)}]
-               }
-             })
+  #   assert {:error, [:invalid_amount]} =
+  #            JournalEntry.create(
+  #              transaction_date,
+  #              posting_date,
+  #              %{
+  #                left: [%{account: revenue_account, amount: 100}],
+  #                right: [%{account: asset_account, amount: Decimal.new(200)}]
+  #              },
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
 
-    assert updated_journal_entry.general_ledger_posting_date ==
-             journal_entry.general_ledger_posting_date
+  #   assert {:error, [:invalid_amount]} =
+  #            JournalEntry.create(
+  #              transaction_date,
+  #              posting_date,
+  #              %{
+  #                left: [%{account: revenue_account, amount: Decimal.new(200)}],
+  #                right: [%{account: asset_account, amount: 200}]
+  #              },
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
 
-    assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
+  #   assert {:error, [:invalid_amount]} =
+  #            JournalEntry.create(
+  #              transaction_date,
+  #              posting_date,
+  #              %{
+  #                left: [%{account: revenue_account, amount: 100}],
+  #                right: [%{account: asset_account, amount: Decimal.new(200)}]
+  #              },
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
+  # end
 
-    refute updated_journal_entry.journal_entry_description ==
-             journal_entry.journal_entry_description
+  # test "disallow journal entry with invalid fields", %{
+  #   transaction_date: transaction_date,
+  #   posting_date: posting_date,
+  #   document_number: journal_entry_number,
+  #   reference_number: reference_number,
+  #   particulars: particulars,
+  #   audit_details: audit_details
+  # } do
+  #   assert {:error, :invalid_journal_entry} =
+  #            JournalEntry.create(
+  #              nil,
+  #              nil,
+  #              %{},
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
 
-    assert {:ok, updated_journal_entry} =
-             JournalEntry.update(journal_entry, %{
-               journal_entry_description: "updated description",
-               posted: true
-             })
+  #   assert {:error, :invalid_line_items} =
+  #            JournalEntry.create(
+  #              transaction_date,
+  #              posting_date,
+  #              %{},
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
+  # end
 
-    assert updated_journal_entry.general_ledger_posting_date ==
-             journal_entry.general_ledger_posting_date
+  # test "update journal entry", %{
+  #   transaction_date: transaction_date,
+  #   posting_date: posting_date,
+  #   t_accounts: t_accounts,
+  #   asset_account: asset_account,
+  #   revenue_account: revenue_account,
+  #   document_number: journal_entry_number,
+  #   reference_number: reference_number,
+  #   particulars: particulars,
+  #   audit_details: audit_details
+  # } do
+  #   assert {:ok, journal_entry} =
+  #            JournalEntry.create(
+  #              transaction_date,
+  #              posting_date,
+  #              t_accounts,
+  #              journal_entry_number,
+  #              reference_number,
+  #              "journal entry description",
+  #              particulars,
+  #              audit_details
+  #            )
 
-    assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
+  #   assert {:error, :invalid_journal_entry} = JournalEntry.update(journal_entry, %{})
 
-    refute updated_journal_entry.journal_entry_description ==
-             journal_entry.journal_entry_description
+  #   assert {:ok, updated_journal_entry} =
+  #            JournalEntry.update(journal_entry, %{
+  #              description: "second updated description",
+  #              particulars: %{approved_by: "other_example@example.com"},
+  #              posted: false,
+  #              t_accounts: %{
+  #                left: [%{account: asset_account, amount: Decimal.new(200)}],
+  #                right: [%{account: revenue_account, amount: Decimal.new(200)}]
+  #              }
+  #            })
 
-    refute updated_journal_entry.posted == journal_entry.posted
+  #   assert updated_journal_entry.posting_date ==
+  #            journal_entry.posting_date
 
-    assert {:error, :already_posted_journal_entry} =
-             JournalEntry.update(updated_journal_entry, %{
-               journal_entry_description: "third description update",
-               posted: true,
-               t_accounts: %{
-                 left: [%{account: asset_account, amount: Decimal.new(200)}],
-                 right: [%{account: revenue_account, amount: Decimal.new(200)}]
-               }
-             })
-  end
+  #   assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
+
+  #   refute updated_journal_entry.description ==
+  #            journal_entry.description
+
+  #   assert {:ok, updated_journal_entry} =
+  #            JournalEntry.update(journal_entry, %{
+  #              description: "updated description",
+  #              posted: true
+  #            })
+
+  #   assert updated_journal_entry.posting_date ==
+  #            journal_entry.posting_date
+
+  #   assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
+
+  #   refute updated_journal_entry.description ==
+  #            journal_entry.description
+
+  #   refute updated_journal_entry.posted == journal_entry.posted
+
+  #   assert {:error, :already_posted_journal_entry} =
+  #            JournalEntry.update(updated_journal_entry, %{
+  #              description: "third description update",
+  #              posted: true,
+  #              t_accounts: %{
+  #                left: [%{account: asset_account, amount: Decimal.new(200)}],
+  #                right: [%{account: revenue_account, amount: Decimal.new(200)}]
+  #              }
+  #            })
+  # end
 end

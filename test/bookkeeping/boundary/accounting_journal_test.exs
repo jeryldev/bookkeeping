@@ -2,15 +2,15 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
   use ExUnit.Case, async: true
   alias Bookkeeping.Boundary.AccountingJournal.Backup, as: AccountingJournalBackup
   alias Bookkeeping.Boundary.AccountingJournal.Server, as: AccountingJournalServer
-  alias Bookkeeping.Boundary.ChartOfAccounts.Server, as: ChartOfAccountsServer
+  alias Bookkeeping.Boundary.ChartOfAccounts.Worker, as: ChartOfAccountsServer
   alias Bookkeeping.Core.Account
 
   setup do
     transaction_date = DateTime.utc_now()
-    general_ledger_posting_date = DateTime.utc_now()
+    posting_date = DateTime.utc_now()
     journal_entry_number = "JE100100"
-    transaction_reference_number = "INV100100"
-    journal_entry_description = "journal entry description"
+    reference_number = "INV100100"
+    description = "journal entry description"
     audit_details = %{email: "example@example.com"}
 
     {:ok, cash_account} =
@@ -41,42 +41,42 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
         %{
           account: cash_account,
           amount: Decimal.new(100),
-          line_item_description: "cash from service revenue"
+          description: "cash from service revenue"
         }
       ],
       right: [
         %{
           account: revenue_account,
           amount: Decimal.new(100),
-          line_item_description: "service revenue"
+          description: "service revenue"
         }
       ]
     }
 
-    journal_entry_details = %{approved_by: "John Doe", approved_at: DateTime.utc_now()}
+    particulars = %{approved_by: "John Doe", approved_at: DateTime.utc_now()}
 
     create_je_params = %{
       transaction_date: transaction_date,
-      general_ledger_posting_date: general_ledger_posting_date,
+      posting_date: posting_date,
       t_accounts: t_accounts,
-      journal_entry_number: journal_entry_number,
-      transaction_reference_number: transaction_reference_number,
-      journal_entry_description: journal_entry_description,
-      journal_entry_details: journal_entry_details,
+      document_number: journal_entry_number,
+      reference_number: reference_number,
+      description: description,
+      particulars: particulars,
       audit_details: audit_details
     }
 
     {:ok,
      transaction_date: transaction_date,
-     general_ledger_posting_date: general_ledger_posting_date,
-     journal_entry_number: journal_entry_number,
-     transaction_reference_number: transaction_reference_number,
+     posting_date: posting_date,
+     document_number: journal_entry_number,
+     reference_number: reference_number,
      t_accounts: t_accounts,
      cash_account: cash_account,
      revenue_account: revenue_account,
      inactive_revenue_account: inactive_revenue_account,
-     journal_entry_description: journal_entry_description,
-     journal_entry_details: journal_entry_details,
+     description: description,
+     particulars: particulars,
      audit_details: audit_details,
      create_je_params: create_je_params}
   end
@@ -100,7 +100,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournalServer.create_journal_entry(params)
 
     assert journal_entry_1.journal_entry_number == "ref_num_1"
-    assert journal_entry_1.journal_entry_description == "journal entry description"
+    assert journal_entry_1.description == "journal entry description"
     assert journal_entry_1.line_items |> length() == 2
     assert journal_entry_1.audit_logs
     assert journal_entry_1.posted == false
@@ -114,20 +114,20 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert {:ok, journal_entry_3} =
              AccountingJournalServer.create_journal_entry(params)
 
-    other_transaction_date = DateTime.add(journal_entry_2.general_ledger_posting_date, 10, :day)
+    other_transaction_date = DateTime.add(journal_entry_2.posting_date, 10, :day)
 
     params =
       create_je_params
       |> Map.put(:transaction_date, other_transaction_date)
-      |> Map.put(:general_ledger_posting_date, other_transaction_date)
+      |> Map.put(:posting_date, other_transaction_date)
       |> Map.put(:journal_entry_number, "ref_num_4")
 
     assert {:ok, journal_entry_4} =
              AccountingJournalServer.create_journal_entry(params)
 
     assert {:ok, found_journal_entries} =
-             journal_entry_2.general_ledger_posting_date
-             |> AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date()
+             journal_entry_2.posting_date
+             |> AccountingJournalServer.find_journal_entries_by_posting_date()
 
     assert Enum.member?(found_journal_entries, journal_entry_2)
     assert Enum.member?(found_journal_entries, journal_entry_3)
@@ -176,7 +176,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     params =
       create_je_params
-      |> Map.put(:journal_entry_description, nil)
+      |> Map.put(:description, nil)
       |> Map.put(:journal_entry_number, "invalid_je_1")
 
     assert {:error, :invalid_journal_entry} =
@@ -243,20 +243,20 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournalServer.create_journal_entry(params)
 
     assert {:ok, je_result_1} =
-             journal_entry_1.general_ledger_posting_date
-             |> AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date()
+             journal_entry_1.posting_date
+             |> AccountingJournalServer.find_journal_entries_by_posting_date()
 
     assert is_list(je_result_1)
 
     assert {:ok, je_result_2} =
-             journal_entry_1.general_ledger_posting_date
+             journal_entry_1.posting_date
              |> Map.take([:year, :month, :day])
-             |> AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date()
+             |> AccountingJournalServer.find_journal_entries_by_posting_date()
 
     assert is_list(je_result_2)
 
     assert {:error, :invalid_date} =
-             AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date(nil)
+             AccountingJournalServer.find_journal_entries_by_posting_date(nil)
   end
 
   test "find journal entries by reference number", %{create_je_params: create_je_params} do
@@ -311,17 +311,17 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              AccountingJournalServer.create_journal_entry(params)
 
     current_from_date_details =
-      journal_entry_1.general_ledger_posting_date
+      journal_entry_1.posting_date
       |> DateTime.add(-10, :day)
       |> Map.take([:year, :month, :day])
 
     current_to_date_details =
-      journal_entry_2.general_ledger_posting_date
+      journal_entry_2.posting_date
       |> DateTime.add(10, :day)
       |> Map.take([:year, :month, :day])
 
     assert {:ok, journal_entries} =
-             AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(
+             AccountingJournalServer.find_journal_entries_by_posting_date_range(
                current_from_date_details,
                current_to_date_details
              )
@@ -331,24 +331,24 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert Enum.member?(journal_entries, journal_entry_2)
 
     assert {:error, :invalid_date} =
-             AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(
+             AccountingJournalServer.find_journal_entries_by_posting_date_range(
                nil,
-               journal_entry_1.general_ledger_posting_date
+               journal_entry_1.posting_date
              )
 
     assert {:error, :invalid_date} =
-             AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(
-               journal_entry_1.general_ledger_posting_date,
+             AccountingJournalServer.find_journal_entries_by_posting_date_range(
+               journal_entry_1.posting_date,
                nil
              )
 
     from_date_details =
-      Map.take(journal_entry_1.general_ledger_posting_date, [:year, :month, :day])
+      Map.take(journal_entry_1.posting_date, [:year, :month, :day])
 
-    to_date_details = Map.take(journal_entry_2.general_ledger_posting_date, [:year, :month, :day])
+    to_date_details = Map.take(journal_entry_2.posting_date, [:year, :month, :day])
 
     assert {:ok, journal_entries} =
-             AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(
+             AccountingJournalServer.find_journal_entries_by_posting_date_range(
                from_date_details,
                to_date_details
              )
@@ -358,33 +358,33 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
     assert Enum.member?(journal_entries, journal_entry_2)
 
     past_from_date_details =
-      journal_entry_1.general_ledger_posting_date
+      journal_entry_1.posting_date
       |> DateTime.add(-100, :day)
       |> Map.take([:year, :month, :day])
 
     past_to_date_details =
-      journal_entry_2.general_ledger_posting_date
+      journal_entry_2.posting_date
       |> DateTime.add(-50, :day)
       |> Map.take([:year, :month, :day])
 
     assert {:ok, []} =
-             AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(
+             AccountingJournalServer.find_journal_entries_by_posting_date_range(
                past_from_date_details,
                past_to_date_details
              )
 
     future_from_date_details =
-      journal_entry_1.general_ledger_posting_date
+      journal_entry_1.posting_date
       |> DateTime.add(100, :day)
       |> Map.take([:year, :month, :day])
 
     future_to_date_details =
-      journal_entry_2.general_ledger_posting_date
+      journal_entry_2.posting_date
       |> DateTime.add(150, :day)
       |> Map.take([:year, :month, :day])
 
     assert {:ok, []} =
-             AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date_range(
+             AccountingJournalServer.find_journal_entries_by_posting_date_range(
                future_from_date_details,
                future_to_date_details
              )
@@ -404,25 +404,25 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                "../../../../test/bookkeeping/data/valid_journal_entries.csv"
              )
 
-    journal_entry_descriptions =
-      Enum.map(created_journals, fn journal_entry -> journal_entry.journal_entry_description end)
+    descriptions =
+      Enum.map(created_journals, fn journal_entry -> journal_entry.description end)
 
     assert Enum.member?(
-             journal_entry_descriptions,
+             descriptions,
              "JE_1001_INV JE_1001_AP JE_1001_LTD JE_1001_STD JE_1001_C"
            )
 
-    assert Enum.member?(journal_entry_descriptions, "JE_1007_INV")
+    assert Enum.member?(descriptions, "JE_1007_INV")
 
-    line_item_descriptions =
+    descriptions =
       created_journals
       |> Enum.map(fn journal_entry -> journal_entry.line_items end)
       |> List.flatten()
-      |> Enum.map(fn line_item -> line_item.line_item_description end)
+      |> Enum.map(fn line_item -> line_item.description end)
 
-    assert Enum.member?(line_item_descriptions, "Bought a new property")
-    assert Enum.member?(line_item_descriptions, "Bought additional inventory from AAA Company")
-    assert Enum.member?(line_item_descriptions, "Remaining Payable amount")
+    assert Enum.member?(descriptions, "Bought a new property")
+    assert Enum.member?(descriptions, "Bought additional inventory from AAA Company")
+    assert Enum.member?(descriptions, "Remaining Payable amount")
 
     assert created_journals |> length() == 2
 
@@ -433,8 +433,8 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
 
     assert errors == [
-             %{error: :duplicate_journal_entry_number, journal_entry_number: "1001"},
-             %{error: :duplicate_journal_entry_number, journal_entry_number: "1007"}
+             %{error: :duplicate_journal_entry_number, document_number: "1001"},
+             %{error: :duplicate_journal_entry_number, document_number: "1007"}
            ]
 
     # importing a file with invalid journal entries
@@ -444,10 +444,10 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              )
 
     assert errors == [
-             %{error: :invalid_date, journal_entry_number: "1003"},
-             %{error: :invalid_csv_item, journal_entry_number: ""},
-             %{error: :invalid_date, journal_entry_number: "1003"},
-             %{error: :invalid_date, journal_entry_number: "1005"}
+             %{error: :invalid_date, document_number: "1003"},
+             %{error: :invalid_csv_item, document_number: ""},
+             %{error: :invalid_date, document_number: "1003"},
+             %{error: :invalid_date, document_number: "1005"}
            ]
 
     # importing a missing file
@@ -468,7 +468,7 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
                "../../../../test/bookkeeping/data/partially_valid_journal_entries.csv"
              )
 
-    assert errors == [%{error: :unbalanced_line_items, journal_entry_number: "1009"}]
+    assert errors == [%{error: :unbalanced_line_items, document_number: "1009"}]
     assert Enum.count(oks) == 1
   end
 
@@ -487,13 +487,13 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     additional_random_days = Enum.random(10..100)
 
-    updated_general_ledger_posting_date =
-      DateTime.add(journal_entry.general_ledger_posting_date, additional_random_days, :day)
+    updated_posting_date =
+      DateTime.add(journal_entry.posting_date, additional_random_days, :day)
 
     assert {:ok, updated_journal_entry} =
              AccountingJournalServer.update_journal_entry(journal_entry, %{
-               general_ledger_posting_date: updated_general_ledger_posting_date,
-               journal_entry_description: "second updated description",
+               posting_date: updated_posting_date,
+               description: "second updated description",
                posted: false,
                t_accounts: %{
                  left: [%{account: revenue_account, amount: Decimal.new(200)}],
@@ -503,18 +503,18 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     assert updated_journal_entry.id == journal_entry.id
 
-    refute updated_journal_entry.general_ledger_posting_date ==
-             journal_entry.general_ledger_posting_date
+    refute updated_journal_entry.posting_date ==
+             journal_entry.posting_date
 
     assert updated_journal_entry.journal_entry_number == journal_entry.journal_entry_number
-    assert updated_journal_entry.journal_entry_description == "second updated description"
+    assert updated_journal_entry.description == "second updated description"
     assert updated_journal_entry.posted == false
     assert updated_journal_entry.line_items |> length() == 2
     assert updated_journal_entry.audit_logs
 
     assert {:ok, third_journal_entry_update} =
              AccountingJournalServer.update_journal_entry(updated_journal_entry, %{
-               journal_entry_description: "third updated description",
+               description: "third updated description",
                posted: true,
                t_accounts: %{
                  left: [%{account: revenue_account, amount: Decimal.new(300)}],
@@ -524,18 +524,18 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
 
     assert third_journal_entry_update.id == journal_entry.id
 
-    refute third_journal_entry_update.general_ledger_posting_date ==
-             journal_entry.general_ledger_posting_date
+    refute third_journal_entry_update.posting_date ==
+             journal_entry.posting_date
 
     assert third_journal_entry_update.journal_entry_number == journal_entry.journal_entry_number
-    assert third_journal_entry_update.journal_entry_description == "third updated description"
+    assert third_journal_entry_update.description == "third updated description"
     assert third_journal_entry_update.posted == true
     assert third_journal_entry_update.line_items |> length() == 2
     assert third_journal_entry_update.audit_logs
 
     assert {:error, :already_posted_journal_entry} =
              AccountingJournalServer.update_journal_entry(third_journal_entry_update, %{
-               journal_entry_description: "fourth updated description",
+               description: "fourth updated description",
                posted: false,
                t_accounts: %{
                  left: [%{account: revenue_account, amount: Decimal.new(400)}],
@@ -544,16 +544,16 @@ defmodule Bookkeeping.Boundary.AccountingJournalTest do
              })
 
     assert {:ok, journal_entries} =
-             journal_entry.general_ledger_posting_date
-             |> AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date()
+             journal_entry.posting_date
+             |> AccountingJournalServer.find_journal_entries_by_posting_date()
 
     refute Enum.member?(journal_entries, journal_entry)
     refute Enum.member?(journal_entries, updated_journal_entry)
     refute Enum.member?(journal_entries, third_journal_entry_update)
 
     assert {:ok, journal_entries} =
-             updated_journal_entry.general_ledger_posting_date
-             |> AccountingJournalServer.find_journal_entries_by_general_ledger_posting_date()
+             updated_journal_entry.posting_date
+             |> AccountingJournalServer.find_journal_entries_by_posting_date()
 
     refute Enum.member?(journal_entries, journal_entry)
     refute Enum.member?(journal_entries, updated_journal_entry)

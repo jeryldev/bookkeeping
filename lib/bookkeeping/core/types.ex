@@ -1,4 +1,11 @@
 defmodule Bookkeeping.Core.Types do
+  @moduledoc """
+  Bookkeeping.Core.Types is a module that contains all the types used in the Bookkeeping.Core module.
+  There are core types: entry and category.
+  Entry is a type that indicates the type of accounting entry for a transaction (debit or credit).
+  Category is a type that indicates which of the two most important financial reports an account belongs to (position or performance).
+  """
+
   @typedoc """
   Entry is a type that indicates the type of accounting entry for a transaction.
   It can have two possible values: debit or credit.
