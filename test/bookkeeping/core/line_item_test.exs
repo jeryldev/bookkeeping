@@ -16,7 +16,7 @@ defmodule Bookkeeping.Core.LineItemTest do
 
     params = %{
       account: account,
-      amount: Decimal.new(100),
+      amount: Money.new("USD", 100),
       entry: :debit,
       particulars: "line particulars"
     }
@@ -27,11 +27,11 @@ defmodule Bookkeeping.Core.LineItemTest do
   describe "create/1" do
     test "with valid params", %{params: params} do
       assert {:ok, line_item} = LineItem.create(params)
-
       assert line_item.account == params.account
       assert line_item.amount == params.amount
       assert line_item.entry == params.entry
       assert line_item.particulars == params.particulars
+      assert is_struct(line_item.account, Account)
     end
 
     test "with invalid account", %{params: params} do

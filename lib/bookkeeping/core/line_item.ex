@@ -10,7 +10,7 @@ defmodule Bookkeeping.Core.LineItem do
   """
   @type t :: %__MODULE__{
           account: Account.t(),
-          amount: Decimal.t(),
+          amount: Money.t(),
           entry: Types.entry(),
           particulars: String.t()
         }
@@ -42,22 +42,22 @@ defmodule Bookkeeping.Core.LineItem do
       iex> Account.create(%{code: "10_000", name: "cash", classification: "asset", particulars: "", audit_details: %{}, active: true})
       {:ok, asset_account}
 
-      iex> LineItem.create(%{account: asset_account, amount: Decimal.new(100), entry: :debit, particulars: ""})
+      iex> LineItem.create(%{account: asset_account, amount: Money.new("USD", 100), entry: :debit, particulars: ""})
       {:ok, %LineItem{...}}
 
-      iex> LineItem.create(%{account: nil, amount: Decimal.new(100), entry: :debit, particulars: ""})
+      iex> LineItem.create(%{account: nil, amount: Money.new("USD", 100), entry: :debit, particulars: ""})
       {:error, :invalid_account}
 
       iex> LineItem.create(%{account: asset_account, amount: 100, entry: :debit, particulars: ""})
       {:error, :invalid_amount}
 
-      iex> LineItem.create(%{account: asset_account, amount: Decimal.new(100), entry: :invalid, particulars: ""})
+      iex> LineItem.create(%{account: asset_account, amount: Money.new("USD", 100), entry: :invalid, particulars: ""})
       {:error, :invalid_entry}
 
-      iex> LineItem.create(%{account: asset_account, amount: Decimal.new(100), entry: :debit, particulars: nil})
+      iex> LineItem.create(%{account: asset_account, amount: Money.new("USD", 100), entry: :debit, particulars: nil})
       {:error, :invalid_particulars}
 
-      iex> LineItem.create(%{account: asset_account, amount: Decimal.new(100), entry: :debit})
+      iex> LineItem.create(%{account: asset_account, amount: Money.new("USD", 100), entry: :debit})
       {:error, :invalid_params}
   """
   @spec create(LineItem.t()) ::
@@ -119,15 +119,10 @@ defmodule Bookkeeping.Core.LineItem do
 
   defp validate_params(_), do: {:error, :invalid_params}
 
-  defp validate_account(account) do
-    case Account.validate(account) do
-      {:ok, _account} -> {:ok, account}
-      {:error, _reason} -> {:error, :invalid_account}
-    end
-  end
+  defp validate_account(account), do: Account.validate(account)
 
-  defp validate_amount(amount) when is_struct(amount, Decimal) do
-    if Decimal.gt?(amount, Decimal.new(0)),
+  defp validate_amount(amount) when is_struct(amount, Money) do
+    if Money.compare(amount, Money.new(amount.currency, 0)) == :gt,
       do: {:ok, amount},
       else: {:error, :invalid_amount}
   end

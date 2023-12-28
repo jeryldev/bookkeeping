@@ -32,7 +32,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Manager do
     {:noreply, table}
   end
 
-  defp wait_for_worker() do
+  defp wait_for_worker do
     case Process.whereis(Worker) do
       nil ->
         Process.sleep(1)
@@ -43,7 +43,7 @@ defmodule Bookkeeping.Boundary.ChartOfAccounts.Manager do
     end
   end
 
-  defp setup_table() do
+  defp setup_table do
     case Process.whereis(Worker) do
       nil ->
         Process.sleep(1)

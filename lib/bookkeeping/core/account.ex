@@ -280,16 +280,9 @@ defmodule Bookkeeping.Core.Account do
              | :invalid_audit_details}
   def create(params) do
     with {:ok, params} <- validate_params(params),
-         {:ok, audit_log} <- validate_audit_details(params, "create") do
-      {:ok,
-       %__MODULE__{
-         code: params.code,
-         name: params.name,
-         description: params.description,
-         classification: Classification.classify(params.classification),
-         audit_logs: [audit_log],
-         active: params.active
-       }}
+         {:ok, params} <- validate_audit_details(params, "create") do
+      params = Map.put(params, :classification, Classification.classify(params.classification))
+      {:ok, Map.merge(%__MODULE__{}, params)}
     end
   end
 
@@ -349,8 +342,8 @@ defmodule Bookkeeping.Core.Account do
   def update(account, params) do
     with {:ok, _account} <- validate(account),
          {:ok, %{}} <- validate_update_params(params),
-         {:ok, audit_log} <- validate_audit_details(params, "update") do
-      params = Map.put(params, :audit_logs, [audit_log | account.audit_logs])
+         {:ok, params} <- validate_audit_details(params, "update") do
+      params = Map.put(params, :audit_logs, [params.audit_logs | account.audit_logs])
       {:ok, Map.merge(account, params)}
     end
   end
@@ -381,7 +374,7 @@ defmodule Bookkeeping.Core.Account do
     end
   end
 
-  def validate(_), do: {:error, :invalid_account}
+  def validate(_account), do: {:error, :invalid_account}
 
   defp validate_params(
          %{
@@ -461,19 +454,24 @@ defmodule Bookkeeping.Core.Account do
   defp validate_audit_details(params, action) do
     details = Map.get(params, :audit_details, %{})
 
-    case AuditLog.create(%{
-           record: "account",
-           action: action,
-           details: details
-         }) do
-      {:ok, audit_log} -> {:ok, audit_log}
-      {:error, _reason} -> {:error, :invalid_audit_details}
+    case AuditLog.create(%{record: "account", action: action, details: details}) do
+      {:ok, audit_log} ->
+        params =
+          params
+          |> Map.delete(:audit_details)
+          |> Map.put(:audit_logs, [audit_log])
+
+        {:ok, params}
+
+      {:error, _reason} ->
+        {:error, :invalid_audit_details}
     end
   end
 
   defp validate_audit_logs(%{audit_logs: audit_logs})
-       when is_list(audit_logs) and length(audit_logs) >= 1,
-       do: {:ok, audit_logs}
+       when audit_logs == [] or not is_list(audit_logs),
+       do: {:error, :invalid_audit_logs}
 
-  defp validate_audit_logs(_params), do: {:error, :invalid_audit_logs}
+  defp validate_audit_logs(%{audit_logs: audit_logs}),
+    do: {:ok, audit_logs}
 end

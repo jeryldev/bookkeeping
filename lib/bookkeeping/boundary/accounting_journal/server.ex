@@ -39,7 +39,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>            }
       ...>          },
       ...>          amount: Decimal.new(100),
-      ...>          entry_type: :debit
+      ...>          entry: :debit
       ...>        },
       ...>        %LineItem{
       ...>          account: %Account{
@@ -53,7 +53,7 @@ defmodule Bookkeeping.Boundary.AccountingJournal.Server do
       ...>            }
       ...>          },
       ...>          amount: Decimal.new(100),
-      ...>          entry_type: :credit
+      ...>          entry: :credit
       ...>        }
       ...>      ],
       ...>      audit_logs: [

@@ -8,25 +8,248 @@ defmodule Bookkeeping.Core.JournalEntry do
 
   @type t :: %__MODULE__{
           transaction_date: DateTime.t(),
-          posting_date: DateTime.t(),
-          line_items: list(LineItem.t()),
+          posting_date: nil | DateTime.t(),
           document_number: String.t(),
-          reference_number: String.t(),
-          description: String.t(),
-          particulars: map(),
+          reference_number: nil | String.t(),
+          particulars: String.t(),
+          details: map(),
+          debit_items: list(LineItem.t()),
+          credit_items: list(LineItem.t()),
           audit_logs: list(AuditLog.t()),
-          posted: boolean()
+          posted: boolean(),
+          base_currency: String.t(),
+          transaction_currency: String.t(),
+          base_rate: Decimal.t(),
+          transaction_rate: Decimal.t()
+        }
+
+  @type create_params :: %{
+          transaction_date: DateTime.t(),
+          posting_date: nil | DateTime.t(),
+          document_number: String.t(),
+          reference_number: nil | String.t(),
+          particulars: String.t(),
+          details: map(),
+          debit_items: list(line_item_create_params()),
+          credit_items: list(line_item_create_params()),
+          audit_logs: list(AuditLog.t()),
+          posted: boolean(),
+          base_currency: String.t(),
+          transaction_currency: String.t(),
+          base_rate: Decimal.t(),
+          transaction_rate: Decimal.t()
+        }
+
+  @type line_item_create_params :: %{
+          account: Account.t(),
+          amount: integer() | float(),
+          particulars: String.t()
         }
 
   defstruct transaction_date: DateTime.utc_now(),
-            posting_date: DateTime.utc_now(),
+            posting_date: nil,
             document_number: "",
-            reference_number: "",
-            description: "",
-            particulars: %{},
-            line_items: [],
+            reference_number: nil,
+            particulars: "",
+            details: %{},
+            debit_items: [],
+            credit_items: [],
             audit_logs: [],
-            posted: false
+            posted: false,
+            base_currency: nil,
+            transaction_currency: nil,
+            base_rate: Decimal.new(1),
+            transaction_rate: Decimal.new(1)
+
+  def create(params) do
+    with {:ok, params} <- validate_params(params),
+         {:ok, params} <- validate_audit_details(params, "create"),
+         {:ok, debit_items} <- validate_line_items(params, :debit_items),
+         {:ok, credit_items} <- validate_line_items(params, :credit_items),
+         {:ok, nil} <- validate_balance(debit_items, credit_items, params.transaction_currency) do
+      params = Map.merge(params, %{debit_items: debit_items, credit_items: credit_items})
+      {:ok, Map.merge(%__MODULE__{}, params)}
+    end
+  end
+
+  defp validate_params(
+         %{
+           transaction_date: transaction_date,
+           posting_date: posting_date,
+           document_number: document_number,
+           reference_number: reference_number,
+           particulars: particulars,
+           details: details,
+           posted: posted,
+           base_currency: base_currency,
+           transaction_currency: transaction_currency,
+           base_rate: base_rate,
+           transaction_rate: transaction_rate
+         } = params
+       ) do
+    with {:ok, _transaction_date} <- validate_transaction_date(transaction_date),
+         {:ok, _posting_date} <- validate_posting_date(posting_date),
+         {:ok, _document_number} <- validate_binary(document_number, :invalid_document_number),
+         {:ok, _reference_number} <- validate_reference_number(reference_number),
+         {:ok, _particulars} <- validate_binary(particulars, :invalid_particulars),
+         {:ok, _details} <- validate_details(details),
+         {:ok, _posted} <- validate_posted_state(posted),
+         {:ok, _base_currency} <- validate_binary(base_currency, :invalid_base_currency),
+         {:ok, _transaction_currency} <-
+           validate_binary(transaction_currency, :invalid_transaction_currency),
+         {:ok, _base_rate} <- validate_rate(base_rate, :invalid_base_rate),
+         {:ok, _transaction_rate} <- validate_rate(transaction_rate, :invalid_base_rate) do
+      {:ok, params}
+    end
+  end
+
+  defp validate_params(_), do: {:error, :invalid_params}
+
+  defp validate_transaction_date(transaction_date)
+       when is_struct(transaction_date, DateTime),
+       do: {:ok, transaction_date}
+
+  defp validate_transaction_date(_transaction_date), do: {:error, :invalid_transaction_date}
+
+  defp validate_posting_date(posting_date)
+       when is_nil(posting_date) or is_struct(posting_date, DateTime),
+       do: {:ok, posting_date}
+
+  defp validate_posting_date(_posting_date), do: {:error, :invalid_posting_date}
+
+  defp validate_reference_number(reference_number)
+       when is_nil(reference_number) or (is_binary(reference_number) and reference_number != ""),
+       do: {:ok, reference_number}
+
+  defp validate_reference_number(_reference_number), do: {:error, :invalid_reference_number}
+
+  defp validate_binary(binary, _error_message) when is_binary(binary) and binary != "",
+    do: {:ok, binary}
+
+  defp validate_binary(_binary, error_message), do: {:error, error_message}
+
+  defp validate_rate(rate, _error_message) when is_struct(rate, Decimal), do: {:ok, rate}
+  defp validate_rate(_rate, error_message), do: {:error, error_message}
+
+  defp validate_details(details) when is_map(details), do: {:ok, details}
+  defp validate_details(_details), do: {:error, :invalid_details}
+
+  defp validate_posted_state(posted) when is_boolean(posted), do: {:ok, posted}
+  defp validate_posted_state(_posted), do: {:error, :invalid_posted_state}
+
+  defp validate_audit_details(params, action) do
+    details = Map.get(params, :audit_details, %{})
+
+    case AuditLog.create(%{record: "journal_entry", action: action, details: details}) do
+      {:ok, audit_log} ->
+        params =
+          params
+          |> Map.delete(:audit_details)
+          |> Map.put(:audit_logs, [audit_log])
+
+        {:ok, params}
+
+      {:error, _reason} ->
+        {:error, :invalid_audit_details}
+    end
+  end
+
+  # defp validate_audit_logs(%{audit_logs: audit_logs})
+  #      when is_list(audit_logs) and length(audit_logs) >= 1,
+  #      do: {:ok, audit_logs}
+
+  # defp validate_audit_logs(_params), do: {:error, :invalid_audit_logs}
+
+  # defp validate_posting_date(posting_date) when is_nil(posting_date) or is_datetime(posting_date),
+  #   do: {:ok, posting_date}
+
+  # defp validate_posting_date(_), do: {:error, :invalid_posting_date}
+
+  # defp validate_document_number(document_number)
+  #      when is_binary(document_number) and document_number != "",
+  #      do: {:ok, document_number}
+
+  # defp validate_date(datetime, _error_message)
+  #      when is_struct(datetime, DateTime),
+  #      do: {:ok, datetime}
+
+  # defp validate_date(_datetime, error_message), do: {:error, error_message}
+
+  defp validate_line_items(params, field) do
+    line_items = Map.get(params, field, [])
+
+    if line_items == [] or not is_list(line_items) do
+      error_reason =
+        case field do
+          :debit_items -> :invalid_debit_items
+          :credit_items -> :invalid_credit_items
+        end
+
+      {:error, error_reason}
+    else
+      transaction_currency = Map.get(params, :transaction_currency)
+
+      Enum.reduce_while(line_items, {:ok, []}, fn item, acc ->
+        with {:ok, params} <- transform_amount(item, field, transaction_currency),
+             {:ok, line_item} <- LineItem.create(params) do
+          {:cont, {:ok, [line_item | elem(acc, 1)]}}
+        else
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+      end)
+    end
+  end
+
+  defp transform_amount(%{amount: amount} = params, field, transaction_currency)
+       when is_integer(amount) and field in [:debit_items, :credit_items] do
+    entry = if field == :debit_items, do: :debit, else: :credit
+
+    case Money.new(transaction_currency, amount) do
+      {:error, _error} -> {:error, :invalid_amount}
+      amount -> {:ok, Map.merge(params, %{amount: amount, entry: entry})}
+    end
+  end
+
+  defp transform_amount(%{amount: amount} = params, field, transaction_currency)
+       when is_float(amount) and field in [:debit_items, :credit_items] do
+    entry = if field == :debit_items, do: :debit, else: :credit
+
+    case Money.from_float(transaction_currency, amount) do
+      {:error, _error} -> {:error, :invalid_amount}
+      amount -> {:ok, Map.merge(params, %{amount: amount, entry: entry})}
+    end
+  end
+
+  defp transform_amount(_params, _field, _transaction_currency), do: {:error, :invalid_amount}
+
+  # defp validate_currency(item, transaction_currency) do
+  #   if Atom.to_string(item.amount.currency) == transaction_currency,
+  #     do: {:ok, item},
+  #     else: {:error, :invalid_currency}
+  # end
+
+  defp validate_balance(debit_items, credit_items, transaction_currency) do
+    total_debits = sum_amounts(debit_items, transaction_currency)
+    total_credits = sum_amounts(credit_items, transaction_currency)
+
+    if Money.compare(total_debits, total_credits) == :eq,
+      do: {:ok, nil},
+      else: {:error, :unbalanced_line_items}
+  end
+
+  defp sum_amounts(line_items, transaction_currency) do
+    Enum.reduce(line_items, Money.new(transaction_currency, 0), fn item, acc ->
+      Money.add(acc, item.amount) |> elem(1)
+    end)
+  end
+
+  # defp validate_date(datetime) do
+  #   # format should be YYYY-MM-DD
+  #   case Date.from_iso8601(datetime) do
+  #     {:ok, _} -> true
+  #     _ -> false
+  #   end
+  # end
 
   # @type t_accounts :: %{
   #         left: list(LineItem.t()),

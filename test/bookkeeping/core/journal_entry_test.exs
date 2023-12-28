@@ -1,6 +1,98 @@
 defmodule Bookkeeping.Core.JournalEntryTest do
   use ExUnit.Case, async: true
+  alias Bookkeeping.Core.LineItem
+  alias Bookkeeping.Core.AuditLog
   alias Bookkeeping.Core.{Account, JournalEntry}
+
+  setup do
+    {:ok, asset_account} =
+      Account.create(%{
+        code: "10_000",
+        name: "cash",
+        classification: "asset",
+        description: "description",
+        audit_details: %{},
+        active: true
+      })
+
+    {:ok, revenue_account} =
+      Account.create(%{
+        code: "20_000",
+        name: "service revenue",
+        classification: "revenue",
+        description: "description",
+        audit_details: %{},
+        active: true
+      })
+
+    {:ok, receivable_account} =
+      Account.create(%{
+        code: "30_000",
+        name: "receivable",
+        classification: "asset",
+        description: "description",
+        audit_details: %{},
+        active: true
+      })
+
+    params = %{
+      transaction_date: DateTime.utc_now(),
+      posting_date: nil,
+      document_number: "JE100100",
+      reference_number: "INV100100",
+      particulars: "journal entry description",
+      details: %{approved_by: "example_admin@example.com"},
+      debit_items: [
+        %{
+          account: asset_account,
+          amount: 99.05,
+          # amount: Money.new("USD", 100),
+          particulars: "cash from service revenue"
+          # entry: :debit
+        },
+        %{
+          account: receivable_account,
+          amount: 200.95,
+          # amount: Money.new("USD", 200),
+          particulars: "receivable from service revenue"
+          # entry: :debit
+        }
+      ],
+      credit_items: [
+        %{
+          account: revenue_account,
+          amount: 300,
+          # amount: Money.new("USD", 300),
+          particulars: "service revenue"
+          # entry: :credit
+        }
+      ],
+      audit_details: %{created_by: "example@example.com"},
+      posted: false,
+      base_currency: "USD",
+      transaction_currency: "USD",
+      base_rate: Decimal.new("1"),
+      transaction_rate: Decimal.new("1")
+    }
+
+    {:ok, asset_account: asset_account, revenue_account: revenue_account, params: params}
+  end
+
+  describe "create/1" do
+    test "with valid unposted params", %{params: params} do
+      assert {:ok, journal_entry} = JournalEntry.create(params)
+      assert journal_entry.transaction_date == params.transaction_date
+      assert journal_entry.posting_date == params.posting_date
+      assert journal_entry.document_number == params.document_number
+      assert journal_entry.reference_number == params.reference_number
+      assert journal_entry.particulars == params.particulars
+      assert journal_entry.details == params.details
+      assert journal_entry.posted == params.posted
+      assert Enum.all?(journal_entry.audit_logs, &is_struct(&1, AuditLog))
+      assert Enum.all?(journal_entry.debit_items, &is_struct(&1, LineItem))
+      assert Enum.all?(journal_entry.credit_items, &is_struct(&1, LineItem))
+    end
+  end
 
   # setup do
   #   transaction_date = DateTime.utc_now()
